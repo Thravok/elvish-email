@@ -10,6 +10,6 @@ enum AppEnvironment {
             if c.path == "/" { c.path = "" }
             return c.url ?? u
         }
-        return URL(string: "https://elvish.quest")!
+        return URL(string: "http://127.0.0.1:8765")!
     }
 }
