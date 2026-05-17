@@ -1,0 +1,24 @@
+{
+  "originHash" : "0c343df7c42f48186d03ecc01290111ef42d591bc1f3a6207783225081de8435",
+  "pins" : [
+    {
+      "identity" : "bigint",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/attaswift/BigInt",
+      "state" : {
+        "revision" : "e07e00fa1fd435143a2dcf8b7eec9a7710b2fdfe",
+        "version" : "5.7.0"
+      }
+    },
+    {
+      "identity" : "objectivepgp",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/krzyzanowskim/ObjectivePGP.git",
+      "state" : {
+        "revision" : "29d7a531f00140224434d0cbaf5f2f21168bfe9c",
+        "version" : "1.0.0"
+      }
+    }
+  ],
+  "version" : 3
+}

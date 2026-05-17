@@ -1,0 +1,214 @@
+{{define "manifesto"}}
+<!DOCTYPE html>
+<html lang="en" data-font="ibm" data-site-theme-default="{{.Site.TweakDefaults.Theme}}"{{if .NavAuth.LoggedIn}} data-user-ui-theme="{{.NavAuth.UITheme}}"{{end}}>
+<head>
+  <meta charset="utf-8"/>
+  <title>{{.Title}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="description" content="{{.Description}}"/>
+  {{template "site-assets" .}}
+  <script type="application/json" id="elvish-tweak-defaults">{{.TweakDefaults}}</script>
+  {{template "theme-boot" .}}
+</head>
+<body>
+{{template "effects" .}}
+<div class="frame">
+{{template "topbar" .}}
+
+<section class="manifesto">
+  <div>
+    <div class="section-label"><span class="index">// 00</span> SECURITY <span class="rule"></span></div>
+    <h1 style="margin-top:18px"><span class="stripe">SECURITY</span> YOU CAN<br/>VERIFY.<br/>PRIVACY WITH<br/><span class="stripe">BOUNDARIES.</span></h1>
+    <div class="manifesto-intro">
+      <p><strong>ELVISH</strong> is encrypted mail built so the operator is structurally limited, not merely trusted. Account and identity keys unlock in the browser, client-authored mail reaches storage already encrypted, and stored bodies remain ciphertext across the mailbox database, blobstore, and outbox.</p>
+      <p>This page is the security posture in plain English: what the system is designed to prevent, how keys and ciphertext actually move through the stack, where privacy depends on send mode, and which tradeoffs are explicit instead of hidden behind marketing.</p>
+    </div>
+    <p style="margin-top:8px;color:var(--accent)">// security claims should survive contact with the architecture.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div class="bracket" style="padding:14px;position:relative">
+      <span class="br-bl"></span><span class="br-br"></span>
+      <div class="ftk" style="font-size:10px;letter-spacing:0.2em;color:var(--dim);margin-bottom:8px">// CORE INVARIANTS</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
+        <div class="row" style="justify-content:space-between"><span class="dim">CLIENT MAIL</span><span>Browser-encrypted before upload</span></div>
+        <div class="row" style="justify-content:space-between"><span class="dim">PRIVATE KEYS</span><span>Never stored unwrapped</span></div>
+        <div class="row" style="justify-content:space-between"><span class="dim">BODY SEARCH</span><span>Local only</span></div>
+        <div class="row" style="justify-content:space-between"><span class="dim">STORAGE</span><span style="color:var(--accent)">Ciphertext at rest</span></div>
+      </div>
+    </div>
+    <div class="bracket" style="padding:14px;position:relative">
+      <span class="br-bl"></span><span class="br-br"></span>
+      <div class="ftk" style="font-size:10px;letter-spacing:0.2em;color:var(--dim);margin-bottom:8px">// IMPORTANT BOUNDARIES</div>
+        <div class="row" style="justify-content:space-between;padding:3px 0"><span class="dim">SMTP INBOUND</span><span>Gateway-encrypt to mailbox key</span></div>
+      <div class="row" style="justify-content:space-between;padding:3px 0"><span class="dim">METADATA</span><span>Consented fields only</span></div>
+      <div class="row" style="justify-content:space-between;padding:3px 0"><span class="dim">LINK MODE</span><span>Password never server-side</span></div>
+      <div class="row" style="justify-content:space-between;padding:3px 0"><span class="dim">RELAY KEY</span><span style="color:var(--accent)">System notices only</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="manifesto-flow-diagram">
+  <div class="section-label" style="padding:12px 16px;border:1px solid var(--fg);border-bottom:0">
+    <span class="section-title">ENCRYPTION LIFECYCLE</span> <span class="rule"></span>
+    <span class="tiny dim">// HOW DATA FLOWS</span>
+  </div>
+  <div class="flow-visual" style="border:1px solid var(--fg);border-top:0;padding:24px 20px">
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="4" width="18" height="16" rx="2"/>
+            <path d="M7 8h10M7 12h6"/>
+          </svg>
+        </div>
+        <div class="flow-label">BROWSER</div>
+        <div class="flow-desc">Keys generated locally<br/>Encryption happens here</div>
+      </div>
+      <div class="flow-arrow">
+        <svg width="40" height="24" viewBox="0 0 40 24">
+          <path d="M0 12h32M26 6l8 6-8 6" stroke="var(--accent)" stroke-width="2" fill="none"/>
+        </svg>
+        <span class="flow-arrow-label">CIPHERTEXT</span>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="6" width="20" height="12" rx="1"/>
+            <circle cx="6" cy="12" r="1.5" fill="currentColor"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+            <circle cx="18" cy="12" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="flow-label">SERVER</div>
+        <div class="flow-desc">Stores encrypted blobs<br/>Cannot read contents</div>
+      </div>
+      <div class="flow-arrow">
+        <svg width="40" height="24" viewBox="0 0 40 24">
+          <path d="M0 12h32M26 6l8 6-8 6" stroke="var(--accent)" stroke-width="2" fill="none"/>
+        </svg>
+        <span class="flow-arrow-label">DELIVERY</span>
+      </div>
+      <div class="flow-step">
+        <div class="flow-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="5" y="2" width="14" height="20" rx="2"/>
+            <path d="M9 18h6"/>
+          </svg>
+        </div>
+        <div class="flow-label">RECIPIENT</div>
+        <div class="flow-desc">Decrypts with their keys<br/>Or shared password</div>
+      </div>
+    </div>
+    <div class="flow-note">
+      <span class="flow-note-icon">●</span>
+      <span>The server only ever handles ciphertext—decryption keys exist only on end-user devices.</span>
+    </div>
+  </div>
+</div>
+
+<div class="section-label" style="padding:12px 16px;border:1px solid var(--fg);border-top:0;border-bottom:0;margin-top:24px">
+  <span class="section-title">CORE GUARANTEES</span> <span class="rule"></span>
+  <span class="tiny dim">// WHAT + HOW</span>
+</div>
+<div class="manifesto-tenets">
+  <div class="manifesto-tenet">
+    <h3>ZERO-ACCESS ENCRYPTION</h3>
+    <div class="cl-prose manifesto-tenet-body">
+      <p><strong>What:</strong> The server cannot read your mail, even with full database access.</p>
+      <p><strong>How:</strong> Messages are encrypted in your browser before upload. The server only ever sees ciphertext, wrapped key material, and delivery metadata—never plaintext bodies.</p>
+    </div>
+  </div>
+  <div class="manifesto-tenet">
+    <h3>BROWSER-HELD KEYS</h3>
+    <div class="cl-prose manifesto-tenet-body">
+      <p><strong>What:</strong> Your private keys never leave your device in usable form.</p>
+      <p><strong>How:</strong> On registration, your browser generates keys locally and wraps them under a password-derived key. Login uses SRP (password never sent to server), then your browser re-derives the key to unwrap your secrets in memory.</p>
+    </div>
+  </div>
+  <div class="manifesto-tenet">
+    <h3>LOCAL-ONLY SEARCH</h3>
+    <div class="cl-prose manifesto-tenet-body">
+      <p><strong>What:</strong> Message body search stays entirely on your device.</p>
+      <p><strong>How:</strong> Body indexing lives in an encrypted browser store. There is intentionally no server search endpoint for message contents—the server cannot build a searchable index of your mail.</p>
+    </div>
+  </div>
+  <div class="manifesto-tenet">
+    <h3>OPEN STANDARDS</h3>
+    <div class="cl-prose manifesto-tenet-body">
+      <p><strong>What:</strong> No vendor lock-in. Your data stays portable and interoperable.</p>
+      <p><strong>How:</strong> OpenPGP for encryption, SMTP for delivery, exportable keys. You can take your keys and mail elsewhere—this is not a sealed proprietary ecosystem.</p>
+    </div>
+  </div>
+</div>
+
+<div class="manifesto-limits-callout">
+  <div class="section-label" style="padding:12px 16px;border:1px solid var(--accent);border-bottom:0;background:rgba(255,87,34,0.06)">
+    <span class="section-title" style="color:var(--accent)">HONEST LIMITS</span> <span class="rule"></span>
+    <span class="tiny" style="color:var(--accent)">// WHAT WE DO NOT PRETEND TO SOLVE</span>
+  </div>
+  <div class="manifesto-limits-grid" style="display:grid;grid-template-columns:repeat(2,1fr);border:1px solid var(--accent);border-top:0;background:rgba(255,87,34,0.03)">
+    <div class="manifesto-limit">
+      <h4>NOT ANONYMITY</h4>
+      <p>Encrypted mail does not make SMTP metadata disappear. Routing data still exists.</p>
+    </div>
+    <div class="manifesto-limit">
+      <h4>NO SECRET RECOVERY</h4>
+      <p>Lose your password? We cannot recover it. The same property that blocks us also blocks rescue.</p>
+    </div>
+    <div class="manifesto-limit">
+      <h4>LOCAL DEVICE TRUST</h4>
+      <p>On-device search means trusting your device. The trust boundary moves there, not nowhere.</p>
+    </div>
+    <div class="manifesto-limit">
+      <h4>AUDIT, DON'T TRUST</h4>
+      <p>Open source (<strong>AGPL-3.0</strong>), build hash <strong>{{.Site.HashShort}}</strong>. Review the system, not the marketing.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section-label" style="padding:12px 16px;border:1px solid var(--fg);border-top:0;border-bottom:0;margin-top:24px">
+  <span class="section-title">DELIVERY MODES</span> <span class="rule"></span>
+  <span class="tiny dim">// PRIVACY DEPENDS ON THE PATH</span>
+</div>
+<div class="manifesto-delivery-compact">
+  <div class="delivery-mode">
+    <h4>PGP DIRECT</h4>
+    <p>True end-to-end encryption to the recipient's OpenPGP key. The strongest path—body stays encrypted at rest and in transit.</p>
+  </div>
+  <div class="delivery-mode">
+    <h4>PROTECTED LINKS</h4>
+    <p>Sender encrypts under a password, recipient unlocks client-side. Server stores ciphertext and wrapped key, never the password.</p>
+  </div>
+  <div class="delivery-mode">
+    <h4>SYSTEM RELAY</h4>
+    <p>For operator notices only. Encrypted at rest under relay key, decrypted in memory only at send time.</p>
+  </div>
+</div>
+
+<div class="section-label" style="margin-top:24px;padding:12px 16px;border:1px solid var(--fg);border-bottom:0">
+  <span class="section-title">CONTACT</span> <span class="rule"></span>
+  <span class="tiny dim">// REACH THE OPERATOR</span>
+</div>
+<div class="manifesto-intro" style="border:1px solid var(--fg);border-top:0;padding:16px 20px">
+  <p class="cl-prose">Use the addresses below for help, abuse, or security reports. For the strongest privacy, encrypt to our published OpenPGP key (WKD on our domain when enabled). Email between providers relies on <strong>transport encryption between hops</strong>; that is not the same as end-to-end encryption over the whole path.</p>
+  <p class="cl-prose dim" style="margin-top:8px">Plaintext sent to an address we host is encrypted to that mailbox&rsquo;s public key on receipt so bodies are not stored in cleartext; the server may still see content briefly while processing.</p>
+  {{- with .Site.Support.PublicSupportRows}}
+  <ul style="margin:14px 0 0;padding-left:18px;font-size:12px;line-height:1.7">
+    {{- range .}}
+    <li><a href="mailto:{{.Email}}">{{.Label}}</a> <span class="dim">— {{.Email}}</span></li>
+    {{- end}}
+  </ul>
+  {{- else}}
+  <p class="dim" style="margin-top:12px;font-size:11px">Configure a default and optional labeled contacts in Admin (Site / SEO). They appear here, in the footer, and in <code>/.well-known/security.txt</code>.</p>
+  {{- end}}
+  <p style="margin-top:12px;font-size:10px" class="dim">Machine-readable: <a href="/.well-known/security.txt">/.well-known/security.txt</a></p>
+</div>
+
+<div class="stripe-band" style="margin-top:32px"></div>
+
+{{template "footer" .}}
+{{template "tweakfab" .}}
+</div>
+</body>
+</html>
+{{end}}

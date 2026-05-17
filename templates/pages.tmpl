@@ -1,0 +1,488 @@
+{{define "home"}}
+<!DOCTYPE html>
+<html lang="en" data-font="ibm" data-site-theme-default="{{.Site.TweakDefaults.Theme}}"{{if .NavAuth.LoggedIn}} data-user-ui-theme="{{.NavAuth.UITheme}}"{{end}}>
+<head>
+  <meta charset="utf-8"/>
+  <title>{{.Title}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="description" content="{{.Description}}"/>
+  {{template "site-assets" .}}
+  <script type="application/json" id="elvish-tweak-defaults">{{.TweakDefaults}}</script>
+  {{template "theme-boot" .}}
+</head>
+<body>
+{{template "effects" .}}
+<div class="frame">
+<div class="home-auth-strip">
+  <a href="/" class="brand" style="text-decoration:none;color:inherit"><span class="dot"></span>ELVISH</a>
+  <div class="home-auth-strip-actions">
+    {{- if .NavAuth.LoggedIn}}
+    <span class="nav-session dim" title="{{.NavAuth.Email}}">{{if .NavAuth.Name}}{{.NavAuth.Name}}{{else}}{{.NavAuth.Email}}{{end}}</span>
+    {{- if .NavAuth.IsAdmin}}
+    <a href="/admin/" class="navlink">PANEL</a>
+    {{- end}}
+    <a href="/mail" class="btn primary">▸ OPEN MAIL</a>
+    <form class="nav-inline-form" action="/auth/logout" method="post">
+      <input type="hidden" name="next" value="{{.NavAuth.LogoutNext}}" />
+      <button type="submit" class="navlink">LOGOUT</button>
+    </form>
+    {{- else}}
+    <a href="/login" class="btn">LOG IN</a>
+    <a href="/register" class="btn primary">REGISTER</a>
+    {{- end}}
+  </div>
+</div>
+
+<section class="hero home-hero">
+  <div class="hero-l">
+    <div class="section-label"><span class="index">// {{.Site.Hero.SectionIndex}}</span> {{.Site.Hero.SectionTitle}} <span class="rule"></span></div>
+    <h1 class="display" style="margin-top:18px">
+      {{- range .Site.Hero.Lines}}
+      {{- range .Parts}}
+      {{- if .Stripe}}<span class="stripe">{{.Text}}</span>{{else}}{{.Text}}{{end}}
+      {{- end}}<br/>
+      {{- end}}
+    </h1>
+    <div class="lede">{{.LedeHTML}}</div>
+
+    <div class="home-hero-actions">
+      {{- if .NavAuth.LoggedIn}}
+      <a href="/mail" class="btn primary">▸ OPEN MAIL</a>
+      {{- else}}
+      <a href="/register" class="btn primary">▸ CREATE INBOX</a>
+      {{- end}}
+      <a href="/manifesto/" class="btn">READ SECURITY</a>
+    </div>
+
+    <div class="home-hero-chips" aria-label="Core product features">
+      <span class="tag live">OPENPGP</span>
+      <span class="tag">BROWSER KEYS</span>
+      <span class="tag">PROTECTED LINKS</span>
+      <span class="tag">SMTP DELIVERY</span>
+    </div>
+
+  </div>
+
+  <div class="hero-r">
+    <div class="panel">
+      <h4>// HOW IT WORKS</h4>
+      <div class="home-flow">
+        <div class="home-flow-step">
+          <div class="home-flow-index">01</div>
+          <div class="home-flow-copy">
+            <strong>Compose and encrypt in the browser</strong>
+            <span class="dim">Keys unlock locally, then message bodies are encrypted before they ever hit storage.</span>
+          </div>
+        </div>
+        <div class="home-flow-step">
+          <div class="home-flow-index">02</div>
+          <div class="home-flow-copy">
+            <strong>Store ciphertext, not plaintext</strong>
+            <span class="dim">The operator sees encrypted blobs, wrapped key material, and delivery metadata only.</span>
+          </div>
+        </div>
+        <div class="home-flow-step">
+          <div class="home-flow-index">03</div>
+          <div class="home-flow-copy">
+            <strong>Decrypt where the recipient opens</strong>
+            <span class="dim">OpenPGP recipients decrypt with their keys; protected links unlock client-side with a shared secret.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-label home-section-label">
+  <span class="section-title">THREE WAYS TO SEND SECURELY</span> <span class="rule"></span>
+  <span class="tiny dim">// DELIVERY</span>
+</div>
+<div class="home-card-grid">
+  <article class="home-card">
+    <h4>// OPENPGP DIRECT</h4>
+    <p>Encrypt directly to a recipient's published key and keep the message protected across the full route.</p>
+    <div class="tiny dim">BEST FOR · PGP USERS · STANDARD MAIL CLIENTS</div>
+  </article>
+  <article class="home-card">
+    <h4>// PROTECTED LINKS</h4>
+    <p>Wrap the body under a sender-chosen password and deliver an unlock link. The password never reaches the server.</p>
+    <div class="tiny dim">BEST FOR · ANY RECIPIENT · CLIENT-SIDE UNLOCK</div>
+  </article>
+  <article class="home-card">
+    <h4>// RELAY MODE</h4>
+    <p>When plaintext delivery is unavoidable, persist only relay-key-wrapped ciphertext and decrypt only in memory at send time.</p>
+    <div class="tiny dim">BEST FOR · LEGACY SMTP · MINIMIZED PLAINTEXT EXPOSURE</div>
+  </article>
+</div>
+
+<div class="section-label home-section-label">
+  <span class="section-title">ZERO-ACCESS ARCHITECTURE</span> <span class="rule"></span>
+  <span class="tiny dim">// SECURITY</span>
+</div>
+<div class="home-card-grid home-card-grid--four">
+  <article class="home-card">
+    <h4>// KEYS STAY CLIENT-SIDE</h4>
+    <p>Account and identity keys are generated or unlocked in the browser so operators cannot silently read inbox contents.</p>
+  </article>
+  <article class="home-card">
+    <h4>// CIPHERTEXT AT REST</h4>
+    <p>Mailbox bodies and protected-link payloads are stored as encrypted objects, not plaintext rows waiting to leak.</p>
+  </article>
+  <article class="home-card">
+    <h4>// LOCAL-ONLY SEARCH</h4>
+    <p>Body indexing stays on the device, preserving searchability without handing message contents to the backend.</p>
+  </article>
+  <article class="home-card">
+    <h4>// OPEN STANDARDS</h4>
+    <p>OpenPGP import/export, SMTP delivery, and publishable public keys keep the system interoperable instead of walled off.</p>
+  </article>
+</div>
+
+<div class="section-label home-section-label">
+  <span class="section-title">WHAT MAKES THIS DIFFERENT</span> <span class="rule"></span>
+  <span class="tiny dim">// TRUST</span>
+</div>
+<div class="home-protocol-grid">
+  <aside class="home-callout bracket" aria-label="What makes ELVISH different">
+    <span class="br-bl"></span><span class="br-br"></span>
+    <div class="ftk">// STRUCTURAL LIMITS</div>
+    <p>Most encrypted mail still asks you to trust the operator. ELVISH is built so the operator is structurally limited—not merely trusted. Even with full database access, the server cannot read your mail because it never had the keys.</p>
+  </aside>
+</div>
+
+<div class="stripe-band" style="margin-top:32px"></div>
+
+{{template "footer" .}}
+{{template "tweakfab" .}}
+</div>
+</body>
+</html>
+{{end}}
+
+{{define "log"}}
+<!DOCTYPE html>
+<html lang="en" data-font="ibm" data-site-theme-default="{{.Site.TweakDefaults.Theme}}"{{if .NavAuth.LoggedIn}} data-user-ui-theme="{{.NavAuth.UITheme}}"{{end}}>
+<head>
+  <meta charset="utf-8"/>
+  <title>{{.Title}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="description" content="{{.Description}}"/>
+  {{template "feed-links" .}}
+  {{template "site-assets" .}}
+  <script type="application/json" id="elvish-tweak-defaults">{{.TweakDefaults}}</script>
+  {{template "theme-boot" .}}
+</head>
+<body>
+{{template "effects" .}}
+<div class="frame">
+{{template "topbar" .}}
+
+<section class="manifesto">
+  <div>
+    <div class="section-label"><span class="index">// {{.Site.LogPage.SectionIndex}}</span> {{.Site.LogPage.SectionTitle}} <span class="rule"></span></div>
+    <h1 style="margin-top:18px">
+      {{- range .Site.LogPage.Headlines}}
+      {{- range .Parts}}
+      {{- if .Stripe}}<span class="stripe">{{.Text}}</span>{{else}}{{.Text}}{{end}}
+      {{- end}}<br/>
+      {{- end}}
+    </h1>
+    <div class="manifesto-intro">{{.IntroHTML}}</div>
+    <p style="margin-top:8px;color:var(--accent)">{{.Site.LogPage.TaglineAccent}}</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div class="bracket" style="padding:14px;position:relative">
+      <span class="br-bl"></span><span class="br-br"></span>
+      <div class="ftk" style="font-size:10px;letter-spacing:0.2em;color:var(--dim);margin-bottom:8px">// FEED</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
+        <div class="row" style="justify-content:space-between"><span class="dim">RSS</span><a href="/feed.xml" style="color:var(--accent)">/feed.xml</a></div>
+        <div class="row" style="justify-content:space-between"><span class="dim">JSON</span><a href="/feed.json" style="color:var(--accent)">/feed.json</a></div>
+        <div class="row" style="justify-content:space-between"><span class="dim">ATOM</span><a href="/atom.xml" style="color:var(--accent)">/atom.xml</a></div>
+        <div class="row" style="justify-content:space-between"><span class="dim">SIGNED</span><span>OpenPGP · <a href="/pgp/keys.json" style="color:var(--accent)">/pgp/keys.json</a></span></div>
+      </div>
+    </div>
+    <div class="bracket" style="padding:14px;position:relative">
+      <span class="br-bl"></span><span class="br-br"></span>
+      <div class="ftk" style="font-size:10px;letter-spacing:0.2em;color:var(--dim);margin-bottom:8px">// COUNTS</div>
+      <div class="row" style="justify-content:space-between;padding:3px 0"><span class="dim">ENTRIES</span><span>{{.EntryCount}}</span></div>
+      <div class="row" style="justify-content:space-between;padding:3px 0"><span class="dim">FIRST</span><span>{{.FirstDate}}</span></div>
+      <div class="row" style="justify-content:space-between;padding:3px 0"><span class="dim">LATEST</span><span style="color:var(--accent)">{{.LatestDate}}</span></div>
+      <div class="row" style="justify-content:space-between;padding:3px 0"><span class="dim">CADENCE</span><span>WHEN-READY</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="cl-filterbar">
+  <span class="tiny dim">FILTER ▸</span>
+  {{- range .Filters}}
+  <a href="{{if eq .ID "all"}}/log/{{else}}/log/tags/{{.ID}}/{{end}}" class="cl-filter{{if eq $.ActiveFilter .ID}} on{{end}}">{{.Label}}</a>
+  {{- end}}
+  <span class="tiny dim" style="margin-left:auto">{{len .Posts}} / {{.EntryCount}} ENTRIES</span>
+</div>
+
+<div class="changelog">
+  <div class="cl-head">
+    <span>DATE</span><span>ENTRY</span><span>BYTES · REACH</span>
+  </div>
+  {{- range .Posts}}
+  <article class="cl-entry" id="entry-{{.Slug}}">
+    <div class="cl-date">
+      <span class="y">{{.DisplayDate}}</span>
+      <span class="t">{{.Time}} UTC</span>
+    </div>
+    <div class="cl-body">
+      <div class="cl-tagrow">
+        {{- range .Tags}}<span class="cl-tag {{.}}">{{.}}</span>{{end}}
+      </div>
+      <h2 class="cl-title"><a href="{{.RelPermalink}}">{{.Title}}</a></h2>
+      <div class="cl-prose">{{.BodyHTML}}</div>
+      <div class="cl-meta">
+        <span><span class="k">▸</span>BYTES · {{.Bytes}}</span>
+        <span><span class="k">▸</span>REACH · {{.Reach}}</span>
+        <span><span class="k">▸</span>PERMALINK · <a href="{{.RelPermalink}}">{{.RelPermalink}}</a></span>
+      </div>
+    </div>
+  </article>
+  {{- end}}
+</div>
+
+<div class="stripe-band"></div>
+
+<div class="ticker" style="margin-top:16px">
+  <div class="ticker-track">
+    {{- range .Ticker}}<span>{{.}}</span>{{end}}
+    {{- range .Ticker}}<span>{{.}}</span>{{end}}
+  </div>
+</div>
+
+{{template "footer" .}}
+{{template "tweakfab" .}}
+</div>
+</body>
+</html>
+{{end}}
+
+{{define "status"}}
+<!DOCTYPE html>
+<html lang="en" data-font="ibm" data-site-theme-default="{{.Site.TweakDefaults.Theme}}"{{if .NavAuth.LoggedIn}} data-user-ui-theme="{{.NavAuth.UITheme}}"{{end}}>
+<head>
+  <meta charset="utf-8"/>
+  <title>{{.Title}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="description" content="{{.Description}}"/>
+  {{template "feed-links" .}}
+  {{template "site-assets" .}}
+  <script type="application/json" id="elvish-tweak-defaults">{{.TweakDefaults}}</script>
+  {{template "theme-boot" .}}
+  <script type="application/json" id="elvish-uptime-initial">{{.UptimeInitial}}</script>
+  <script type="application/json" id="elvish-uptime-labels">{{.LabelsJSON}}</script>
+</head>
+<body data-page="status">
+{{template "effects" .}}
+<div class="frame">
+{{template "topbar" .}}
+
+<section class="status-page">
+  <div class="section-label" style="padding:12px 16px;border:1px solid var(--fg);border-bottom:0">
+    <span class="index">// 09</span> STATUS <span class="rule"></span>
+    <span class="tiny dim">HTTP PROBES · ROLLUP FROM SERVER</span>
+  </div>
+  <div class="status-summary bracket" style="border:1px solid var(--fg);padding:16px 18px">
+    <div class="status-summary-grid">
+      <div>
+        <div class="ftk" style="font-size:10px;letter-spacing:0.2em;color:var(--dim)">MONTHLY UPTIME (UTC)</div>
+        <div id="status-overall" class="status-kpi">{{.OverallUptime}}</div>
+      </div>
+      <div>
+        <div class="ftk" style="font-size:10px;letter-spacing:0.2em;color:var(--dim)">LAST CHECK (UTC)</div>
+        <div id="status-checked" class="status-kpi mono">{{.CheckedAt}}</div>
+      </div>
+      <div>
+        <div class="ftk" style="font-size:10px;letter-spacing:0.2em;color:var(--dim)">FEED</div>
+        <div class="status-kpi"><a href="/api/uptime.json" class="navlink" style="display:inline">/api/uptime.json</a></div>
+      </div>
+    </div>
+    {{if .EmptyMessage}}
+    <p id="status-banner" class="status-banner">{{.EmptyMessage}}</p>
+    {{else}}
+    <p id="status-banner" class="status-banner" style="display:none"></p>
+    {{end}}
+  </div>
+
+  <div id="elvish-status-root" class="status-table-wrap" style="border:1px solid var(--fg);border-top:0">
+    <table class="status-table" aria-label="Uptime targets">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">NAME</th>
+          <th scope="col">NOW</th>
+          <th scope="col">HTTP</th>
+          <th scope="col">LATENCY</th>
+          <th scope="col">ROLLUP</th>
+          <th scope="col">NOTE</th>
+        </tr>
+      </thead>
+      <tbody id="elvish-status-tbody">
+        {{- range .Rows}}
+        <tr data-target-id="{{.ID}}">
+          <td class="mono dim">{{.ID}}</td>
+          <td>{{.DisplayName}}</td>
+          <td>{{if .OK}}<span class="tag live">UP</span>{{else}}<span class="tag" style="border-color:#c62828;color:#e57373">DOWN</span>{{end}}</td>
+          <td class="mono">{{.StatusCode}}</td>
+          <td class="mono">{{.LatencyMS}} ms</td>
+          <td class="mono">{{.UptimePct}}</td>
+          <td class="dim tiny">{{.Error}}</td>
+        </tr>
+        {{- end}}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="stripe-band"></div>
+
+<div class="ticker" style="margin-top:16px">
+  <div class="ticker-track">
+    {{- range .Ticker}}<span>{{.}}</span>{{end}}
+    {{- range .Ticker}}<span>{{.}}</span>{{end}}
+  </div>
+</div>
+
+{{template "footer" .}}
+{{template "tweakfab" .}}
+</div>
+</body>
+</html>
+{{end}}
+
+{{define "post"}}
+<!DOCTYPE html>
+<html lang="en" data-font="ibm" data-site-theme-default="{{.Site.TweakDefaults.Theme}}"{{if .NavAuth.LoggedIn}} data-user-ui-theme="{{.NavAuth.UITheme}}"{{end}}>
+<head>
+  <meta charset="utf-8"/>
+  <title>{{.Title}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="description" content="{{.Description}}"/>
+  {{template "feed-links" .}}
+  {{template "site-assets" .}}
+  <script type="application/json" id="elvish-tweak-defaults">{{.TweakDefaults}}</script>
+  {{template "theme-boot" .}}
+</head>
+<body>
+{{template "effects" .}}
+<div class="frame">
+{{template "topbar" .}}
+
+<article class="post-single">
+  <p class="tiny dim"><a href="/log/">← /log</a></p>
+  <div class="cl-tagrow" style="margin-top:12px">
+    {{- range .Post.Tags}}<span class="cl-tag {{.}}">{{.}}</span>{{end}}
+  </div>
+  <h1 class="display" style="margin-top:12px;font-size:clamp(28px,4vw,52px)">{{.Post.Title}}</h1>
+  <div class="row tiny dim" style="gap:16px;margin-top:8px">
+    <span>{{.Post.DisplayDate}}</span>
+    <span>{{.Post.Time}} UTC</span>
+    <span>{{.Post.Type}}</span>
+    <span>BYTES · {{.Post.Bytes}}</span>
+    <span>REACH · {{.Post.Reach}}</span>
+  </div>
+  {{- if and .OpenPGP .OpenPGP.HasSignature}}
+  <aside class="post-signing" aria-label="Detached OpenPGP signature">
+    <div class="post-signing-h">// OPENPGP · DETACHED</div>
+    {{- if .OpenPGP.VerifiedOK}}
+    <p class="tiny post-signing-ok">Signature verified for key fingerprint <code>{{.OpenPGP.Fingerprint}}</code>.</p>
+    {{- else if .OpenPGP.ErrMsg}}
+    <p class="tiny post-signing-err">Signature check failed: <code>{{.OpenPGP.ErrMsg}}</code></p>
+    {{- else}}
+    <p class="tiny dim">Detached OpenPGP signature is published with this entry. Download the public key and verify with <code>gpg</code> or OpenPGP.js.</p>
+    {{- end}}
+    <ul class="tiny dim post-signing-ul">
+      <li><a href="source.md"><code>source.md</code></a> — signed plaintext (full markdown)</li>
+      <li><a href="{{.OpenPGP.SigURL}}"><code>source.openpgp.asc</code></a> — detached signature</li>
+      {{- if .OpenPGP.KeyURL}}
+      <li><a href="{{.OpenPGP.KeyURL}}">public key</a> — OpenPGP armored block</li>
+      {{- end}}
+    </ul>
+    <pre class="tiny post-signing-cmd">gpg --verify source.openpgp.asc source.md</pre>
+    <div class="post-signing-actions" role="group" aria-label="Copy material for local verification">
+      <span class="tiny dim post-signing-actions-h">// COPY · LOCAL VERIFY</span>
+      <button type="button" class="post-signing-copybtn" data-log-copy="source.md">copy source.md</button>
+      <button type="button" class="post-signing-copybtn" data-log-copy="source.openpgp.asc">copy detached sig</button>
+      {{- if .OpenPGP.KeyURL}}
+      <button type="button" class="post-signing-copybtn" data-log-copy="{{.OpenPGP.KeyURL}}">copy pubkey</button>
+      {{- end}}
+    </div>
+  </aside>
+  {{- else if .Post.Signing.HasSignature}}
+  <aside class="post-signing" aria-label="Detached minisign signature">
+    <div class="post-signing-h">// MINISIGN · DETACHED</div>
+    {{- if .Post.Signing.VerifiedOK}}
+    <p class="tiny post-signing-ok">Signature verified with public key <code>{{.Post.Signing.PubKeyIDHex}}</code> (signature key id <code>{{.Post.Signing.SigKeyIDHex}}</code>).</p>
+    {{- else if .Post.Signing.ErrMsg}}
+    <p class="tiny post-signing-err">Signature check failed: <code>{{.Post.Signing.ErrMsg}}</code></p>
+    {{- else}}
+    <p class="tiny dim">Detached signature is published with this entry. Verify locally with <code>minisign</code> and the site public key.</p>
+    {{- end}}
+    <ul class="tiny dim post-signing-ul">
+      <li><a href="source.md"><code>source.md</code></a> — exact signed bytes (full markdown)</li>
+      <li><a href="source.md.minisig"><code>source.md.minisig</code></a> — detached signature</li>
+      {{- if .SigningPubDeployed}}
+      <li><a href="{{.SigningPubURL}}"><code>{{.SigningPubURL}}</code></a> — public key</li>
+      {{- end}}
+    </ul>
+    {{- if .Post.Signing.TrustedLine}}
+    <p class="tiny dim">Trusted comment: <code>{{.Post.Signing.TrustedLine}}</code></p>
+    {{- end}}
+    <pre class="tiny post-signing-cmd">minisign -Vm source.md -p signing.pub -x source.md.minisig</pre>
+    <p class="tiny dim post-signing-hint">Save <code>signing.pub</code>, <code>source.md</code>, and <code>source.md.minisig</code> in one directory (from this site), then run the command above.</p>
+    <div class="post-signing-actions" role="group" aria-label="Copy material for local verification">
+      <span class="tiny dim post-signing-actions-h">// COPY · LOCAL VERIFY</span>
+      <button type="button" class="post-signing-copybtn" data-log-copy="source.md">copy source.md</button>
+      <button type="button" class="post-signing-copybtn" data-log-copy="source.md.minisig">copy .minisig</button>
+      {{- if .SigningPubDeployed}}
+      <button type="button" class="post-signing-copybtn" data-log-copy="{{.SigningPubURL}}">copy signing.pub</button>
+      {{- end}}
+    </div>
+  </aside>
+  {{- end}}
+  <div class="cl-prose" style="margin-top:28px">{{.Post.BodyHTML}}</div>
+</article>
+
+<div class="stripe-band" style="margin-top:48px"></div>
+
+{{template "footer" .}}
+{{template "tweakfab" .}}
+</div>
+<script>
+(function () {
+  var base = {{printf "%q" .Post.RelPermalink}};
+  document.querySelectorAll("[data-log-copy]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var rel = btn.getAttribute("data-log-copy");
+      if (!rel) return;
+      var url = rel.indexOf("/") === 0 ? location.origin + rel : new URL(rel, location.origin + base).href;
+      fetch(url, { credentials: "same-origin" })
+        .then(function (r) {
+          if (!r.ok) throw new Error(String(r.status));
+          return r.text();
+        })
+        .then(function (t) {
+          return navigator.clipboard.writeText(t);
+        })
+        .then(function () {
+          var prev = btn.textContent;
+          btn.textContent = "COPIED";
+          setTimeout(function () {
+            btn.textContent = prev;
+          }, 1600);
+        })
+        .catch(function (e) {
+          alert("Copy failed (needs same-origin fetch): " + e);
+        });
+    });
+  });
+})();
+</script>
+</body>
+</html>
+{{end}}

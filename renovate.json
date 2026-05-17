@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["gomod", "npm"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group browser bundle npm updates",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["frontend/package.json"],
+      "groupName": "frontend npm"
+    },
+    {
+      "description": "Group Playwright / e2e npm updates",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["e2e/package.json"],
+      "groupName": "e2e npm"
+    }
+  ],
+  "ignorePaths": ["**/node_modules/**"]
+}

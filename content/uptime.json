@@ -1,0 +1,14 @@
+{
+  "base_url": "",
+  "include_tools_from_home": true,
+  "targets": [
+    {
+      "id": "home",
+      "path": "/"
+    },
+    {
+      "id": "log_index",
+      "path": "/log/"
+    }
+  ]
+}

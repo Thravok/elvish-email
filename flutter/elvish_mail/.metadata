@@ -1,0 +1,10 @@
+# This file is used by the Flutter tool to track project metadata.
+# See https://github.com/flutter/flutter/wiki/Upgrading-from-legacy-.metadata
+
+version:
+  revision: "manual"
+  channel: "stable"
+
+project_type: app
+
+# Tracks migration of package:elvish_mail to workspace; safe to regenerate with `flutter pub get`.

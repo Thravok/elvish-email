@@ -1,0 +1,21 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "AGPL-3.0",
+  "type": "commonjs",
+  "dependencies": {
+    "cap-widget": "0.1.51",
+    "dompurify": "3.4.3",
+    "esbuild": "0.25.12",
+    "openpgp": "6.3.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  }
+}
