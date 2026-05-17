@@ -1,0 +1,149 @@
+{
+  "title": "ELVISH — end-to-end encrypted mail",
+  "description": "End-to-end encrypted mail with browser-held keys, OpenPGP interoperability, and zero-access storage.",
+  "version": "v0.8.0",
+  "build_label": "NIGHTLY",
+  "license_line": "AGPL-3.0",
+  "hash_short": "e2ee01f4",
+  "build_date": "26.05.10",
+  "base_url": "https://example.com",
+  "support": {
+    "default_email": "",
+    "contacts": []
+  },
+  "tweak_defaults": {
+    "theme": "light",
+    "font": "ibm",
+    "crosshair": false,
+    "scanlines": false,
+    "show_grid": false
+  },
+  "nav": [
+    {
+      "href": "/",
+      "label": "HOME",
+      "id": "home"
+    },
+    {
+      "href": "/mail",
+      "label": "MAIL",
+      "id": "mail"
+    },
+    {
+      "href": "/manifesto/",
+      "label": "SECURITY",
+      "id": "manifesto"
+    }
+  ],
+  "footer": {
+    "tagline": "End-to-end encrypted mail.\nKeys generated in browser.\nCiphertext at rest.\n",
+    "pages": [
+      {
+        "href": "/",
+        "label": "Home"
+      },
+      {
+        "href": "/mail",
+        "label": "Mail"
+      },
+      {
+        "href": "/manifesto/",
+        "label": "Security"
+      },
+      {
+        "href": "/login",
+        "label": "Log in"
+      },
+      {
+        "href": "/register",
+        "label": "Register"
+      },
+      {
+        "href": "/admin/",
+        "label": "Panel"
+      },
+      {
+        "href": "#",
+        "label": "Source"
+      }
+    ],
+    "protocol": [
+      "License — AGPL-3.0",
+      "Hash — e2ee01f4",
+      "Build — nightly · 26.05.10",
+      "Encryption — OpenPGP",
+      "Storage — ciphertext only"
+    ],
+    "ascii_block": "┌────────────────┐\n│   ████  ████   │\n│   ██ █  █ ██   │\n│   ████  ████   │\n│        ██      │\n│   ████████     │\n│   ██   ██      │\n│   ████████     │\n└────────────────┘\n",
+    "ascii_scale_to_fit": false
+  },
+  "hero": {
+    "section_index": "00",
+    "section_title": "E2EE MAIL",
+    "lines": [
+      {
+        "parts": [
+          {
+            "stripe": true,
+            "text": "END-TO-END"
+          },
+          {
+            "stripe": false,
+            "text": " ENCRYPTED"
+          }
+        ]
+      },
+      {
+        "parts": [
+          {
+            "stripe": false,
+            "text": "MAIL."
+          }
+        ]
+      },
+      {
+        "parts": [
+          {
+            "stripe": true,
+            "text": "ZERO-ACCESS"
+          },
+          {
+            "stripe": false,
+            "text": " DELIVERY."
+          }
+        ]
+      }
+    ],
+    "lede_markdown": "Plain email asks you to trust every server in the path with your message content. **ELVISH** moves encryption to your browser—messages are protected before they ever reach storage or delivery. The server handles ciphertext, not readable mail. <span class=\"dim\">// zero-access by design</span>\n",
+    "stats": [
+      {
+        "key": "ENCRYPTION",
+        "value": "OPENPGP"
+      },
+      {
+        "key": "KEYS",
+        "value": "BROWSER-HELD"
+      },
+      {
+        "key": "DELIVERY",
+        "value": "SMTP + LINK"
+      },
+      {
+        "key": "STORAGE",
+        "value": "CIPHERTEXT"
+      }
+    ]
+  },
+  "tools": [],
+  "ticker_home": [
+    "E2EE BY DEFAULT",
+    "BROWSER-HELD KEYS",
+    "ZERO-ACCESS STORAGE",
+    "OPENPGP COMPATIBLE",
+    "PROTECTED LINKS",
+    "PLAINTEXT RELAY",
+    "OPEN SOURCE",
+    "AGPL-3.0",
+    "ELVISH MAIL"
+  ]
+}

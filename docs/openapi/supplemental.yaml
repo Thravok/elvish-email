@@ -1,0 +1,329 @@
+# Routes not expressed as literal `case p == "…" && r.Method == …` in internal/httpserver/api.go.
+# Edit this file when adding nested dispatcher paths, then run `make openapi`.
+routes:
+  # --- auth / MFA (handleAuth2FAAPI) ---
+  - method: GET
+    path: /api/auth/2fa
+    summary: MFA status
+  - method: POST
+    path: /api/auth/2fa/totp/begin
+    summary: Begin TOTP enrollment
+  - method: POST
+    path: /api/auth/2fa/totp/confirm
+    summary: Confirm TOTP enrollment
+  - method: POST
+    path: /api/auth/2fa/verify/totp
+    summary: Verify TOTP during sensitive change
+  - method: POST
+    path: /api/auth/2fa/login/totp
+    summary: Complete login with TOTP
+  - method: POST
+    path: /api/auth/2fa/verify/recovery
+    summary: Verify recovery code
+  - method: POST
+    path: /api/auth/2fa/login/recovery
+    summary: Complete login with recovery code
+  - method: POST
+    path: /api/auth/2fa/recovery/regenerate
+    summary: Regenerate recovery codes
+  - method: POST
+    path: /api/auth/2fa/webauthn/register/begin
+    summary: Begin WebAuthn registration
+  - method: POST
+    path: /api/auth/2fa/webauthn/register/finish
+    summary: Finish WebAuthn registration
+  - method: POST
+    path: /api/auth/2fa/login/webauthn/begin
+    summary: Begin WebAuthn login step-up
+  - method: POST
+    path: /api/auth/2fa/login/webauthn/finish
+    summary: Finish WebAuthn login step-up
+  - method: POST
+    path: /api/auth/2fa/verify/webauthn/begin
+    summary: Begin WebAuthn verification for sensitive change
+  - method: POST
+    path: /api/auth/2fa/verify/webauthn/finish
+    summary: Finish WebAuthn verification for sensitive change
+  - method: DELETE
+    path: /api/auth/2fa/totp/{totpId}
+    summary: Delete enrolled TOTP factor
+  - method: DELETE
+    path: /api/auth/2fa/webauthn/{credentialId}
+    summary: Delete WebAuthn credential
+
+  # --- admin users ---
+  - method: GET
+    path: /api/admin/users
+    summary: List users (admin)
+  - method: GET
+    path: /api/admin/users/{userId}
+    summary: Get user (admin)
+  - method: POST
+    path: /api/admin/users/{userId}/disable
+    summary: Disable user (admin)
+  - method: DELETE
+    path: /api/admin/users/{userId}
+    summary: Delete user (admin)
+
+  # --- admin outbox ---
+  - method: GET
+    path: /api/admin/outbox/stats
+    summary: Mail outbox stats (admin)
+  - method: GET
+    path: /api/admin/outbox
+    summary: List outbox entries (admin)
+  - method: GET
+    path: /api/admin/outbox/{outboxId}
+    summary: Get outbox entry (admin)
+  - method: POST
+    path: /api/admin/outbox/{outboxId}/retry
+    summary: Retry outbox delivery (admin)
+
+  # --- admin domains ---
+  - method: GET
+    path: /api/admin/domains
+    summary: List mail domains (admin)
+  - method: POST
+    path: /api/admin/domains
+    summary: Add mail domain (admin)
+  - method: GET
+    path: /api/admin/domains/{domain}
+    summary: Get mail domain (admin)
+  - method: DELETE
+    path: /api/admin/domains/{domain}
+    summary: Delete mail domain (admin)
+  - method: PATCH
+    path: /api/admin/domains/{domain}/sharing
+    summary: Update domain sharing mode (admin)
+  - method: POST
+    path: /api/admin/domains/{domain}/verify
+    summary: Verify mail domain DNS (admin)
+
+  # --- admin system mail ---
+  - method: GET
+    path: /api/admin/system-mail
+    summary: System mail config (admin)
+  - method: POST
+    path: /api/admin/system-mail/preview
+    summary: Preview bulk system mail (admin)
+  - method: POST
+    path: /api/admin/system-mail/send
+    summary: Send bulk system mail (admin)
+  - method: GET
+    path: /api/admin/system-mail/runs
+    summary: List system mail runs (admin)
+
+  # --- admin operator test ---
+  - method: GET
+    path: /api/admin/test
+    summary: Test API ping (admin)
+  - method: GET
+    path: /api/admin/test/health
+    summary: Health JSON (admin)
+  - method: GET
+    path: /api/admin/test/key-material
+    summary: Key material status (admin)
+  - method: POST
+    path: /api/admin/test/key-material/relay/generate
+    summary: Generate relay key (admin)
+  - method: POST
+    path: /api/admin/test/key-material/dkim/generate
+    summary: Generate DKIM key (admin)
+  - method: POST
+    path: /api/admin/test/key-material/dkim/upload
+    summary: Upload DKIM key (admin)
+  - method: POST
+    path: /api/admin/test/key-material/dkim/config
+    summary: Save DKIM config (admin)
+  - method: GET
+    path: /api/admin/test/readiness
+    summary: Readiness probe JSON (admin)
+  - method: GET
+    path: /api/admin/test/auth-posture
+    summary: Auth posture report (admin)
+  - method: GET
+    path: /api/admin/test/privacy-posture
+    summary: Privacy posture report (admin)
+  - method: POST
+    path: /api/admin/test/uploads
+    summary: Test blob upload (admin)
+  - method: POST
+    path: /api/admin/test/preview
+    summary: Test send preview (admin)
+  - method: POST
+    path: /api/admin/test/send
+    summary: Test send (admin)
+  - method: POST
+    path: /api/admin/test/echo
+    summary: Test echo (admin)
+  - method: POST
+    path: /api/admin/test/keyserver-probe
+    summary: Keyserver probe (admin)
+  - method: POST
+    path: /api/admin/test/wrap-roundtrip
+    summary: Wrap crypto roundtrip (admin)
+
+  # --- v1 account key ---
+  - method: POST
+    path: /api/v1/account-key/bootstrap
+    summary: Upload account key bootstrap
+  - method: GET
+    path: /api/v1/account-key/me
+    summary: Wrapped account secret for current user
+
+  # --- v1 identities ---
+  - method: GET
+    path: /api/v1/identities
+    summary: List identities
+  - method: POST
+    path: /api/v1/identities
+    summary: Add identity
+  - method: GET
+    path: /api/v1/identities/visible-profile
+    summary: Public-visible identity profile
+  - method: DELETE
+    path: /api/v1/identities/{fingerprint}
+    summary: Hard-delete identity
+  - method: PATCH
+    path: /api/v1/identities/{fingerprint}
+    summary: Patch identity metadata
+  - method: POST
+    path: /api/v1/identities/{fingerprint}/default
+    summary: Set default identity
+  - method: POST
+    path: /api/v1/identities/{fingerprint}/revoke
+    summary: Revoke identity
+
+  # --- v1 keys / contacts ---
+  - method: GET
+    path: /api/v1/keys/lookup
+    summary: Resolver chain key lookup
+  - method: GET
+    path: /api/v1/keys/contacts
+    summary: List saved contact keys
+  - method: POST
+    path: /api/v1/keys/contacts
+    summary: Upsert contact key
+  - method: GET
+    path: /api/v1/keys/contacts/{email}
+    summary: Get contact key for address
+  - method: DELETE
+    path: /api/v1/keys/contacts/{email}
+    summary: Delete contact keys for address
+
+  # --- v1 mailbox folders ---
+  - method: GET
+    path: /api/v1/mailbox/folders
+    summary: List mailbox folders
+  - method: POST
+    path: /api/v1/mailbox/folders
+    summary: Create custom folder
+  - method: DELETE
+    path: /api/v1/mailbox/folders/{folderName}
+    summary: Delete custom folder
+
+  # --- v1 mail ---
+  - method: GET
+    path: /api/v1/mail/messages
+    summary: List message manifests
+  - method: POST
+    path: /api/v1/mail/messages
+    summary: Ingest internal ciphertext message
+  - method: GET
+    path: /api/v1/mail/messages/{messageId}
+    summary: Get message manifest
+  - method: PATCH
+    path: /api/v1/mail/messages/{messageId}
+    summary: Patch manifest metadata
+  - method: DELETE
+    path: /api/v1/mail/messages/{messageId}
+    summary: Delete message
+  - method: GET
+    path: /api/v1/mail/messages/{messageId}/blob
+    summary: Stream body ciphertext
+  - method: GET
+    path: /api/v1/mail/usable-domains
+    summary: Domains usable for new mail identities
+  - method: GET
+    path: /api/v1/mail/settings
+    summary: Mail settings and retention
+  - method: POST
+    path: /api/v1/mail/settings
+    summary: Update mail settings
+  - method: PUT
+    path: /api/v1/mail/settings
+    summary: Update mail settings (alias)
+  - method: POST
+    path: /api/v1/mail/outbox
+    summary: Queue OpenPGP outbox payload
+  - method: GET
+    path: /api/v1/mail/outbox/{outboxId}
+    summary: Outbox status
+  - method: POST
+    path: /api/v1/mail/outbox-plain
+    summary: Plaintext relay (disabled for user mail; returns 410)
+  - method: POST
+    path: /api/v1/mail/protected-links
+    summary: Create protected-link message
+  - method: GET
+    path: /api/v1/mail/search/metadata
+    summary: Server-side metadata search (consented fields only)
+  - method: POST
+    path: /api/v1/mail/test/echo
+    summary: Self-deliver ciphertext selfcheck
+  - method: GET
+    path: /api/v1/mail/sender-icon
+    summary: Resolve BIMI or favicon for domain
+
+  # --- v1 protected links (public) ---
+  - method: GET
+    path: /api/v1/protected-links/{token}/meta
+    summary: Protected link KDF metadata (public, rate-limited)
+  - method: POST
+    path: /api/v1/protected-links/{token}/open
+    summary: Consume view and return ciphertext (public, rate-limited)
+
+  # --- v1 custom domains ---
+  - method: GET
+    path: /api/v1/custom-domains
+    summary: List owned custom domains
+  - method: POST
+    path: /api/v1/custom-domains
+    summary: Add custom domain
+  - method: DELETE
+    path: /api/v1/custom-domains/{domain}
+    summary: Remove custom domain
+  - method: POST
+    path: /api/v1/custom-domains/{domain}/verify
+    summary: Verify custom domain
+  - method: PUT
+    path: /api/v1/custom-domains/{domain}/catchall
+    summary: Set catch-all identity
+
+  # --- v1 filters ---
+  - method: GET
+    path: /api/v1/filters
+    summary: List mail filters
+  - method: POST
+    path: /api/v1/filters
+    summary: Create mail filter
+  - method: PUT
+    path: /api/v1/filters/{filterId}
+    summary: Update mail filter
+  - method: DELETE
+    path: /api/v1/filters/{filterId}
+    summary: Delete mail filter
+
+  # --- v1 SMTP submission credentials ---
+  - method: GET
+    path: /api/v1/smtp-submission
+    summary: List SMTP credentials
+  - method: POST
+    path: /api/v1/smtp-submission
+    summary: Create SMTP credential
+  - method: DELETE
+    path: /api/v1/smtp-submission/{credentialId}
+    summary: Delete SMTP credential
+  - method: POST
+    path: /api/v1/smtp-submission/{credentialId}/regenerate
+    summary: Regenerate SMTP password
