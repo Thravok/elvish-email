@@ -9748,11 +9748,32 @@ async function handleInit(msg) {
     if (typeof openpgp !== "undefined") {
       openpgpReady = true;
     } else if (msg.openpgpScriptUrl) {
-      importScripts(msg.openpgpScriptUrl);
+      const scriptUrl = validateOpenpgpWorkerScriptUrl(msg.openpgpScriptUrl);
+      importScripts(scriptUrl);
       openpgpReady = true;
     }
   }
   await writeMeta();
+}
+function validateOpenpgpWorkerScriptUrl(raw) {
+  const s2 = String(raw || "").trim();
+  if (!s2) {
+    throw new Error("openpgp script url missing");
+  }
+  let u2;
+  try {
+    u2 = new URL(s2, self.location.href);
+  } catch (_2) {
+    throw new Error("invalid openpgp script url");
+  }
+  if (u2.origin !== new URL(self.location.href).origin) {
+    throw new Error("openpgp script must be same-origin");
+  }
+  const pathname = u2.pathname || "";
+  if (!pathname.endsWith(".js")) {
+    throw new Error("openpgp script must be a .js URL");
+  }
+  return u2.href;
 }
 async function writeMeta() {
   const t2 = db.transaction([STORE_META], "readwrite");

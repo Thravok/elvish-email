@@ -1,0 +1,12 @@
+---
+description: Persistent Skiff whitepaper reference for secure mail architecture context
+alwaysApply: true
+---
+
+# Skiff whitepaper reference
+
+Use this whitepaper as background context when discussing secure email architecture, E2EE mail product decisions, and privacy/security trade-offs in this project:
+
+- Skiff Whitepaper (2023): https://skiff-org.github.io/whitepaper/Skiff_Whitepaper_2023.pdf
+
+When relevant, align design ideas and terminology with the whitepaper, but prioritize this repository's explicit requirements and existing architecture.

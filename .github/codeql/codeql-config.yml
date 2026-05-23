@@ -1,0 +1,8 @@
+name: "ELVish server CodeQL"
+
+# Flutter Android is scanned in the analyze-flutter-android job.
+paths-ignore:
+  - flutter/**
+  - IOS/**
+  - IOSTests/**
+  - e2e/**

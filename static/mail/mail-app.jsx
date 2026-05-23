@@ -430,21 +430,21 @@ function parseHeaderBlock(headerBlock) {
 }
 
 function htmlToDisplayText(html) {
-  return String(html || "")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<(br|\/p|\/div|\/li|\/tr|\/h[1-6])\b[^>]*>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, "\"")
-    .replace(/&#39;/gi, "'")
-    .replace(/\r/g, "")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  const s = String(html || "").trim();
+  if (!s) return "";
+  try {
+    if (typeof DOMParser !== "undefined") {
+      const doc = new DOMParser().parseFromString(s, "text/html");
+      if (doc && doc.body) {
+        return doc.body.textContent.replace(/\s+/g, " ").trim();
+      }
+    }
+  } catch (_) {
+    /* fall through */
+  }
+  const d = document.createElement("div");
+  d.textContent = s;
+  return (d.textContent || "").trim();
 }
 
 function splitMultipartBody(body, boundary) {

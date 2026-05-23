@@ -14559,7 +14559,10 @@
 
   // ../static/admin/modals.jsx
   function genPid() {
-    return "0x" + Math.floor(Math.random() * 65535).toString(16).toUpperCase().padStart(4, "0");
+    const b = new Uint8Array(2);
+    crypto.getRandomValues(b);
+    const n = b[0] << 8 | b[1];
+    return "0x" + (n & 65535).toString(16).toUpperCase().padStart(4, "0");
   }
   function Modal({ open, onClose, title, kind = "MODAL", status, size, children, footer, dismissable = true }) {
     const pidRef = useR_m(genPid());

@@ -8,7 +8,9 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -695,10 +697,31 @@ func safeRedirectPath(next string) string {
 	if next == "" {
 		return "/"
 	}
-	if !strings.HasPrefix(next, "/") || strings.HasPrefix(next, "//") {
+	if strings.ContainsAny(next, "\r\n\x00") || strings.Contains(next, `\`) {
 		return "/"
 	}
-	return next
+	dec, err := url.PathUnescape(next)
+	if err != nil {
+		return "/"
+	}
+	next = strings.TrimSpace(dec)
+	if strings.Contains(next, "://") {
+		return "/"
+	}
+	if !strings.HasPrefix(next, "/") {
+		return "/"
+	}
+	if strings.HasPrefix(next, "//") {
+		return "/"
+	}
+	c := path.Clean(next)
+	if c == "." || !strings.HasPrefix(c, "/") {
+		return "/"
+	}
+	if strings.HasPrefix(c, "//") {
+		return "/"
+	}
+	return c
 }
 
 func (s *Server) handleAuthLogout(w http.ResponseWriter, r *http.Request) {

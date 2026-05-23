@@ -308,8 +308,11 @@ func normalizeDKIMDomain(raw string) (string, error) {
 
 func writeSecretFile(path string, body []byte) error {
 	path = filepath.Clean(strings.TrimSpace(path))
-	if path == "" {
+	if path == "" || path == "." {
 		return errors.New("secret path required")
+	}
+	if strings.Contains(path, "\x00") {
+		return errors.New("invalid secret path")
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err

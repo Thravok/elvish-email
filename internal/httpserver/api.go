@@ -713,7 +713,7 @@ func (s *Server) apiPostUpsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	mdr := markdown.NewRenderer()
-	parsed, skip, err := blog.ParsePostMarkdown("api/"+body.Slug+".md", []byte(body.BodyMarkdown), mdr, nil, nil)
+	parsed, skip, err := blog.ParsePostMarkdown("", "api/"+body.Slug+".md", []byte(body.BodyMarkdown), mdr, nil, nil)
 	if err != nil {
 		s.log.Warn("post markdown parse", "slug", body.Slug, "err", err)
 		s.writeErr(w, http.StatusBadRequest, "invalid post markdown")

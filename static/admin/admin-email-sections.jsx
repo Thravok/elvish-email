@@ -71,7 +71,9 @@ function bytesToB64(bytes) {
 }
 
 function sanitizeAttachmentName(name) {
-  return String(name || "attachment.bin").replace(/[\r\n"]/g, "").trim() || "attachment.bin";
+  const raw = String(name || "").replace(/[\r\n\x00"]/g, "").replace(/[/\\]/g, "_").trim();
+  if (!raw) return "attachment.bin";
+  return raw.length > 255 ? raw.slice(0, 255) : raw;
 }
 
 function sanitizeAttachmentType(type) {

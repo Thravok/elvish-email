@@ -14720,7 +14720,10 @@
 
   // ../static/admin/modals.jsx
   function genPid() {
-    return "0x" + Math.floor(Math.random() * 65535).toString(16).toUpperCase().padStart(4, "0");
+    const b = new Uint8Array(2);
+    crypto.getRandomValues(b);
+    const n = b[0] << 8 | b[1];
+    return "0x" + (n & 65535).toString(16).toUpperCase().padStart(4, "0");
   }
   function Modal2({ open, onClose, title, kind = "MODAL", status, size, children, footer, dismissable = true }) {
     const pidRef = useR_m(genPid());
@@ -15568,7 +15571,11 @@
         },
         style: { position: "absolute", bottom: -22, left: -4, right: -4, fontSize: 9, padding: 1, background: "transparent", border: 0, color: "var(--dim)", textAlign: "center", fontFamily: "var(--font)" }
       }
-    )))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 32, display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setH("load_bar_heights", [...h.load_bar_heights, 32]) }, "+ bar"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setH("load_bar_heights", h.load_bar_heights.slice(0, -1)), disabled: h.load_bar_heights.length <= 1 }, "\u2212 bar"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setH("load_bar_heights", h.load_bar_heights.map(() => 20 + Math.floor(Math.random() * 40))) }, "shuffle"))), /* @__PURE__ */ React.createElement(A.Card, { title: "SYSTEM STATUS ROWS" }, /* @__PURE__ */ React.createElement(
+    )))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 32, display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setH("load_bar_heights", [...h.load_bar_heights, 32]) }, "+ bar"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setH("load_bar_heights", h.load_bar_heights.slice(0, -1)), disabled: h.load_bar_heights.length <= 1 }, "\u2212 bar"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => {
+      const a = new Uint8Array(h.load_bar_heights.length);
+      crypto.getRandomValues(a);
+      setH("load_bar_heights", h.load_bar_heights.map((_, i) => 20 + a[i] % 40));
+    } }, "shuffle"))), /* @__PURE__ */ React.createElement(A.Card, { title: "SYSTEM STATUS ROWS" }, /* @__PURE__ */ React.createElement(
       A.Repeater,
       {
         items: h.sys_rows,

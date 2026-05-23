@@ -228,7 +228,7 @@ func (s *Server) handleOIDCAuthorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	redir, err := url.Parse(redirectURI)
+	redir, err := iss.RedirectTarget(redirectURI)
 	if err != nil {
 		http.Error(w, "invalid redirect_uri", http.StatusBadRequest)
 		return

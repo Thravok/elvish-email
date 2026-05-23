@@ -49,6 +49,21 @@ func TestPartitionRecipientsByLocality_PropagatesLookupErrors(t *testing.T) {
 	}
 }
 
+func TestBuildRFC5322_RejectsHeaderInjection(t *testing.T) {
+	t.Parallel()
+
+	_, _, err := buildRFC5322(
+		"sender@example.com",
+		[]string{"user@example.com"},
+		"evil\r\nBcc: attacker@example.com",
+		"body",
+		nil,
+	)
+	if err == nil {
+		t.Fatal("expected header injection error")
+	}
+}
+
 func TestBuildRFC5322_WithAttachmentsBuildsMultipartMessage(t *testing.T) {
 	t.Parallel()
 

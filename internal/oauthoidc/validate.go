@@ -2,8 +2,13 @@ package oauthoidc
 
 import (
 	"crypto/subtle"
+	"errors"
+	"net/url"
 	"strings"
 )
+
+// ErrRedirectNotAllowed means redirect_uri was missing, malformed, or not on the allowlist.
+var ErrRedirectNotAllowed = errors.New("oauthoidc: redirect_uri not allowed")
 
 // RedirectAllowed returns true if redirectURI exactly matches a configured allowlist entry.
 func (i *Issuer) RedirectAllowed(redirectURI string) bool {
@@ -17,6 +22,27 @@ func (i *Issuer) RedirectAllowed(redirectURI string) bool {
 		}
 	}
 	return false
+}
+
+// RedirectTarget returns a parsed URL for use with http.Redirect only when redirectURI
+// is on the issuer allowlist (exact string match).
+func (i *Issuer) RedirectTarget(redirectURI string) (*url.URL, error) {
+	if i == nil || !i.RedirectAllowed(redirectURI) {
+		return nil, ErrRedirectNotAllowed
+	}
+	u, err := url.Parse(redirectURI)
+	if err != nil || u == nil {
+		return nil, ErrRedirectNotAllowed
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "http", "https":
+	default:
+		return nil, ErrRedirectNotAllowed
+	}
+	if u.Host == "" {
+		return nil, ErrRedirectNotAllowed
+	}
+	return u, nil
 }
 
 // ClientSecretMatches compares the presented client secret in constant time.

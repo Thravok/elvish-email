@@ -1,0 +1,320 @@
+stages:
+  - lint
+  - security
+  - test
+  - build
+  - container-scan
+  - release
+
+# Include GitLab security scanning templates
+# Note: These templates require GitLab Ultimate or proper configuration
+# Disabled temporarily due to image configuration issues
+# include:
+#   - template: Security/Dependency-Scanning.gitlab-ci.yml
+#   - template: Security/Container-Scanning.gitlab-ci.yml
+#   - template: Security/SAST.gitlab-ci.yml
+#   - template: Security/Secret-Detection.gitlab-ci.yml
+
+variables:
+  # Go module caching
+  GOPATH: $CI_PROJECT_DIR/.go
+  GOCACHE: $CI_PROJECT_DIR/.go-cache
+  GOMODCACHE: $CI_PROJECT_DIR/.go/pkg/mod
+
+# Go Format Check
+lint-fmt:
+  image: golang:1.25-bookworm
+  stage: lint
+  # No cache needed for fmt check - faster without restoring .go/
+  script:
+    # Check only project source directories, not module cache
+    - |
+      unformatted=$(gofmt -l cmd/ internal/ 2>/dev/null || true)
+      if [ -n "$unformatted" ]; then
+        echo "gofmt needed on:"
+        echo "$unformatted"
+        exit 1
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# Go Vet
+lint-vet:
+  image: golang:1.25-bookworm
+  stage: lint
+  cache:
+    key: go-mod-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+      - .go-cache/
+  script:
+    - go vet ./...
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# golangci-lint
+lint-golangci:
+  image: golang:1.25-bookworm
+  stage: lint
+  cache:
+    key: go-mod-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+      - .go-cache/
+  script:
+    - go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4 run
+    # Invariant: there is no server-side body-search endpoint. ADR 0008.
+    # Exclude test files; match route declarations (quoted paths), not comments.
+    - |
+      if grep -RIn --include='*.go' --exclude='*_test.go' '"[^"]*search/body' internal/httpserver/ ; then
+        echo "ERROR: forbidden body-search route detected — see ADR 0008"
+        exit 1
+      fi
+    # Invariant: protected-link password (Mode B) never reaches the server. ADR 0009.
+    - |
+      if grep -RIn --include='*.go' -E '"(password|kek_b64|recipient_password|sender_password)"' \
+        internal/httpserver/api_protected_links.go internal/maillinks/ internal/relaykey/ 2>/dev/null ; then
+        echo "ERROR: protected-link password leaked into server code — see ADR 0009"
+        exit 1
+      fi
+    - go run ./cmd/apiroutes -check
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# Vulnerability scanning with govulncheck
+security-vuln:
+  image: golang:1.25-bookworm
+  stage: security
+  cache:
+    key: go-mod-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+      - .go-cache/
+  script:
+    - go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# GitLab SAST (Static Application Security Testing)
+# Scans source code for security vulnerabilities
+# Disabled - requires GitLab security scanning templates to be properly configured
+# sast:
+#   stage: security
+#   allow_failure: true
+#   rules:
+#     - if: $CI_COMMIT_BRANCH
+
+# GitLab Secret Detection
+# Scans for secrets, API keys, and credentials in the codebase
+# Disabled - requires GitLab security scanning templates to be properly configured
+# secret_detection:
+#   stage: security
+#   allow_failure: true
+#   rules:
+#     - if: $CI_COMMIT_BRANCH
+
+# Unit Tests
+test-unit:
+  image: golang:1.25-bookworm
+  stage: test
+  cache:
+    key: go-mod-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+      - .go-cache/
+  script:
+    - go test ./...
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# Race Condition Tests
+test-race:
+  image: golang:1.25-bookworm
+  stage: test
+  cache:
+    key: go-mod-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+      - .go-cache/
+  script:
+    - go test -race ./...
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# Benchmark Smoke Tests
+test-bench-smoke:
+  image: golang:1.25-bookworm
+  stage: test
+  cache:
+    key: go-mod-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+      - .go-cache/
+  script:
+    - go test -bench=. -benchtime=1x ./...
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# Integration Tests (requires Docker services)
+# Disabled by default - enable when needed
+test-integration:
+  image: golang:1.25-bookworm
+  stage: test
+  services:
+    - name: cockroachdb/cockroach:v24.1.0
+      alias: cockroach
+      command: ["start-single-node", "--insecure", "--listen-addr=0.0.0.0:26257"]
+    - name: valkey/valkey:8-alpine
+      alias: valkey
+  variables:
+    COCKROACH_DSN: "postgres://root@cockroach:26257/defaultdb?sslmode=disable"
+    VALKEY_ADDR: "valkey:6379"
+    ELVISH_INTEGRATION_DB: "1"
+  cache:
+    key: go-mod-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+      - .go-cache/
+  before_script:
+    # Wait for CockroachDB to be ready
+    - |
+      for i in $(seq 1 30); do
+        if pg_isready -h cockroach -p 26257 2>/dev/null; then
+          echo "CockroachDB is ready"
+          break
+        fi
+        echo "Waiting for CockroachDB... ($i/30)"
+        sleep 2
+      done
+  script:
+    - go test ./internal/db -run TestCockroachMigrationsAndMailstore -count=1 -v
+    - go test ./internal/httpserver -run TestAdminUptimeAPIIntegration -count=1 -v
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - when: never  # Disabled - enable manually when integration tests are needed
+    # - if: $CI_COMMIT_BRANCH
+
+# E2E Tests (Playwright)
+# Disabled by default - requires running elvishserver
+test-e2e:
+  image: mcr.microsoft.com/playwright:v1.49.1-jammy
+  stage: test
+  cache:
+    paths:
+      - e2e/node_modules/
+  before_script:
+    - cd e2e
+    - npm ci
+  script:
+    - npm test
+  variables:
+    BASE_URL: "http://elvishserver:8765"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - when: never  # Disabled - requires separate elvishserver instance
+    # - if: $CI_COMMIT_BRANCH
+    #   exists:
+    #     - e2e/package.json
+
+# Build Go Binary (verification only, not published)
+build-binary:
+  image: golang:1.25-bookworm
+  stage: build
+  cache:
+    key: go-mod-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+      - .go-cache/
+  script:
+    - mkdir -p bin
+    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishserver ./cmd/elvishserver
+  artifacts:
+    paths:
+      - bin/elvishserver
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+# Docker Build - elvishserver (using Kaniko, no Docker daemon required)
+docker-build-elvishserver:
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  stage: build
+  script:
+    - |
+      # Create Kaniko config for registry auth
+      mkdir -p /kaniko/.docker
+      echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - |
+      # Build and push image
+      /kaniko/executor \
+        --context "${CI_PROJECT_DIR}" \
+        --dockerfile "${CI_PROJECT_DIR}/Dockerfile" \
+        --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}" \
+        --cache=true \
+        --cache-repo="${CI_REGISTRY_IMAGE}/cache"
+    - |
+      # Also tag as latest on default branch
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        /kaniko/executor \
+          --context "${CI_PROJECT_DIR}" \
+          --dockerfile "${CI_PROJECT_DIR}/Dockerfile" \
+          --destination "${CI_REGISTRY_IMAGE}:latest" \
+          --cache=true \
+          --cache-repo="${CI_REGISTRY_IMAGE}/cache"
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+      exists:
+        - Dockerfile
+
+# Renovate: opens a child pipeline so this schedule does not run lint/test/build here.
+# GitLab → Build → Pipeline schedules: new schedule on the default branch, variable RENOVATE_SCHEDULE=true,
+# and masked CI variable RENOVATE_TOKEN (project access token: api + write_repository). Details: CONTRIBUTING.md.
+renovate-child:
+  stage: security
+  trigger:
+    include:
+      - local: .gitlab/ci/renovate-child.gitlab-ci.yml
+    strategy: depend
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+
+# GitLab Container Scanning
+# Scans Docker images after they are built and pushed to registry
+# Disabled - requires GitLab security scanning templates to be properly configured
+# container_scanning:elvishserver:
+#   extends: container_scanning
+#   stage: container-scan
+#   needs:
+#     - job: docker-build-elvishserver
+#       artifacts: false
+#   variables:
+#     CS_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+#   rules:
+#     - if: $CI_COMMIT_BRANCH
+#       exists:
+#         - Dockerfile

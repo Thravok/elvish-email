@@ -80,11 +80,34 @@ async function handleInit(msg) {
     if (typeof openpgp !== 'undefined') {
       openpgpReady = true;
     } else if (msg.openpgpScriptUrl) {
-      importScripts(msg.openpgpScriptUrl);
+      const scriptUrl = validateOpenpgpWorkerScriptUrl(msg.openpgpScriptUrl);
+      importScripts(scriptUrl);
       openpgpReady = true;
     }
   }
   await writeMeta();
+}
+
+/** Same-origin .js URLs only (mitigates importScripts SSRF from postMessage). */
+function validateOpenpgpWorkerScriptUrl(raw) {
+  const s = String(raw || '').trim();
+  if (!s) {
+    throw new Error('openpgp script url missing');
+  }
+  let u;
+  try {
+    u = new URL(s, self.location.href);
+  } catch (_) {
+    throw new Error('invalid openpgp script url');
+  }
+  if (u.origin !== new URL(self.location.href).origin) {
+    throw new Error('openpgp script must be same-origin');
+  }
+  const pathname = u.pathname || '';
+  if (!pathname.endsWith('.js')) {
+    throw new Error('openpgp script must be a .js URL');
+  }
+  return u.href;
 }
 
 async function writeMeta() {

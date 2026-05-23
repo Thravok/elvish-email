@@ -22,6 +22,7 @@ import (
 	"elvish/internal/blobstore"
 	"elvish/internal/mailmeta"
 	"elvish/internal/mailpipe"
+	"elvish/internal/mailutil"
 )
 
 // outboxPlainBody is the user-supplied composition for a plaintext outbound mail.
@@ -256,20 +257,31 @@ func (s *Server) handlePlainSubmitErr(w http.ResponseWriter, err error) {
 
 // buildRFC5322 produces a valid RFC 5322 message and an encrypted header summary.
 func buildRFC5322(from string, to []string, subject, bodyText string, attachments []plaintextAttachment) ([]byte, mailpipe.HeaderSummary, error) {
+	if err := mailutil.RejectHeaderInjection(subject); err != nil {
+		return nil, mailpipe.HeaderSummary{}, fmt.Errorf("subject: %w", err)
+	}
+	fromAddr, err := mailutil.ParseMailbox(from)
+	if err != nil {
+		return nil, mailpipe.HeaderSummary{}, fmt.Errorf("from: %w", err)
+	}
+	cleanTo, err := mailutil.ParseMailboxList(to)
+	if err != nil {
+		return nil, mailpipe.HeaderSummary{}, fmt.Errorf("to: %w", err)
+	}
 	var buf bytes.Buffer
-	id := messageID(from)
+	id := messageID(fromAddr)
 	headerSummary := mailpipe.HeaderSummary{
 		Subject:     subject,
-		From:        from,
-		To:          append([]string(nil), to...),
+		From:        fromAddr,
+		To:          append([]string(nil), cleanTo...),
 		ThreadID:    "<" + id + ">",
 		Date:        time.Now().UTC(),
 		Attachments: attachmentSummaries(attachments),
 	}
 	fmt.Fprintf(&buf, "Message-ID: <%s>\r\n", id)
 	fmt.Fprintf(&buf, "Date: %s\r\n", headerSummary.Date.Format(time.RFC1123Z))
-	fmt.Fprintf(&buf, "From: %s\r\n", from)
-	fmt.Fprintf(&buf, "To: %s\r\n", strings.Join(to, ", "))
+	fmt.Fprintf(&buf, "From: %s\r\n", fromAddr)
+	fmt.Fprintf(&buf, "To: %s\r\n", strings.Join(cleanTo, ", "))
 	if subject != "" {
 		fmt.Fprintf(&buf, "Subject: %s\r\n", subject)
 	}
@@ -294,7 +306,7 @@ func buildRFC5322(from string, to []string, subject, bodyText string, attachment
 	}
 	writeBodyLines(textPart, bodyText)
 	for _, attachment := range attachments {
-		name := sanitizeAttachmentName(attachment.FileName)
+		name := mailutil.SanitizeAttachmentName(attachment.FileName)
 		contentType := sanitizeContentType(attachment.ContentType)
 		partHdr := textproto.MIMEHeader{}
 		partHdr.Set("Content-Type", fmt.Sprintf("%s; name=%q", contentType, name))
@@ -348,7 +360,7 @@ func attachmentSummaries(attachments []plaintextAttachment) []mailpipe.Attachmen
 	out := make([]mailpipe.AttachmentSummary, 0, len(attachments))
 	for _, attachment := range attachments {
 		out = append(out, mailpipe.AttachmentSummary{
-			FileName:    sanitizeAttachmentName(attachment.FileName),
+			FileName:    mailutil.SanitizeAttachmentName(attachment.FileName),
 			ContentType: sanitizeContentType(attachment.ContentType),
 			SizeBytes:   int64(len(attachment.Data)),
 		})
@@ -357,11 +369,7 @@ func attachmentSummaries(attachments []plaintextAttachment) []mailpipe.Attachmen
 }
 
 func sanitizeAttachmentName(name string) string {
-	name = strings.TrimSpace(strings.ReplaceAll(strings.ReplaceAll(name, "\r", ""), "\n", ""))
-	if name == "" {
-		return "attachment.bin"
-	}
-	return name
+	return mailutil.SanitizeAttachmentName(name)
 }
 
 func sanitizeContentType(contentType string) string {

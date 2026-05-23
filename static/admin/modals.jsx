@@ -2,7 +2,12 @@
 const { useState: useS_m, useEffect: useE_m, useMemo: useM_m, useRef: useR_m } = React;
 
 // ============ Modal shell ============
-function genPid() { return "0x" + Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, "0"); }
+function genPid() {
+  const b = new Uint8Array(2);
+  crypto.getRandomValues(b);
+  const n = (b[0] << 8) | b[1];
+  return "0x" + (n & 0xffff).toString(16).toUpperCase().padStart(4, "0");
+}
 
 function Modal({ open, onClose, title, kind = "MODAL", status, size, children, footer, dismissable = true }) {
   const pidRef = useR_m(genPid());

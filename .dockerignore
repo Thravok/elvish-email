@@ -1,0 +1,12 @@
+.git
+.github
+.cursor
+bin
+tmp
+public
+
+# Local DB compose is not part of the app image
+docker-compose.yml
+
+# Never bake minisign private key into an image layer
+content/blog/signing.key

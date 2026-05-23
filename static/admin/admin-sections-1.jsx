@@ -211,7 +211,11 @@ function SecHero({ state, set }) {
       <div style={{ marginTop: 32, display: "flex", gap: 8 }}>
         <button className="btn-sm" onClick={() => setH("load_bar_heights", [...h.load_bar_heights, 32])}>+ bar</button>
         <button className="btn-sm" onClick={() => setH("load_bar_heights", h.load_bar_heights.slice(0, -1))} disabled={h.load_bar_heights.length <= 1}>− bar</button>
-        <button className="btn-sm" onClick={() => setH("load_bar_heights", h.load_bar_heights.map(() => 20 + Math.floor(Math.random() * 40)))}>shuffle</button>
+        <button className="btn-sm" onClick={() => {
+          const a = new Uint8Array(h.load_bar_heights.length);
+          crypto.getRandomValues(a);
+          setH("load_bar_heights", h.load_bar_heights.map((_, i) => 20 + (a[i] % 40)));
+        }}>shuffle</button>
       </div>
     </A.Card>
 

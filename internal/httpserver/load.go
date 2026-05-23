@@ -129,7 +129,7 @@ func (s *Server) loadPosts(ctx context.Context) ([]blog.Post, error) {
 
 func (s *Server) blogPostFromStoreDoc(ctx context.Context, bp *models.BlogPost, metrics map[string]blog.EntryMetrics, md *markdown.Renderer) (blog.Post, error) {
 	hint := filepath.Join("db", bp.Slug+".md")
-	post, skip, err := blog.ParsePostMarkdown(hint, []byte(bp.BodyMarkdown), md, metrics, nil)
+	post, skip, err := blog.ParsePostMarkdown("", hint, []byte(bp.BodyMarkdown), md, metrics, nil)
 	if err != nil {
 		return post, err
 	}

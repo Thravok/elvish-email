@@ -1,0 +1,21 @@
+# Downstream pipeline opened by `renovate-child` in the root `.gitlab-ci.yml`.
+# Runs Renovate only; keeps dependency MRs off the main CI graph.
+stages:
+  - deps
+
+renovate:
+  stage: deps
+  image: renovate/renovate:39
+  resource_group: renovate
+  timeout: 3h
+  variables:
+    LOG_LEVEL: info
+    RENOVATE_PLATFORM: gitlab
+    RENOVATE_ENDPOINT: $CI_API_V4_URL
+    RENOVATE_TOKEN: $RENOVATE_TOKEN
+    RENOVATE_REPOSITORY_LIST: $CI_PROJECT_PATH
+    RENOVATE_ONBOARDING: "false"
+  script:
+    - renovate
+  rules:
+    - when: always

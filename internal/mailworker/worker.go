@@ -37,6 +37,7 @@ import (
 	"elvish/internal/dkim"
 	"elvish/internal/mailmeta"
 	"elvish/internal/mailpipe"
+	"elvish/internal/mailutil"
 	vopenpgp "elvish/internal/openpgp"
 	"elvish/internal/relaykey"
 	"elvish/internal/scyllastore"
@@ -266,9 +267,10 @@ func (w *Worker) deliver(ctx context.Context, row mailmeta.OutboxRow) {
 		w.recordDelivery(ctx, "transient_fail", startedAt)
 		return
 	}
-	rcpt := strings.Fields(strings.ReplaceAll(row.RecipientSummary, ",", " "))
-	if len(rcpt) == 0 {
-		w.failPermanent(ctx, row.ID, 553, "no recipients in outbox row")
+	rawRcpt := strings.Fields(strings.ReplaceAll(row.RecipientSummary, ",", " "))
+	rcpt, err := mailutil.ParseMailboxList(rawRcpt)
+	if err != nil {
+		w.failPermanent(ctx, row.ID, 553, "invalid recipients in outbox row")
 		w.recordDelivery(ctx, "permanent_fail", startedAt)
 		return
 	}
@@ -586,15 +588,16 @@ func buildPGPMIMEMessage(from string, rcpt []string, payload []byte, now time.Ti
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
-	from = normalizeMailbox(from)
-	if from == "" {
-		return nil, errors.New("missing sender address")
+	fromAddr, err := mailutil.ParseMailbox(from)
+	if err != nil {
+		return nil, fmt.Errorf("from: %w", err)
 	}
-	if len(rcpt) == 0 {
-		return nil, errors.New("missing recipients")
+	cleanRcpt, err := mailutil.ParseMailboxList(rcpt)
+	if err != nil {
+		return nil, fmt.Errorf("recipients: %w", err)
 	}
 	boundary := "=_elvish_" + strings.ReplaceAll(uuid.NewString(), "-", "")
-	messageID := buildMessageID(from, now)
+	messageID := buildMessageID(fromAddr, now)
 
 	var buf strings.Builder
 	buf.WriteString("Message-ID: <")
@@ -604,10 +607,10 @@ func buildPGPMIMEMessage(from string, rcpt []string, payload []byte, now time.Ti
 	buf.WriteString(now.Format(time.RFC1123Z))
 	buf.WriteString("\r\n")
 	buf.WriteString("From: ")
-	buf.WriteString(from)
+	buf.WriteString(fromAddr)
 	buf.WriteString("\r\n")
 	buf.WriteString("To: ")
-	buf.WriteString(strings.Join(rcpt, ", "))
+	buf.WriteString(strings.Join(cleanRcpt, ", "))
 	buf.WriteString("\r\n")
 	// Keep the exposed subject opaque; compatible MUAs can recover the real
 	// subject from the encrypted payload's protected headers.

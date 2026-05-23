@@ -8,6 +8,8 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/netip"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -148,7 +150,7 @@ func (s *Server) resolveBIMI(ctx context.Context, domain string) string {
 		return ""
 	}
 
-	svgData, contentType, err := s.fetchExternalImage(ctx, logoURL, senderIconMaxSVGBytes)
+	svgData, contentType, err := s.fetchExternalImage(ctx, logoURL, senderIconMaxSVGBytes, domain)
 	if err != nil || len(svgData) == 0 {
 		return ""
 	}
@@ -184,8 +186,8 @@ func (s *Server) resolveFavicon(ctx context.Context, domain string) string {
 		"https://www." + domain + "/favicon.ico",
 	}
 
-	for _, url := range candidates {
-		data, contentType, err := s.fetchExternalImage(ctx, url, senderIconMaxOtherBytes)
+	for _, fetchURL := range candidates {
+		data, contentType, err := s.fetchExternalImage(ctx, fetchURL, senderIconMaxOtherBytes, domain)
 		if err != nil || len(data) == 0 {
 			continue
 		}
@@ -201,12 +203,58 @@ func (s *Server) resolveFavicon(ctx context.Context, domain string) string {
 	return ""
 }
 
+// hostMatchesSenderDomain reports whether host is domain or a DNS subdomain of domain.
+func hostMatchesSenderDomain(host, domain string) bool {
+	h := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(host)), ".")
+	d := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(domain)), ".")
+	if h == "" || d == "" {
+		return false
+	}
+	return h == d || strings.HasSuffix(h, "."+d)
+}
+
+func validateSenderFetchURL(raw string, relatedDomain string) error {
+	raw = strings.TrimSpace(raw)
+	u, err := url.Parse(raw)
+	if err != nil || u == nil {
+		return fmt.Errorf("invalid url")
+	}
+	if strings.ToLower(u.Scheme) != "https" {
+		return fmt.Errorf("sender icon fetch requires https")
+	}
+	host := strings.ToLower(strings.TrimSpace(u.Hostname()))
+	if host == "" {
+		return fmt.Errorf("missing host")
+	}
+	if !hostMatchesSenderDomain(host, relatedDomain) {
+		return fmt.Errorf("host does not match sender domain")
+	}
+	if addr, err := netip.ParseAddr(host); err == nil {
+		if addr.IsLoopback() || addr.IsMulticast() || addr.IsLinkLocalUnicast() || addr.IsPrivate() {
+			return fmt.Errorf("literal IP host not allowed")
+		}
+	}
+	if hl := host; hl != "" {
+		if _, blocked := map[string]struct{}{
+			"metadata.google.internal": {},
+			"metadata.goog":            {},
+		}[hl]; blocked {
+			return fmt.Errorf("host not allowed")
+		}
+	}
+	return nil
+}
+
 // fetchExternalImage fetches an image URL with size limit and timeout.
-func (s *Server) fetchExternalImage(ctx context.Context, url string, maxBytes int64) ([]byte, string, error) {
+// relatedDomain must be the mailbox domain being resolved; fetch URL host must match it or be its subdomain.
+func (s *Server) fetchExternalImage(ctx context.Context, fetchURL string, maxBytes int64, relatedDomain string) ([]byte, string, error) {
+	if err := validateSenderFetchURL(fetchURL, relatedDomain); err != nil {
+		return nil, "", err
+	}
 	ctx, cancel := context.WithTimeout(ctx, senderIconFetchTimeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fetchURL, nil)
 	if err != nil {
 		return nil, "", err
 	}
@@ -218,6 +266,9 @@ func (s *Server) fetchExternalImage(ctx context.Context, url string, maxBytes in
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= 3 {
 				return http.ErrUseLastResponse
+			}
+			if err := validateSenderFetchURL(req.URL.String(), relatedDomain); err != nil {
+				return fmt.Errorf("redirect blocked: %w", err)
 			}
 			return nil
 		},

@@ -27,6 +27,7 @@ import (
 	"elvish/internal/mailworker"
 	"elvish/internal/migrate"
 	"elvish/internal/oauthoidc"
+	"elvish/internal/ratelimit"
 	"elvish/internal/relaykey"
 	"elvish/internal/scyllastore"
 	smtpserver "elvish/internal/smtp/server"
@@ -354,11 +355,15 @@ func main() {
 		pipe := mailpipe.New(blb, scy, mm, logger)
 		pipe.Telemetry = srv.Telemetry()
 		var stForAuth *store.Store
+		var smtpRL *ratelimit.Limiter
 		if bundle != nil && bundle.Pool() != nil {
 			stForAuth = store.New(bundle.Pool())
 		}
+		if bundle != nil && bundle.Valkey() != nil {
+			smtpRL = ratelimit.New(bundle.Valkey(), "")
+		}
 		if sa := strings.TrimSpace(os.Getenv("ELVISH_SMTP_ADDR")); sa != "" && mailDomain != "" {
-			be := newSMTPBackend(pipe, logger, false, stForAuth, mm, srv.Telemetry())
+			be := newSMTPBackend(pipe, logger, false, stForAuth, mm, srv.Telemetry(), smtpRL)
 			s, serr := smtpserver.New(smtpserver.Config{
 				Addr: sa, Hostname: hostName, Mode: smtpserver.ModeMX, Logger: logger, TLSConfig: smtpTLSConfig,
 			}, be)
@@ -376,7 +381,7 @@ func main() {
 			logger.Warn("ELVISH_SMTP_ADDR set but ELVISH_MAIL_DOMAIN empty; inbound SMTP disabled")
 		}
 		if ss := strings.TrimSpace(os.Getenv("ELVISH_SMTP_SUBMISSION_ADDR")); ss != "" {
-			be := newSMTPBackend(pipe, logger, true, stForAuth, mm, srv.Telemetry())
+			be := newSMTPBackend(pipe, logger, true, stForAuth, mm, srv.Telemetry(), smtpRL)
 			s, serr := smtpserver.New(smtpserver.Config{
 				Addr: ss, Hostname: hostName, Mode: smtpserver.ModeSubmission, Logger: logger,
 				TLSConfig: smtpTLSConfig, AllowPlainAuth: envTruthyMain("ELVISH_SMTP_ALLOW_PLAIN_AUTH"),

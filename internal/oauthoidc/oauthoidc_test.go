@@ -65,6 +65,18 @@ func TestIssuerRedirectAllowed(t *testing.T) {
 	}
 }
 
+func TestIssuerRedirectTarget(t *testing.T) {
+	t.Parallel()
+	iss := &Issuer{RedirectURIs: []string{"https://client.example/callback"}}
+	u, err := iss.RedirectTarget("https://client.example/callback")
+	if err != nil || u == nil || u.String() == "" {
+		t.Fatalf("got %v err %v", u, err)
+	}
+	if _, err := iss.RedirectTarget("https://evil.example/callback"); err == nil {
+		t.Fatal("expected error for non-allowlisted redirect")
+	}
+}
+
 func TestMarshalJWKSJSON(t *testing.T) {
 	t.Parallel()
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)

@@ -14,6 +14,9 @@ const (
 
 	rateLimitProbePerHour = int64(120)
 	rateLimitProbeWindow  = time.Hour
+
+	rateLimitKeysLookupPerHour = int64(120)
+	rateLimitKeysLookupWindow  = time.Hour
 )
 
 // rateLimitOK enforces a Valkey-backed fixed window when configured. On Valkey errors it fails open and logs.

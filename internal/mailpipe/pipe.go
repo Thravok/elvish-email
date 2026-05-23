@@ -37,6 +37,20 @@ func New(blob *blobstore.Store, scy *scyllastore.Store, meta *mailmeta.Store, lg
 	return &Pipe{Blob: blob, Scylla: scy, Meta: meta, Logger: lg, MaxSize: 26 << 20}
 }
 
+func (p *Pipe) maxSize() int {
+	if p != nil && p.MaxSize > 0 {
+		return p.MaxSize
+	}
+	return 26 << 20
+}
+
+func (p *Pipe) checkBodySize(raw []byte) error {
+	if len(raw) > p.maxSize() {
+		return fmt.Errorf("mailpipe: message exceeds max size (%d bytes)", p.maxSize())
+	}
+	return nil
+}
+
 // IngestResult is the outcome of a successful Ingest call.
 type IngestResult struct {
 	UserID      uuid.UUID
@@ -98,6 +112,9 @@ func (p *Pipe) ingestPlaintext(ctx context.Context, source, fromAddr, recipient 
 // persisting. Already-encrypted PGP payloads are stored as-is and the manifest
 // records "already_encrypted" provenance.
 func (p *Pipe) IngestExternal(ctx context.Context, fromAddr string, recipient string, rawBody []byte) (*IngestResult, error) {
+	if err := p.checkBodySize(rawBody); err != nil {
+		return nil, err
+	}
 	switch kind := vopenpgp.Sniff(rawBody); kind {
 	case vopenpgp.BodyArmoredMessage, vopenpgp.BodyBinaryPGP, vopenpgp.BodyPGPMIME:
 	default:
@@ -149,6 +166,9 @@ func (p *Pipe) IngestExternal(ctx context.Context, fromAddr string, recipient st
 // IngestSubmission stores the sender's outbound copy in the sender's sent folder.
 // The body is PGP-encrypted to the sender's own identity (so they can re-read it).
 func (p *Pipe) IngestSubmission(ctx context.Context, principalEmail, fromAddr string, rcpt []string, rawBody []byte) (*IngestResult, error) {
+	if err := p.checkBodySize(rawBody); err != nil {
+		return nil, err
+	}
 	startedAt := time.Now()
 	defer wipe(rawBody)
 	sender, err := p.recipientIdentity(ctx, principalEmail)
@@ -175,6 +195,9 @@ func (p *Pipe) IngestSubmission(ctx context.Context, principalEmail, fromAddr st
 // IngestInternal stores a message that arrived as PGP ciphertext from the API (client-encrypted).
 // rawCipher is treated as the body blob (no re-encryption).
 func (p *Pipe) IngestInternal(ctx context.Context, recipient string, headerCiphertext, rawCipher []byte, fromAddr string, rcpt []string) (*IngestResult, error) {
+	if err := p.checkBodySize(rawCipher); err != nil {
+		return nil, err
+	}
 	startedAt := time.Now()
 	rec, err := p.recipientIdentity(ctx, recipient)
 	if err != nil {
@@ -194,6 +217,9 @@ func (p *Pipe) IngestInternal(ctx context.Context, recipient string, headerCiphe
 
 // IngestClientSent stores a sender-authored ciphertext copy in the sender's sent folder.
 func (p *Pipe) IngestClientSent(ctx context.Context, principalEmail string, headerCiphertext, rawCipher []byte, fromAddr string, rcpt []string) (*IngestResult, error) {
+	if err := p.checkBodySize(rawCipher); err != nil {
+		return nil, err
+	}
 	startedAt := time.Now()
 	sender, err := p.recipientIdentity(ctx, principalEmail)
 	if err != nil {

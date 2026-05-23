@@ -163,7 +163,7 @@ Implementation pointers: `static/mail/compose.jsx` (UI), `internal/httpserver/ap
 | POST | `/api/v1/identities/{fp}/default` | session | Mark default |
 | POST | `/api/v1/identities/{fp}/revoke` | session | Submit revocation cert + mark inactive |
 | DELETE | `/api/v1/identities/{fp}` | session | Hard delete identity + secret blob |
-| GET | `/api/v1/keys/lookup?email=` | session | Run resolver chain (local → cache → WKD → Proton/HKPS) |
+| GET | `/api/v1/keys/lookup?email=` | session, rate-limited (120/hr/user) | Run resolver chain (local → cache → WKD → Proton/HKPS) |
 | GET | `/api/v1/mail/messages?folder=&limit=&before=` | session | Manifest list with `header_ciphertext_b64` + sparse consented fields |
 | GET | `/api/v1/mail/messages/{id}` | session | Single manifest |
 | GET | `/api/v1/mail/messages/{id}/blob` | session | Stream PGP body ciphertext |
@@ -216,6 +216,7 @@ ELVISH_HOSTNAME=mx.elvish.email
 ELVISH_SMTP_ADDR=:25
 ELVISH_SMTP_SUBMISSION_ADDR=:587
 ELVISH_SMTP_ALLOW_PLAIN_AUTH=false   # only enable if a TLS terminator handles AUTH
+ELVISH_SMTP_RATE_LIMIT_PER_HOUR=100    # per connecting IP on inbound MX + submission (Valkey; 451 when exceeded)
 
 # DKIM (optional; outbound SMTP mail is domain-signed if all three are set)
 # Selector/domain are normalized to lowercase at runtime before status checks and worker delivery.

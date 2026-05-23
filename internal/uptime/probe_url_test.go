@@ -29,3 +29,14 @@ func TestValidateProbeHTTPURL(t *testing.T) {
 		}
 	}
 }
+
+func TestNewValidatedProbeURL(t *testing.T) {
+	t.Parallel()
+	if _, err := NewValidatedProbeURL("http://169.254.169.254/latest/meta-data"); err == nil {
+		t.Fatal("expected error for metadata address")
+	}
+	u, err := NewValidatedProbeURL("https://example.com/health")
+	if err != nil || u.String() != "https://example.com/health" {
+		t.Fatalf("got %q err %v", u, err)
+	}
+}

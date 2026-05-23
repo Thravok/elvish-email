@@ -10,6 +10,7 @@ import (
 
 	"elvish/internal/keyserver"
 	"elvish/internal/mailmeta"
+	"elvish/internal/mailutil"
 	"elvish/internal/models"
 	"elvish/internal/openpgp"
 )
@@ -32,6 +33,9 @@ func (s *Server) handleKeysAPI(w http.ResponseWriter, r *http.Request, p string)
 		}
 		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if !s.rateLimitKey(w, r, "keys_lookup", u.ID.String(), rateLimitKeysLookupPerHour, rateLimitKeysLookupWindow) {
 			return
 		}
 		s.apiKeysLookup(w, r)
@@ -72,9 +76,14 @@ func (s *Server) handleKeysAPI(w http.ResponseWriter, r *http.Request, p string)
 }
 
 func (s *Server) apiKeysLookup(w http.ResponseWriter, r *http.Request) {
-	email := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("email")))
-	if email == "" {
+	emailRaw := strings.TrimSpace(r.URL.Query().Get("email"))
+	if emailRaw == "" {
 		s.writeErr(w, http.StatusBadRequest, "email required")
+		return
+	}
+	email, err := mailutil.ParseMailbox(emailRaw)
+	if err != nil {
+		s.writeErr(w, http.StatusBadRequest, "invalid email")
 		return
 	}
 	hit, err := s.resolver.Lookup(r.Context(), email)

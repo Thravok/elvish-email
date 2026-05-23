@@ -13,8 +13,16 @@ import (
 	"elvish/internal/models"
 )
 
-func customDomainDKIMKeyBasename(domain string) string {
-	return strings.TrimSpace(strings.ToLower(domain)) + ".pem"
+func customDomainDKIMKeyBasename(domain string) (string, error) {
+	d, err := normalizeDNSDomain(domain)
+	if err != nil {
+		return "", err
+	}
+	base := d + ".pem"
+	if filepath.Base(base) != base {
+		return "", fmt.Errorf("invalid dkim key basename")
+	}
+	return base, nil
 }
 
 func (s *Server) customDomainDKIMDir() string {
@@ -47,7 +55,10 @@ func (s *Server) ensureCustomDomainDKIM(ctx context.Context, userID uuid.UUID, d
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("dkim domains dir: %w", err)
 	}
-	base := customDomainDKIMKeyBasename(domain)
+	base, err := customDomainDKIMKeyBasename(domain)
+	if err != nil {
+		return err
+	}
 	path := filepath.Join(dir, base)
 	raw, err := dkim.GenerateRSAPrivatePEM(2048)
 	if err != nil {
@@ -72,7 +83,10 @@ func (s *Server) removeCustomDomainDKIMFiles(domain string) {
 	if dir == "" {
 		return
 	}
-	base := customDomainDKIMKeyBasename(domain)
+	base, err := customDomainDKIMKeyBasename(domain)
+	if err != nil {
+		return
+	}
 	_ = os.Remove(filepath.Join(dir, base))
 }
 
@@ -88,8 +102,13 @@ func (s *Server) dkimKeyStatusForDomain(ctx context.Context, domain string) admi
 	if s.mailmeta != nil && dir != "" {
 		sel, ref, err := s.mailmeta.GetDomainDKIMByName(ctx, domain)
 		if err == nil && ref != "" && sel != "" {
+			wantBase, err := customDomainDKIMKeyBasename(domain)
+			if err != nil {
+				out.Error = err.Error()
+				return out
+			}
 			safeRef := filepath.Base(ref)
-			if safeRef != ref || safeRef != customDomainDKIMKeyBasename(domain) {
+			if safeRef != ref || safeRef != wantBase {
 				out.Error = "invalid dkim key reference"
 				return out
 			}

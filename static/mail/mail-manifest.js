@@ -479,8 +479,10 @@ function buildGeneratedIdentityAddress({ type, domain, localPart, name }) {
     return { email: `${base}+${tag}@${dom}`, expiresAt: '' };
   }
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const buf = new Uint8Array(14);
+  crypto.getRandomValues(buf);
   let rand = '';
-  for (let i = 0; i < 14; i++) rand += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 14; i++) rand += chars[buf[i] % chars.length];
   return {
     email: `d_${rand}@${dom}`,
     expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),

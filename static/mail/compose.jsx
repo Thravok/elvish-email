@@ -47,6 +47,15 @@ import * as React from "react";
 
   function utf8(s) { return new TextEncoder().encode(s); }
 
+  /** Rejects CRLF/NUL in header values to prevent RFC5322 header injection. */
+  function rejectHeaderInjection(value, label) {
+    const s = String(value || "");
+    if (/[\r\n\x00]/.test(s)) {
+      throw new Error((label || "Header") + " contains invalid characters");
+    }
+    return s;
+  }
+
   /** Split To/Cc/Bcc on commas or semicolons; keeps tokens inside angle brackets together. */
   function splitAddressList(value) {
     const raw = String(value || "").replace(/\r\n/g, "\n").replace(/\n/g, " ").trim();
@@ -336,23 +345,25 @@ import * as React from "react";
 
   function buildRFC5322(from, to, subject, body, opts) {
     const o = opts || {};
+    const safeFrom = rejectHeaderInjection(from || "anonymous", "From");
+    const safeSubject = rejectHeaderInjection(subject || "(no subject)", "Subject");
     const wantAttach = !!(o.attachPublicKey && o.senderArmoredPublic && String(o.senderArmoredPublic).trim());
-    const ccJoin = (o.ccDisplay || []).filter(Boolean).join(", ");
-    const bccJoin = (o.bccDisplay || []).filter(Boolean).join(", ");
-    const irt = String(o.inReplyTo || "").trim();
-    const refs = String(o.references || "").trim();
+    const ccJoin = (o.ccDisplay || []).filter(Boolean).map((a) => rejectHeaderInjection(a, "Cc")).join(", ");
+    const bccJoin = (o.bccDisplay || []).filter(Boolean).map((a) => rejectHeaderInjection(a, "Bcc")).join(", ");
+    const irt = rejectHeaderInjection(String(o.inReplyTo || "").trim(), "In-Reply-To");
+    const refs = rejectHeaderInjection(String(o.references || "").trim(), "References");
     const pushAddrHeaders = (lines) => {
-      lines.push(`To: ${(to || []).join(", ")}`);
+      lines.push(`To: ${(to || []).map((a) => rejectHeaderInjection(a, "To")).join(", ")}`);
       if (ccJoin) lines.push(`Cc: ${ccJoin}`);
       if (bccJoin) lines.push(`Bcc: ${bccJoin}`);
-      lines.push(`Subject: ${subject || "(no subject)"}`);
+      lines.push(`Subject: ${safeSubject}`);
       if (irt) lines.push(`In-Reply-To: ${irt}`);
       if (refs) lines.push(`References: ${refs}`);
     };
     if (!wantAttach) {
       const lines = [];
       lines.push(`Date: ${new Date().toUTCString()}`);
-      lines.push(`From: ${from || "anonymous"}`);
+      lines.push(`From: ${safeFrom}`);
       pushAddrHeaders(lines);
       lines.push('Content-Type: text/plain; charset="utf-8"; protected-headers="v1"');
       lines.push("Content-Transfer-Encoding: 8bit");
@@ -366,7 +377,7 @@ import * as React from "react";
     const keyBody = normalizeCRLF(String(o.senderArmoredPublic).trim()).replace(/\r\n$/, "");
     const head = [
       `Date: ${new Date().toUTCString()}`,
-      `From: ${from || "anonymous"}`,
+      `From: ${safeFrom}`,
     ];
     pushAddrHeaders(head);
     head.push(
@@ -413,53 +424,21 @@ import * as React from "react";
   };
 
   function htmlToPlainText(html) {
-    if (!html || typeof html !== "string") return "";
-    let text = html;
-    text = text.replace(/<style[\s\S]*?<\/style>/gi, "");
-    text = text.replace(/<script[\s\S]*?<\/script>/gi, "");
-    text = text.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, "\n# $1\n");
-    text = text.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, "\n## $1\n");
-    text = text.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, "\n### $1\n");
-    text = text.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content) => {
-      const lines = content.replace(/<[^>]+>/g, "").trim().split("\n");
-      return "\n" + lines.map((l) => `> ${l.trim()}`).join("\n") + "\n";
-    });
-    text = text.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, "\n```\n$1\n```\n");
-    text = text.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, "`$1`");
-    text = text.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, content) => {
-      const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
-      return "\n" + items.map((item) => "- " + item.replace(/<[^>]+>/g, "").trim()).join("\n") + "\n";
-    });
-    text = text.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, content) => {
-      const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
-      return "\n" + items.map((item, i) => `${i + 1}. ` + item.replace(/<[^>]+>/g, "").trim()).join("\n") + "\n";
-    });
-    text = text.replace(/<a[^>]+href=\s*"([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => {
-      const linkText = content.replace(/<[^>]+>/g, "").trim();
-      if (linkText === href || !linkText) return href;
-      return `${linkText} (${href})`;
-    });
-    text = text.replace(/<a[^>]+href=\s*'([^']*)'[^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => {
-      const linkText = content.replace(/<[^>]+>/g, "").trim();
-      if (linkText === href || !linkText) return href;
-      return `${linkText} (${href})`;
-    });
-    text = text.replace(/<(b|strong)[^>]*>([\s\S]*?)<\/(b|strong)>/gi, "**$2**");
-    text = text.replace(/<(i|em)[^>]*>([\s\S]*?)<\/(i|em)>/gi, "_$2_");
-    text = text.replace(/<(u)[^>]*>([\s\S]*?)<\/(u)>/gi, "$2");
-    text = text.replace(/<(s|strike|del)[^>]*>([\s\S]*?)<\/(s|strike|del)>/gi, "~$2~");
-    text = text.replace(/<br\s*\/?>/gi, "\n");
-    text = text.replace(/<\/p>/gi, "\n\n");
-    text = text.replace(/<\/div>/gi, "\n");
-    text = text.replace(/<[^>]+>/g, "");
-    text = text.replace(/&nbsp;/gi, " ");
-    text = text.replace(/&amp;/gi, "&");
-    text = text.replace(/&lt;/gi, "<");
-    text = text.replace(/&gt;/gi, ">");
-    text = text.replace(/&quot;/gi, '"');
-    text = text.replace(/&#39;/gi, "'");
-    text = text.replace(/\n{3,}/g, "\n\n");
-    return text.trim();
+    const s = String(html || "").trim();
+    if (!s) return "";
+    try {
+      if (typeof DOMParser !== "undefined") {
+        const doc = new DOMParser().parseFromString(s, "text/html");
+        if (doc && doc.body) {
+          return doc.body.textContent.replace(/\s+/g, " ").trim();
+        }
+      }
+    } catch (_) {
+      /* fall through */
+    }
+    const d = document.createElement("div");
+    d.textContent = s;
+    return (d.textContent || "").trim();
   }
 
   function sanitizeComposeHtml(html) {

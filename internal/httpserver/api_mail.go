@@ -17,6 +17,8 @@ import (
 	"elvish/internal/mailmeta"
 	"elvish/internal/mailops"
 	"elvish/internal/mailpipe"
+	"elvish/internal/mailutil"
+	vopenpgp "elvish/internal/openpgp"
 	"elvish/internal/scyllastore"
 )
 
@@ -482,6 +484,23 @@ func (s *Server) apiMailMessagesPost(w http.ResponseWriter, r *http.Request, use
 		s.writeErr(w, http.StatusBadRequest, "recipient and body_ciphertext_b64 required")
 		return
 	}
+	recipient, err := mailutil.ParseMailbox(body.Recipient)
+	if err != nil {
+		s.writeErr(w, http.StatusBadRequest, "invalid recipient")
+		return
+	}
+	if body.FromAddr != "" {
+		if _, err := mailutil.ParseMailbox(body.FromAddr); err != nil {
+			s.writeErr(w, http.StatusBadRequest, "invalid from_addr")
+			return
+		}
+	}
+	if len(body.ToAddrs) > 0 {
+		if _, err := mailutil.ParseMailboxList(body.ToAddrs); err != nil {
+			s.writeErr(w, http.StatusBadRequest, "invalid to_addrs")
+			return
+		}
+	}
 	cipher, err := base64.StdEncoding.DecodeString(body.BodyCiphertextB64)
 	if err != nil {
 		s.writeErr(w, http.StatusBadRequest, "invalid body_ciphertext_b64")
@@ -518,7 +537,7 @@ func (s *Server) apiMailMessagesPost(w http.ResponseWriter, r *http.Request, use
 		s.writeErrAPIInternal(w, "sender identity lookup", err)
 		return
 	}
-	recipientIdentity, err := s.mailmeta.IdentityForEmail(r.Context(), body.Recipient)
+	recipientIdentity, err := s.mailmeta.IdentityForEmail(r.Context(), recipient)
 	if err != nil {
 		if errors.Is(err, mailmeta.ErrNotFound) {
 			s.writeErr(w, http.StatusBadRequest, "recipient is not a local Elvish identity")
@@ -537,7 +556,7 @@ func (s *Server) apiMailMessagesPost(w http.ResponseWriter, r *http.Request, use
 			return
 		}
 	}
-	res, err := pipe.IngestInternal(r.Context(), body.Recipient, headerCT, cipher, body.FromAddr, body.ToAddrs)
+	res, err := pipe.IngestInternal(r.Context(), recipient, headerCT, cipher, body.FromAddr, body.ToAddrs)
 	if err != nil {
 		if senderCopy != nil {
 			_, _ = mailops.New(s.mailmeta, s.scylla, s.blob).DeletePermanent(r.Context(), senderCopy.UserID, senderCopy.MessageID)
@@ -695,6 +714,15 @@ func (s *Server) apiMailOutboxPost(w http.ResponseWriter, r *http.Request, userI
 		s.writeErr(w, http.StatusBadRequest, "invalid payload_ciphertext_b64")
 		return
 	}
+	if vopenpgp.Sniff(cipher) == vopenpgp.BodyCleartext {
+		s.writeErr(w, http.StatusBadRequest, "payload must be OpenPGP ciphertext")
+		return
+	}
+	rcptList, err := mailutil.ParseMailboxList(body.RecipientSummary)
+	if err != nil {
+		s.writeErr(w, http.StatusBadRequest, "invalid recipient_summary")
+		return
+	}
 	var sentCopy *mailmeta.OutboxSentCopy
 	var sentCopyTempKey string
 	if strings.TrimSpace(body.SenderHeaderCiphertextB64) != "" || strings.TrimSpace(body.SenderBodyCiphertextB64) != "" {
@@ -745,7 +773,7 @@ func (s *Server) apiMailOutboxPost(w http.ResponseWriter, r *http.Request, userI
 		s.writeErrAPIInternal(w, "outbox blob put", err)
 		return
 	}
-	rcptSummary := strings.Join(body.RecipientSummary, " ")
+	rcptSummary := strings.Join(rcptList, " ")
 	rowID, err := s.mailmeta.InsertOutboxMeta(r.Context(), userID, mailmeta.OutboxKindPGP, key, int64(len(cipher)), rcptSummary, "", uuid.Nil, sentCopy)
 	if err != nil {
 		_ = s.blob.Delete(r.Context(), key)

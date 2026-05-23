@@ -11,6 +11,20 @@ import (
 	"elvish/internal/mailmeta"
 )
 
+func TestBuildPGPMIMEMessage_RejectsHeaderInjection(t *testing.T) {
+	t.Parallel()
+
+	_, err := buildPGPMIMEMessage(
+		"sender@example.com",
+		[]string{"rcpt\r\nBcc: evil@example.com"},
+		[]byte("-----BEGIN PGP MESSAGE-----\nabc\n-----END PGP MESSAGE-----\n"),
+		time.Time{},
+	)
+	if err == nil {
+		t.Fatal("expected header injection error")
+	}
+}
+
 func TestPreparePGPOutboundPayload_WrapsArmoredCiphertextForSMTP(t *testing.T) {
 	t.Parallel()
 

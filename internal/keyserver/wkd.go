@@ -36,6 +36,9 @@ func (s *WKDSource) Lookup(ctx context.Context, email string) (*KeyHit, error) {
 	if local == "" || domain == "" {
 		return nil, ErrNotFound
 	}
+	if err := wkdDomainOK(domain); err != nil {
+		return nil, ErrNotFound
+	}
 	hash := vopenpgp.WKDLocalPartHash(local)
 	urls := []struct {
 		u   string

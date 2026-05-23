@@ -12900,7 +12900,7 @@
     let document2 = window2.document;
     const originalDocument = document2;
     const currentScript = originalDocument.currentScript;
-    const DocumentFragment = window2.DocumentFragment, HTMLTemplateElement = window2.HTMLTemplateElement, Node = window2.Node, Element = window2.Element, NodeFilter = window2.NodeFilter, _window$NamedNodeMap = window2.NamedNodeMap, NamedNodeMap = _window$NamedNodeMap === void 0 ? window2.NamedNodeMap || window2.MozNamedAttrMap : _window$NamedNodeMap, HTMLFormElement = window2.HTMLFormElement, DOMParser = window2.DOMParser, trustedTypes = window2.trustedTypes;
+    const DocumentFragment = window2.DocumentFragment, HTMLTemplateElement = window2.HTMLTemplateElement, Node = window2.Node, Element = window2.Element, NodeFilter = window2.NodeFilter, _window$NamedNodeMap = window2.NamedNodeMap, NamedNodeMap = _window$NamedNodeMap === void 0 ? window2.NamedNodeMap || window2.MozNamedAttrMap : _window$NamedNodeMap, HTMLFormElement = window2.HTMLFormElement, DOMParser2 = window2.DOMParser, trustedTypes = window2.trustedTypes;
     const ElementPrototype = Element.prototype;
     const cloneNode = lookupGetter(ElementPrototype, "cloneNode");
     const remove = lookupGetter(ElementPrototype, "remove");
@@ -13252,7 +13252,7 @@
       const dirtyPayload = trustedTypesPolicy ? trustedTypesPolicy.createHTML(dirty) : dirty;
       if (NAMESPACE === HTML_NAMESPACE) {
         try {
-          doc = new DOMParser().parseFromString(dirtyPayload, PARSER_MEDIA_TYPE);
+          doc = new DOMParser2().parseFromString(dirtyPayload, PARSER_MEDIA_TYPE);
         } catch (_) {
         }
       }
@@ -14687,53 +14687,20 @@ ${body || ""}`;
           collapse: /* @__PURE__ */ React6.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" }, /* @__PURE__ */ React6.createElement("polyline", { points: "4 14 10 14 10 20" }), /* @__PURE__ */ React6.createElement("polyline", { points: "20 10 14 10 14 4" }), /* @__PURE__ */ React6.createElement("line", { x1: "14", y1: "10", x2: "21", y2: "3" }), /* @__PURE__ */ React6.createElement("line", { x1: "3", y1: "21", x2: "10", y2: "14" }))
         };
         function htmlToPlainText(html2) {
-          if (!html2 || typeof html2 !== "string") return "";
-          let text2 = html2;
-          text2 = text2.replace(/<style[\s\S]*?<\/style>/gi, "");
-          text2 = text2.replace(/<script[\s\S]*?<\/script>/gi, "");
-          text2 = text2.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, "\n# $1\n");
-          text2 = text2.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, "\n## $1\n");
-          text2 = text2.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, "\n### $1\n");
-          text2 = text2.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content) => {
-            const lines = content.replace(/<[^>]+>/g, "").trim().split("\n");
-            return "\n" + lines.map((l) => `> ${l.trim()}`).join("\n") + "\n";
-          });
-          text2 = text2.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, "\n```\n$1\n```\n");
-          text2 = text2.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, "`$1`");
-          text2 = text2.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, content) => {
-            const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
-            return "\n" + items.map((item) => "- " + item.replace(/<[^>]+>/g, "").trim()).join("\n") + "\n";
-          });
-          text2 = text2.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, content) => {
-            const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
-            return "\n" + items.map((item, i) => `${i + 1}. ` + item.replace(/<[^>]+>/g, "").trim()).join("\n") + "\n";
-          });
-          text2 = text2.replace(/<a[^>]+href=\s*"([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => {
-            const linkText = content.replace(/<[^>]+>/g, "").trim();
-            if (linkText === href || !linkText) return href;
-            return `${linkText} (${href})`;
-          });
-          text2 = text2.replace(/<a[^>]+href=\s*'([^']*)'[^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => {
-            const linkText = content.replace(/<[^>]+>/g, "").trim();
-            if (linkText === href || !linkText) return href;
-            return `${linkText} (${href})`;
-          });
-          text2 = text2.replace(/<(b|strong)[^>]*>([\s\S]*?)<\/(b|strong)>/gi, "**$2**");
-          text2 = text2.replace(/<(i|em)[^>]*>([\s\S]*?)<\/(i|em)>/gi, "_$2_");
-          text2 = text2.replace(/<(u)[^>]*>([\s\S]*?)<\/(u)>/gi, "$2");
-          text2 = text2.replace(/<(s|strike|del)[^>]*>([\s\S]*?)<\/(s|strike|del)>/gi, "~$2~");
-          text2 = text2.replace(/<br\s*\/?>/gi, "\n");
-          text2 = text2.replace(/<\/p>/gi, "\n\n");
-          text2 = text2.replace(/<\/div>/gi, "\n");
-          text2 = text2.replace(/<[^>]+>/g, "");
-          text2 = text2.replace(/&nbsp;/gi, " ");
-          text2 = text2.replace(/&amp;/gi, "&");
-          text2 = text2.replace(/&lt;/gi, "<");
-          text2 = text2.replace(/&gt;/gi, ">");
-          text2 = text2.replace(/&quot;/gi, '"');
-          text2 = text2.replace(/&#39;/gi, "'");
-          text2 = text2.replace(/\n{3,}/g, "\n\n");
-          return text2.trim();
+          const s = String(html2 || "").trim();
+          if (!s) return "";
+          try {
+            if (typeof DOMParser !== "undefined") {
+              const doc = new DOMParser().parseFromString(s, "text/html");
+              if (doc && doc.body) {
+                return doc.body.textContent.replace(/\s+/g, " ").trim();
+              }
+            }
+          } catch (_) {
+          }
+          const d = document.createElement("div");
+          d.textContent = s;
+          return (d.textContent || "").trim();
         }
         function sanitizeComposeHtml(html2) {
           const raw = String(html2 || "");
@@ -16514,7 +16481,20 @@ ${body || ""}`;
     return { headers, totalHeaders, knownHeaders };
   }
   function htmlToDisplayText(html2) {
-    return String(html2 || "").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<(br|\/p|\/div|\/li|\/tr|\/h[1-6])\b[^>]*>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"').replace(/&#39;/gi, "'").replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    const s = String(html2 || "").trim();
+    if (!s) return "";
+    try {
+      if (typeof DOMParser !== "undefined") {
+        const doc = new DOMParser().parseFromString(s, "text/html");
+        if (doc && doc.body) {
+          return doc.body.textContent.replace(/\s+/g, " ").trim();
+        }
+      }
+    } catch (_) {
+    }
+    const d = document.createElement("div");
+    d.textContent = s;
+    return (d.textContent || "").trim();
   }
   function splitMultipartBody(body, boundary) {
     const marker = `--${boundary}`;

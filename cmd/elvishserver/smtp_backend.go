@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log/slog"
 	"net"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 
 	"elvish/internal/mailmeta"
 	"elvish/internal/mailpipe"
+	"elvish/internal/ratelimit"
 	"elvish/internal/smtp/sasl"
 	"elvish/internal/smtp/wire"
 	"elvish/internal/store"
@@ -26,22 +29,84 @@ import (
 //
 // Submission mode (port 587): authenticates against store.UserByEmail using
 // bcrypt, then hands the message to mailpipe.IngestSubmission (encrypts to the
-// sender's own identity for sent-folder readback) and queues per-recipient
-// outbound delivery via the existing outbox state in mailmeta.
+// sender's own identity for sent-folder readback only).
 type smtpBackend struct {
-	pipe       *mailpipe.Pipe
-	logger     *slog.Logger
-	submission bool
-	store      *store.Store
-	meta       *mailmeta.Store
-	telemetry  *telemetry.Service
+	pipe                 *mailpipe.Pipe
+	logger               *slog.Logger
+	submission           bool
+	store                *store.Store
+	meta                 *mailmeta.Store
+	telemetry            *telemetry.Service
+	rateLimit            *ratelimit.Limiter
+	smtpRateLimitPerHour int64
 }
 
-func newSMTPBackend(pipe *mailpipe.Pipe, logger *slog.Logger, submission bool, st *store.Store, meta *mailmeta.Store, tel *telemetry.Service) *smtpBackend {
-	return &smtpBackend{pipe: pipe, logger: logger, submission: submission, store: st, meta: meta, telemetry: tel}
+func newSMTPBackend(pipe *mailpipe.Pipe, logger *slog.Logger, submission bool, st *store.Store, meta *mailmeta.Store, tel *telemetry.Service, rl *ratelimit.Limiter) *smtpBackend {
+	return &smtpBackend{
+		pipe:                 pipe,
+		logger:               logger,
+		submission:           submission,
+		store:                st,
+		meta:                 meta,
+		telemetry:            tel,
+		rateLimit:            rl,
+		smtpRateLimitPerHour: smtpRateLimitPerHourFromEnv(),
+	}
+}
+
+func smtpRateLimitPerHourFromEnv() int64 {
+	v := strings.TrimSpace(os.Getenv("ELVISH_SMTP_RATE_LIMIT_PER_HOUR"))
+	if v == "" {
+		return 100
+	}
+	n, err := strconv.ParseInt(v, 10, 64)
+	if err != nil || n <= 0 {
+		return 100
+	}
+	return n
+}
+
+func peerIPString(peer net.Addr) string {
+	if peer == nil {
+		return ""
+	}
+	host, _, err := net.SplitHostPort(peer.String())
+	if err != nil {
+		return peer.String()
+	}
+	return host
+}
+
+func (b *smtpBackend) checkSMTPRateLimit(ctx context.Context, peer net.Addr) error {
+	if b == nil || b.rateLimit == nil {
+		return nil
+	}
+	ip := peerIPString(peer)
+	if ip == "" {
+		return nil
+	}
+	max := b.smtpRateLimitPerHour
+	if max <= 0 {
+		max = 100
+	}
+	ok, err := b.rateLimit.Allow(ctx, "smtp_ip", ip, max, time.Hour)
+	if err != nil {
+		if b.logger != nil {
+			b.logger.Warn("smtp ratelimit", "err", err)
+		}
+		return nil
+	}
+	if !ok {
+		return &wire.SMTPError{Code: 451, Message: "rate limit exceeded, please retry later"}
+	}
+	return nil
 }
 
 func (b *smtpBackend) HandleInbound(ctx context.Context, from string, rcpt []string, body []byte, peer net.Addr, hello string) error {
+	if err := b.checkSMTPRateLimit(ctx, peer); err != nil {
+		b.recordSMTP(ctx, "inbound", false, time.Now())
+		return err
+	}
 	startedAt := time.Now()
 	for _, to := range rcpt {
 		res, err := b.pipe.IngestExternal(ctx, from, strings.ToLower(strings.TrimSpace(to)), append([]byte(nil), body...))
@@ -62,6 +127,10 @@ func (b *smtpBackend) HandleInbound(ctx context.Context, from string, rcpt []str
 }
 
 func (b *smtpBackend) HandleSubmission(ctx context.Context, principal, from string, rcpt []string, body []byte, peer net.Addr) error {
+	if err := b.checkSMTPRateLimit(ctx, peer); err != nil {
+		b.recordSMTP(ctx, "submission", false, time.Now())
+		return err
+	}
 	startedAt := time.Now()
 	resolveStartedAt := time.Now()
 	principalEmail, err := b.resolveSubmissionPrincipal(ctx, principal)
