@@ -3,7 +3,7 @@ const A = window.adm;
 const { useState: useSt, useEffect: useEf, useCallback: useCb, useMemo: useMm } = React;
 
 async function apiJSON(url, opts) {
-  const res = await fetch(url, {
+  const res = await fetch(elvishApiUrl(url), {
     credentials: "include",
     ...(opts || {}),
     headers: {
@@ -17,7 +17,7 @@ async function apiJSON(url, opts) {
 }
 
 async function apiForm(url, formData) {
-  const res = await fetch(url, {
+  const res = await fetch(elvishApiUrl(url), {
     method: "POST",
     credentials: "include",
     body: formData
@@ -234,27 +234,38 @@ function buildReadinessDNSGuide(readiness) {
   return records;
 }
 
-function UserDetailModal({ user, onClose, onDisable, onDelete, busy }) {
+function userAccountStatusLabel(u) {
+  if (u && u.scheduled_delete_at) return "Scheduled delete";
+  if (u && u.disabled) return "Disabled";
+  return "Active";
+}
+
+function UserDetailModal({ user, currentUserId, onClose, onDisable, onEnable, onToggleAdmin, onDelete, busy }) {
   const [detailUser, setDetailUser] = useSt(user);
+  const [loadErr, setLoadErr] = useSt("");
   useEf(() => {
     if (!user) {
       setDetailUser(null);
+      setLoadErr("");
       return;
     }
     setDetailUser(user);
+    setLoadErr("");
     let cancelled = false;
     (async () => {
       try {
-        const d = await apiJSON(`/api/admin/users/${encodeURIComponent(user.id)}?expand=mail`);
+        const d = await apiJSON(`/api/admin/users/${encodeURIComponent(user.id)}?expand=mail,auth`);
         if (!cancelled) setDetailUser((prev) => ({ ...prev, ...d }));
-      } catch (_) {
-        /* keep list row */
+      } catch (e) {
+        if (!cancelled) setLoadErr(String(e.message || e));
       }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user && user.id]);
   if (!user) return null;
   const u = detailUser || user;
+  const isSelf = currentUserId && u.id === currentUserId;
+  const statusLabel = userAccountStatusLabel(u);
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -263,11 +274,24 @@ function UserDetailModal({ user, onClose, onDisable, onDelete, busy }) {
           <button className="btn-close" onClick={onClose}>×</button>
         </div>
         <div className="modal-body mail-detail-grid">
+          {loadErr && <div className="f-err" style={{ gridColumn: "1 / -1" }}>{loadErr}</div>}
           <div className="row"><span className="dim">ID</span><span>{u.id}</span></div>
           <div className="row"><span className="dim">Email</span><span>{u.email}</span></div>
           <div className="row"><span className="dim">Name</span><span>{u.name || "—"}</span></div>
+          <div className="row"><span className="dim">Status</span><span><span className={"user-status-badge user-status-" + statusLabel.toLowerCase().replace(/\s+/g, "-")}>{statusLabel}</span></span></div>
+          <div className="row"><span className="dim">Auth</span><span>{u.auth_method || "—"}</span></div>
           <div className="row"><span className="dim">Admin</span><span>{u.is_admin ? "Yes" : "No"}</span></div>
+          <div className="row"><span className="dim">MFA</span><span>{u.mfa_enabled === true ? "Enabled" : u.mfa_enabled === false ? "Off" : "—"}</span></div>
           <div className="row"><span className="dim">Created</span><span>{fmtDT(u.created_at)}</span></div>
+          {u.last_activity_at && (
+            <div className="row"><span className="dim">Last activity</span><span>{fmtDT(u.last_activity_at)}</span></div>
+          )}
+          {u.scheduled_delete_at && (
+            <div className="row"><span className="dim">Scheduled delete</span><span>{fmtDT(u.scheduled_delete_at)}</span></div>
+          )}
+          {u.scheduled_delete_reason && (
+            <div className="row"><span className="dim">Delete reason</span><span>{u.scheduled_delete_reason}</span></div>
+          )}
           {u.identity_count != null && (
             <div className="row"><span className="dim">Active identities</span><span>{u.identity_count}</span></div>
           )}
@@ -278,9 +302,22 @@ function UserDetailModal({ user, onClose, onDisable, onDelete, busy }) {
             <div className="row"><span className="dim">Shared-domain allowlists</span><span>{u.shared_domain_allowlist_count}</span></div>
           )}
         </div>
-        <div className="modal-foot">
-          <button className="btn-sm warn" onClick={onDisable} disabled={busy}>Disable</button>
-          <button className="btn-sm danger" onClick={onDelete} disabled={busy}>Delete</button>
+        <div className="modal-foot" style={{ flexWrap: "wrap", gap: 8 }}>
+          {u.disabled && !isSelf && (
+            <button className="btn-sm primary" onClick={onEnable} disabled={busy}>Enable</button>
+          )}
+          {!u.disabled && !isSelf && (
+            <button className="btn-sm warn" onClick={onDisable} disabled={busy}>Disable</button>
+          )}
+          {!isSelf && (
+            <button className="btn-sm" onClick={onToggleAdmin} disabled={busy}>
+              {u.is_admin ? "Revoke admin" : "Grant admin"}
+            </button>
+          )}
+          {!isSelf && (
+            <button className="btn-sm danger" onClick={onDelete} disabled={busy}>Delete</button>
+          )}
+          {isSelf && <span className="dim" style={{ fontSize: 11 }}>You cannot modify your own account here.</span>}
         </div>
       </div>
     </div>
@@ -463,25 +500,57 @@ function SecUsers() {
   const [users, setUsers] = useSt([]);
   const [total, setTotal] = useSt(0);
   const [page, setPage] = useSt(1);
+  const [searchDraft, setSearchDraft] = useSt("");
   const [query, setQuery] = useSt("");
+  const [statusFilter, setStatusFilter] = useSt("all");
+  const [adminFilter, setAdminFilter] = useSt("all");
   const [loading, setLoading] = useSt(false);
+  const [loadError, setLoadError] = useSt("");
+  const [currentUserId, setCurrentUserId] = useSt(null);
   const [selected, setSelected] = useSt(null);
   const [busy, setBusy] = useSt(false);
   const [confirmAction, setConfirmAction] = useSt(null);
   const [actionError, setActionError] = useSt("");
+  const [actionOk, setActionOk] = useSt("");
+
+  useEf(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const j = await apiJSON("/api/auth/me");
+        const me = j && j.user;
+        if (!cancelled && me && me.id) setCurrentUserId(me.id);
+      } catch (_) { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEf(() => {
+    const t = setTimeout(() => {
+      setQuery(searchDraft.trim());
+      setPage(1);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [searchDraft]);
 
   const load = useCb(async () => {
     setLoading(true);
+    setLoadError("");
     try {
-      const url = `/api/admin/users?page=${page}&limit=${ADMIN_USER_PAGE}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+      let url = `/api/admin/users?page=${page}&limit=${ADMIN_USER_PAGE}`;
+      if (query) url += `&q=${encodeURIComponent(query)}`;
+      if (statusFilter && statusFilter !== "all") url += `&status=${encodeURIComponent(statusFilter)}`;
+      if (adminFilter === "admin") url += "&admin=true";
+      if (adminFilter === "nonadmin") url += "&admin=false";
       const data = await apiJSON(url);
       setUsers(data.users || []);
       setTotal(data.total || 0);
     } catch (e) {
-      console.error(e);
+      setLoadError(String(e.message || e));
+      setUsers([]);
     }
     setLoading(false);
-  }, [page, query]);
+  }, [page, query, statusFilter, adminFilter]);
 
   const userPageStart = (page - 1) * ADMIN_USER_PAGE;
   const userHasNext = userPageStart + users.length < total;
@@ -494,41 +563,75 @@ function SecUsers() {
     load();
   };
 
+  const confirmTitles = {
+    disable: "Disable User",
+    enable: "Enable User",
+    delete: "Delete User",
+    admin_grant: "Grant Admin",
+    admin_revoke: "Revoke Admin",
+  };
+
   return (
     <div data-testid="admin-users-panel">
-      <A.H num="02" title="USERS" sub={`${total} total · search · targeted notices`} />
+      <A.H num="02" title="USERS" sub={`${total} accounts · moderation · directory`} />
       <div className="adm-explain">
-        Use this directory to inspect accounts before targeted system sends. System mail in this admin panel is limited to existing platform users.
+        Inspect and moderate platform accounts. Disable blocks sign-in; delete purges mail data and storage for the user. System mail can target users from this directory.
       </div>
+      {actionOk && <div className="f-ok" style={{ marginBottom: 12 }}>{actionOk}</div>}
       <A.Card title="USER DIRECTORY" right={loading ? "loading…" : `${users.length} on page · ${total} total`}>
-        <form className="search-bar" onSubmit={(e) => { e.preventDefault(); setPage(1); load(); }}>
+        <div className="search-bar" style={{ marginBottom: 10 }}>
           <input
             type="text"
             className="inp"
-            placeholder="Search by email…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search email or name…"
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
           />
-          <button type="submit" className="btn-sm">Search</button>
-        </form>
+        </div>
+        <div className="filters" style={{ marginBottom: 12, flexWrap: "wrap" }}>
+          {[
+            { id: "all", label: "All status" },
+            { id: "active", label: "Active" },
+            { id: "disabled", label: "Disabled" },
+          ].map((f) => (
+            <button key={f.id} type="button" className={"btn-sm" + (statusFilter === f.id ? " active" : "")} onClick={() => { setStatusFilter(f.id); setPage(1); }}>
+              {f.label}
+            </button>
+          ))}
+          <span className="dim" style={{ margin: "0 6px" }}>|</span>
+          {[
+            { id: "all", label: "All roles" },
+            { id: "admin", label: "Admins" },
+            { id: "nonadmin", label: "Non-admin" },
+          ].map((f) => (
+            <button key={f.id} type="button" className={"btn-sm" + (adminFilter === f.id ? " active" : "")} onClick={() => { setAdminFilter(f.id); setPage(1); }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+        {loadError && <div className="f-err" style={{ marginBottom: 10 }}>{loadError}</div>}
         <table className="admin-table">
           <thead>
             <tr>
               <th>Email</th>
               <th>Name</th>
+              <th>Status</th>
+              <th>Auth</th>
               <th>Admin</th>
               <th>Created</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan="5" className="dim">Loading…</td></tr>}
-            {!loading && users.length === 0 && <tr><td colSpan="5" className="dim">No users found</td></tr>}
+            {loading && <tr><td colSpan="7" className="dim">Loading…</td></tr>}
+            {!loading && users.length === 0 && <tr><td colSpan="7" className="dim">No users found</td></tr>}
             {users.map((u) => (
               <tr key={u.id}>
                 <td>{u.email}</td>
                 <td>{u.name || "—"}</td>
-                <td>{u.is_admin ? "✓" : "—"}</td>
+                <td><span className={"user-status-badge user-status-" + userAccountStatusLabel(u).toLowerCase().replace(/\s+/g, "-")}>{userAccountStatusLabel(u)}</span></td>
+                <td className="dim">{u.auth_method || "—"}</td>
+                <td>{u.is_admin ? "Yes" : "—"}</td>
                 <td className="dim">{fmtDT(u.created_at)}</td>
                 <td><button className="btn-sm" onClick={() => setSelected(u)}>View</button></td>
               </tr>
@@ -543,9 +646,16 @@ function SecUsers() {
       </A.Card>
       <UserDetailModal
         user={selected}
+        currentUserId={currentUserId}
         busy={busy}
         onClose={closeModal}
         onDisable={() => { if (selected) setConfirmAction({ type: "disable", user: selected }); }}
+        onEnable={() => { if (selected) setConfirmAction({ type: "enable", user: selected }); }}
+        onToggleAdmin={() => {
+          if (selected) {
+            setConfirmAction({ type: selected.is_admin ? "admin_revoke" : "admin_grant", user: selected });
+          }
+        }}
         onDelete={() => { if (selected) setConfirmAction({ type: "delete", user: selected }); }}
       />
 
@@ -556,31 +666,46 @@ function SecUsers() {
             <div style={{ position: "absolute", top: -1, right: -1, width: 6, height: 6, background: "var(--accent)" }}></div>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--fg)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                {confirmAction.type === "disable" ? "Disable User" : "Delete User"}
+                {confirmTitles[confirmAction.type] || "Confirm"}
               </span>
               <button type="button" className="btn-close" onClick={() => { setConfirmAction(null); setActionError(""); }} disabled={busy}>×</button>
             </div>
             <div style={{ padding: 18 }}>
               {actionError && <div style={{ padding: "10px 12px", marginBottom: 14, border: "1px solid rgba(255,80,80,0.5)", color: "#ff6b6b", fontSize: 12 }}>{actionError}</div>}
               <p style={{ margin: "0 0 16px", fontSize: 13, lineHeight: 1.5 }}>
-                {confirmAction.type === "disable"
-                  ? `Disable user "${confirmAction.user.email}"? They will not be able to log in.`
-                  : `DELETE user "${confirmAction.user.email}" permanently? This action cannot be undone.`}
+                {confirmAction.type === "disable" && `Disable "${confirmAction.user.email}"? They cannot sign in until re-enabled.`}
+                {confirmAction.type === "enable" && `Re-enable "${confirmAction.user.email}"? SRP accounts restore immediately; legacy accounts may need a password reset.`}
+                {confirmAction.type === "delete" && `Permanently delete "${confirmAction.user.email}" and purge associated mail data? This cannot be undone.`}
+                {confirmAction.type === "admin_grant" && `Grant operator (admin) access to "${confirmAction.user.email}"?`}
+                {confirmAction.type === "admin_revoke" && `Revoke operator access from "${confirmAction.user.email}"?`}
               </p>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
                 <button type="button" className="btn-sm" onClick={() => { setConfirmAction(null); setActionError(""); }} disabled={busy}>Cancel</button>
                 <button
                   type="button"
-                  className="btn-sm danger"
+                  className={"btn-sm" + (confirmAction.type === "delete" || confirmAction.type === "admin_revoke" ? " danger" : confirmAction.type === "enable" ? " primary" : " warn")}
                   disabled={busy}
                   onClick={async () => {
                     setBusy(true);
                     setActionError("");
+                    setActionOk("");
                     try {
+                      const id = confirmAction.user.id;
                       if (confirmAction.type === "disable") {
-                        await apiJSON(`/api/admin/users/${confirmAction.user.id}/disable`, { method: "POST" });
-                      } else {
-                        await apiJSON(`/api/admin/users/${confirmAction.user.id}`, { method: "DELETE" });
+                        await apiJSON(`/api/admin/users/${id}/disable`, { method: "POST" });
+                        setActionOk(`Disabled ${confirmAction.user.email}.`);
+                      } else if (confirmAction.type === "enable") {
+                        await apiJSON(`/api/admin/users/${id}/enable`, { method: "POST" });
+                        setActionOk(`Enabled ${confirmAction.user.email}.`);
+                      } else if (confirmAction.type === "delete") {
+                        await apiJSON(`/api/admin/users/${id}`, { method: "DELETE" });
+                        setActionOk(`Deleted ${confirmAction.user.email}.`);
+                      } else if (confirmAction.type === "admin_grant" || confirmAction.type === "admin_revoke") {
+                        await apiJSON(`/api/admin/users/${id}`, {
+                          method: "PATCH",
+                          body: JSON.stringify({ is_admin: confirmAction.type === "admin_grant" }),
+                        });
+                        setActionOk(confirmAction.type === "admin_grant" ? `Granted admin to ${confirmAction.user.email}.` : `Revoked admin from ${confirmAction.user.email}.`);
                       }
                       setConfirmAction(null);
                       closeModal();
@@ -590,7 +715,7 @@ function SecUsers() {
                     }
                   }}
                 >
-                  {busy ? "Working…" : confirmAction.type === "disable" ? "Disable" : "Delete Forever"}
+                  {busy ? "Working…" : "Confirm"}
                 </button>
               </div>
             </div>

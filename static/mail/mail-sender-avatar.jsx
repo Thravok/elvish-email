@@ -86,7 +86,7 @@ async function fetchSenderIcon(domain) {
 
   const fetchPromise = (async () => {
     try {
-      const resp = await fetch(`/api/v1/mail/sender-icon?domain=${encodeURIComponent(domain)}`);
+      const resp = await fetch(elvishApiUrl(`/api/v1/mail/sender-icon?domain=${encodeURIComponent(domain)}`));
       if (!resp.ok) return null;
       const data = await resp.json();
       setCachedSenderIcon(domain, data);

@@ -104,7 +104,9 @@ export class LocalSearch {
 }
 
 export async function serverMetadataSearch(q, fields, limit) {
-  const u = new URL('/api/v1/mail/search/metadata', window.location.origin);
+  const apiOrigin =
+    typeof elvishApiUrl === "function" ? elvishApiUrl("/") : window.location.origin;
+  const u = new URL("/api/v1/mail/search/metadata", apiOrigin);
   u.searchParams.set('q', q);
   u.searchParams.set('fields', fields.join(','));
   u.searchParams.set('limit', String(limit));

@@ -1060,7 +1060,7 @@
       (async () => {
         setDomainsLoaded(false);
         try {
-          const resp = await fetch("/api/auth/signup-config", { credentials: "include" });
+          const resp = await fetch(elvishApiUrl("/api/auth/signup-config"), { credentials: "include" });
           const j = await resp.json().catch(() => ({}));
           const dom = typeof j.mail_domain === "string" ? j.mail_domain.trim().toLowerCase() : "";
           if (!cancelled) {

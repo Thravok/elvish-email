@@ -35,7 +35,7 @@ const ADMIN_STATE_INITIAL = {
       { href: "/manifesto/", label: "Security" },
       { href: "/login", label: "Log in" },
       { href: "/register", label: "Register" },
-      { href: "/admin/", label: "Panel" },
+      { href: "/mail?view=admin", label: "Panel" },
       { href: "#", label: "Source" }
     ],
     protocol: [

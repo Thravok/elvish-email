@@ -47,7 +47,6 @@ func TestSecureSurfaceHTMLHasNoThirdPartyOrigins(t *testing.T) {
 		"../../static/auth/login.html",
 		"../../static/auth/register.html",
 		"../../static/auth/cap-embed.html",
-		"../../static/admin/index.html",
 		"../../static/mail/index.html",
 		"../../static/protected/index.html",
 	}

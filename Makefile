@@ -43,7 +43,7 @@ openapi:
 
 openapi-check:
 	go run ./cmd/apiroutes -check
-.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e vuln bench-smoke check
+.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e vuln bench-smoke check dev-api dev-mta compose-up
 
 # Precompiled browser bundles (React 19, OpenPGP 6 vendor copy, mail search worker) into static/dist/.
 # Requires Node.js. First run installs frontend/node_modules via npm ci. Set SKIP_STATIC_JS=1 to skip (use prebuilt static/dist only).
@@ -137,6 +137,30 @@ dev-once:
 	@$(DEV_AUTO_DB_UP) \
 	$(DEV_ENV_EXPORTS) \
 	go run ./cmd/elvishserver -addr :$(PORT) -root $(ROOT)
+
+# API role only (no SMTP listeners).
+dev-api:
+	@$(DEV_AUTO_DB_UP) \
+	$(DEV_ENV_EXPORTS) \
+	ELVISH_COMPONENT=api ELVISH_SMTP_ADDR= ELVISH_SMTP_SUBMISSION_ADDR= \
+	go run ./cmd/elvishserver -addr :$(PORT) -root $(ROOT)
+
+# MTA role (SMTP + mail worker; HTTP off unless ELVISH_HTTP_ENABLED=1).
+dev-mta:
+	@$(DEV_AUTO_DB_UP) \
+	$(DEV_ENV_EXPORTS) \
+	ELVISH_COMPONENT=mta ELVISH_HTTP_ENABLED=0 \
+	ELVISH_MAIL_DOMAIN=$${ELVISH_MAIL_DOMAIN:-localhost.test} \
+	ELVISH_SMTP_ADDR=$${ELVISH_SMTP_ADDR:-:2525} \
+	ELVISH_SMTP_SUBMISSION_ADDR=$${ELVISH_SMTP_SUBMISSION_ADDR:-:2587} \
+	go run ./cmd/elvishserver -addr :$(PORT) -root $(ROOT)
+
+# Full app tier in Docker (databases + api + frontend + mail-mta). Site on http://127.0.0.1:8765
+compose-up:
+	@command -v docker >/dev/null 2>&1 || { printf '%s\n' "docker not found"; exit 1; }
+	$(MAKE) -s static-js
+	docker compose --profile full up -d --build
+	@printf '%s\n' "Full stack: http://127.0.0.1:8765 (frontend)" "SMTP (mail-mta): localhost:2525 / :2587"
 
 # Rebuild $(BINARY) when sources change; run the binary separately (e.g. ./bin/elvish). For build + run with auto-restart, use make dev.
 dev-watch:

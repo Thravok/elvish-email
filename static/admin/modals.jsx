@@ -256,7 +256,7 @@ function AuthModal({ open, onClose, onAuth, emailHint }) {
     setPhase("checking");
     setErrDetail("");
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(elvishApiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -322,7 +322,7 @@ function RegisterModal({ open, onClose, onDone }) {
     setPhase("checking");
     setErrDetail("");
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch(elvishApiUrl("/api/auth/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -382,7 +382,7 @@ function LoginModal({ open, onClose, onDone }) {
     setPhase("checking");
     setErrDetail("");
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(elvishApiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -391,7 +391,7 @@ function LoginModal({ open, onClose, onDone }) {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) { setPhase("err"); setErrDetail(j.error || "login failed"); return; }
       if (j && j.mfa_required) {
-        window.location.href = "/login?next=" + encodeURIComponent("/admin/");
+        window.location.href = "/login?next=" + encodeURIComponent("/mail?view=admin");
         return;
       }
       setPhase("ok");
@@ -576,7 +576,7 @@ function SigningKeyModal({ open, onClose, onUpload }) {
       return;
     }
     try {
-      const res = await fetch("/api/pgp/keys", {
+      const res = await fetch(elvishApiUrl("/api/pgp/keys"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

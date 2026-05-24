@@ -145,7 +145,7 @@ function ToolEditor({ tool, onChange, onClose, onDelete }) {
     setProbeOut(null);
     setProbeBusy(true);
     try {
-      const r = await fetch("/api/admin/uptime/test-probe", {
+      const r = await fetch(elvishApiUrl("/api/admin/uptime/test-probe"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -498,8 +498,50 @@ function SecTools({ state, set }) {
 }
 
 // ====================== POSTS ======================
+function buildPostMarkdown(post) {
+  const isoDate = String(post.date || "").replace(/\./g, "-");
+  const tagsYaml = (post.tags && post.tags.length)
+    ? "[" + post.tags.map((t) => JSON.stringify(t)).join(", ") + "]"
+    : "[]";
+  return `---
+title: ${JSON.stringify(post.title || "")}
+date: ${isoDate}
+time: ${post.time || "00:00"}
+slug: ${post.slug}
+type: ${post.type || "notes"}
+tags: ${tagsYaml}
+draft: ${post.draft ? "true" : "false"}
+---
+
+${post.body || ""}
+`;
+}
+
+async function publishPostToAPI(post) {
+  if (post.draft) {
+    throw new Error("Draft posts cannot be saved to the database. Mark the post public first.");
+  }
+  const body = {
+    slug: post.slug,
+    body_markdown: buildPostMarkdown({ ...post, draft: false }),
+  };
+  if ((post.openpgp_sig || "").trim()) body.detached_openpgp_sig = post.openpgp_sig.trim();
+  if ((post.minisig || "").trim()) body.detached_minisig = post.minisig.trim();
+  const res = await fetch(elvishApiUrl("/api/posts"), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(j.error || "publish failed");
+  return j;
+}
+
 function PostEditor({ post, metricsPreview, onChange, onClose, onDelete }) {
   const [tab, setTab] = useS_a("write");
+  const [pubBusy, setPubBusy] = useS_a(false);
+  const [pubMsg, setPubMsg] = useS_a("");
   const setF = (k, v) => onChange({ ...post, [k]: v });
   const mp = metricsPreview || {};
   return (
@@ -580,10 +622,28 @@ draft: ${post.draft ? "true" : "false"}
 ${post.body}
 ${(post.openpgp_sig || "").trim() ? `\n# + detached OpenPGP armored (${(post.openpgp_sig || "").trim().length} chars) → POST /api/posts as detached_openpgp_sig\n` : ""}${(post.minisig || "").trim() ? `\n# + minisig (${(post.minisig || "").trim().length} chars) → POST /api/posts as detached_minisig\n` : ""}`}</pre>
         )}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14 }}>
+        {pubMsg && <div className={"auth-status " + (pubMsg.startsWith("Saved") ? "ok" : "err")} style={{ marginTop: 10 }}>{pubMsg}</div>}
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14, flexWrap: "wrap", gap: 8 }}>
           <button className="btn-sm danger" onClick={onDelete}>delete post</button>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             <button className="btn-sm" onClick={() => setF("draft", true)}>save as draft</button>
+            <button
+              className="btn-sm"
+              disabled={pubBusy}
+              onClick={async () => {
+                setPubBusy(true);
+                setPubMsg("");
+                try {
+                  await publishPostToAPI(post);
+                  setPubMsg("Saved to database.");
+                } catch (e) {
+                  setPubMsg(String(e.message || e));
+                }
+                setPubBusy(false);
+              }}
+            >
+              {pubBusy ? "…" : "save to database"}
+            </button>
             <button className="btn-sm primary" onClick={() => { setF("draft", false); onClose(); }}>publish & close</button>
           </div>
         </div>
@@ -597,6 +657,8 @@ function SecPosts({ state, set }) {
   const [filter, setFilter] = useS_a("all");
   const [q, setQ] = useS_a("");
   const [pendingDel, setPendingDel] = useS_a(null);
+  const [migrateBusy, setMigrateBusy] = useS_a(false);
+  const [migrateMsg, setMigrateMsg] = useS_a("");
   const M = window.VModals;
 
   const setPosts = (v) => set({ ...state, posts: v });
@@ -633,9 +695,31 @@ function SecPosts({ state, set }) {
     <div className="adm-explain">Posts live at <code>content/blog/YYYY-MM-DD-slug.md</code> with YAML front matter. Drafts are excluded from site and feeds. Bytes/reach come from <code>content/blog/metrics.json</code> (slug overlay), not the per-post editor.</div>
 
     <A2.Card title="POSTS" right={<>
+      <button
+        type="button"
+        className="btn-sm"
+        style={{ marginRight: 8 }}
+        disabled={migrateBusy}
+        onClick={async () => {
+          setMigrateBusy(true);
+          setMigrateMsg("");
+          try {
+            const res = await fetch(elvishApiUrl("/api/migrate/posts"), { method: "POST", credentials: "include" });
+            const j = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(j.error || "migrate failed");
+            setMigrateMsg(`Imported ${j.upserted ?? 0} post(s) from disk. Reload to refresh.`);
+          } catch (e) {
+            setMigrateMsg(String(e.message || e));
+          }
+          setMigrateBusy(false);
+        }}
+      >
+        {migrateBusy ? "…" : "import from disk"}
+      </button>
       <input className="inp" style={{ width: 200, marginRight: 8 }} placeholder="search title/body…" value={q} onChange={(e) => setQ(e.target.value)} />
       <button className="btn-sm primary" onClick={add}>+ new post</button>
     </>}>
+      {migrateMsg && <div className="f-help" style={{ marginBottom: 10 }}>{migrateMsg}</div>}
       <div className="cl-filterbar" style={{ borderTop: 0, borderLeft: 0, borderRight: 0 }}>
         <span className="tiny dim">FILTER ▸</span>
         {[
@@ -773,7 +857,7 @@ function SecSigningPGP() {
     }
     setPhase("uploading");
     try {
-      const res = await fetch("/api/pgp/keys", {
+      const res = await fetch(elvishApiUrl("/api/pgp/keys"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

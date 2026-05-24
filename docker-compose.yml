@@ -116,6 +116,7 @@ services:
     restart: "no"
 
   api:
+    profiles: [full]
     build:
       context: .
       dockerfile: Dockerfile
@@ -132,6 +133,10 @@ services:
     expose:
       - "8765"
     environment:
+      - ELVISH_COMPONENT=api
+      - ELVISH_BACKGROUND_JOBS=1
+      - ELVISH_SMTP_ADDR=
+      - ELVISH_SMTP_SUBMISSION_ADDR=
       - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
       - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
       - VALKEY_PASSWORD=${VALKEY_PASSWORD:-}
@@ -152,6 +157,7 @@ services:
       - BLOB_S3_FORCE_PATH_STYLE=${BLOB_S3_FORCE_PATH_STYLE:-1}
 
   frontend:
+    profiles: [full]
     build:
       context: .
       dockerfile: docker/frontend/Dockerfile
@@ -160,6 +166,43 @@ services:
       - api
     ports:
       - "8765:80"
+
+  mail-mta:
+    profiles: [full]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: elvish-mail-mta
+    depends_on:
+      cockroach:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      scylla:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      - ELVISH_COMPONENT=mta
+      - ELVISH_HTTP_ENABLED=0
+      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-localhost.test}
+      - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-localhost.test}
+      - ELVISH_SMTP_ADDR=:25
+      - ELVISH_SMTP_SUBMISSION_ADDR=:587
+      - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
+      - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
+      - SCYLLA_HOSTS=${SCYLLA_HOSTS:-scylla:9042}
+      - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
+      - BLOB_S3_ENDPOINT=${BLOB_S3_ENDPOINT:-http://minio:9000}
+      - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
+      - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
+      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-elvish-dev}
+      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-elvish-dev-secret}
+      - BLOB_S3_FORCE_PATH_STYLE=${BLOB_S3_FORCE_PATH_STYLE:-1}
+      - ELVISH_AUTO_GEN_MFA_KEY=${ELVISH_AUTO_GEN_MFA_KEY:-1}
+    ports:
+      - "2525:25"
+      - "2587:587"
 
 volumes:
   elvish_crdb_data:

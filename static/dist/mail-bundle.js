@@ -13918,7 +13918,7 @@
       return /* @__PURE__ */ import_react4.default.createElement("span", { className: "dim", style: { fontSize: 10 } }, "\u2026");
     }
     if (loggedIn) {
-      return /* @__PURE__ */ import_react4.default.createElement(import_react4.default.Fragment, null, /* @__PURE__ */ import_react4.default.createElement("span", { className: "nav-session dim", title: me.email || "" }, label), me.is_admin && /* @__PURE__ */ import_react4.default.createElement("a", { href: "/admin/", className: "navlink" }, "PANEL"), showMailLink && /* @__PURE__ */ import_react4.default.createElement("a", { href: "/mail", className: "navlink" }, "MAIL"), /* @__PURE__ */ import_react4.default.createElement("form", { className: "nav-inline-form", action: "/auth/logout", method: "post" }, /* @__PURE__ */ import_react4.default.createElement("input", { type: "hidden", name: "next", value: logoutNext }), /* @__PURE__ */ import_react4.default.createElement("button", { type: "submit", className: "navlink" }, "LOGOUT")));
+      return /* @__PURE__ */ import_react4.default.createElement(import_react4.default.Fragment, null, /* @__PURE__ */ import_react4.default.createElement("span", { className: "nav-session dim", title: me.email || "" }, label), me.is_admin && /* @__PURE__ */ import_react4.default.createElement("a", { href: "/mail?view=admin", className: "navlink" }, "PANEL"), showMailLink && /* @__PURE__ */ import_react4.default.createElement("a", { href: "/mail", className: "navlink" }, "MAIL"), /* @__PURE__ */ import_react4.default.createElement("form", { className: "nav-inline-form", action: "/auth/logout", method: "post" }, /* @__PURE__ */ import_react4.default.createElement("input", { type: "hidden", name: "next", value: logoutNext }), /* @__PURE__ */ import_react4.default.createElement("button", { type: "submit", className: "navlink" }, "LOGOUT")));
     }
     return /* @__PURE__ */ import_react4.default.createElement(import_react4.default.Fragment, null, /* @__PURE__ */ import_react4.default.createElement("a", { href: loginHref, className: "navlink" }, "LOGIN"), /* @__PURE__ */ import_react4.default.createElement("a", { href: registerHref, className: "navlink" }, "REGISTER"));
   }
@@ -13937,13 +13937,13 @@
     const [fetchedMe, setFetchedMe] = useState3(null);
     const [time, setTime] = useState3(() => /* @__PURE__ */ new Date());
     const loadMe = () => {
-      fetch("/api/auth/me", { credentials: "include" }).then((r) => r.json().catch(() => ({}))).then((j) => {
+      fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" }).then((r) => r.json().catch(() => ({}))).then((j) => {
         if (j && j.user) setFetchedMe(j.user);
         else setFetchedMe(false);
       }).catch(() => setFetchedMe(false));
     };
     useEffect2(() => {
-      fetch("/api/site/topbar.json").then((r) => r.ok ? r.json() : null).then((j) => {
+      fetch(elvishApiUrl("/api/site/topbar.json")).then((r) => r.ok ? r.json() : null).then((j) => {
         if (j) {
           setNav(j.nav || []);
         }
@@ -14059,7 +14059,7 @@
             let cancelled = false;
             (async () => {
               try {
-                const r = await fetch("/api/v1/account-key/me", { credentials: "include" });
+                const r = await fetch(elvishApiUrl("/api/v1/account-key/me"), { credentials: "include" });
                 if (!r.ok) return;
                 const j = await r.json();
                 if (!cancelled) setNeedsBootstrap(!j.bootstrapped);
@@ -14084,20 +14084,20 @@
               }
               setActiveStage("session");
               setStep("Checking your signed-in session\u2026");
-              const meAuthRes = await fetch("/api/auth/me", { credentials: "include" });
+              const meAuthRes = await fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" });
               if (!meAuthRes.ok) throw new Error("not logged in (refresh and try again)");
               const meAuth = await meAuthRes.json();
               const userEmail = meAuth && meAuth.user && meAuth.user.email;
               if (!userEmail) throw new Error("session has no user email");
               setActiveStage("secure");
               setStep(needsBootstrap ? "Generating account keys for this device\u2026" : "Fetching your encrypted account key\u2026");
-              const meRes = await fetch("/api/v1/account-key/me", { credentials: "include" });
+              const meRes = await fetch(elvishApiUrl("/api/v1/account-key/me"), { credentials: "include" });
               if (!meRes.ok) throw new Error("account key fetch failed (" + meRes.status + ")");
               let me = await meRes.json();
               if (!me.bootstrapped) {
                 setStep("No keys yet \u2014 generating account + identity in your browser\u2026");
                 await bootstrapNew(userEmail, password);
-                const refetch = await fetch("/api/v1/account-key/me", { credentials: "include" });
+                const refetch = await fetch(elvishApiUrl("/api/v1/account-key/me"), { credentials: "include" });
                 if (!refetch.ok) throw new Error("account key re-fetch failed (" + refetch.status + ")");
                 me = await refetch.json();
                 if (!me.bootstrapped) throw new Error("bootstrap upload did not persist");
@@ -14106,14 +14106,14 @@
               setStep("Unlocking your mailbox\u2026");
               await window.ElvishKeyVault.unlockAccount(me, password, { sessionEmail: userEmail });
               setStep("Checking your sender identities\u2026");
-              let idRes = await fetch("/api/v1/identities", { credentials: "include" });
+              let idRes = await fetch(elvishApiUrl("/api/v1/identities"), { credentials: "include" });
               if (!idRes.ok) throw new Error("identities fetch failed (" + idRes.status + ")");
               let idJson = await idRes.json();
               let list = Array.isArray(idJson.identities) ? idJson.identities : [];
               if (list.length === 0) {
                 setStep("Creating a default sender identity for " + userEmail + "\u2026");
                 await mintIdentity(userEmail, me.armored_public);
-                idRes = await fetch("/api/v1/identities", { credentials: "include" });
+                idRes = await fetch(elvishApiUrl("/api/v1/identities"), { credentials: "include" });
                 if (idRes.ok) {
                   idJson = await idRes.json();
                   list = Array.isArray(idJson.identities) ? idJson.identities : [];
@@ -14133,7 +14133,7 @@
             const identityWrappedB64 = window.ElvishKeygen.bytesToB64(
               new TextEncoder().encode(keys.identity.wrapped_secret_armored)
             );
-            const r = await fetch("/api/v1/account-key/bootstrap", {
+            const r = await fetch(elvishApiUrl("/api/v1/account-key/bootstrap"), {
               method: "POST",
               credentials: "include",
               headers: { "content-type": "application/json" },
@@ -14166,7 +14166,7 @@
             });
             const wrappedArmored = await window.ElvishKeygen.pgpWrapToAccount(idKp.privateKey, accountArmoredPublic);
             const wrappedB64 = window.ElvishKeygen.bytesToB64(new TextEncoder().encode(wrappedArmored));
-            const r = await fetch("/api/v1/identities", {
+            const r = await fetch(elvishApiUrl("/api/v1/identities"), {
               method: "POST",
               credentials: "include",
               headers: { "content-type": "application/json" },
@@ -14350,6 +14350,13 @@
         }
         function utf8(s) {
           return new TextEncoder().encode(s);
+        }
+        function rejectHeaderInjection(value, label) {
+          const s = String(value || "");
+          if (/[\r\n\x00]/.test(s)) {
+            throw new Error((label || "Header") + " contains invalid characters");
+          }
+          return s;
         }
         function splitAddressList(value) {
           const raw = String(value || "").replace(/\r\n/g, "\n").replace(/\n/g, " ").trim();
@@ -14614,23 +14621,25 @@ ${body || ""}`;
         }
         function buildRFC5322(from, to, subject, body, opts) {
           const o = opts || {};
+          const safeFrom = rejectHeaderInjection(from || "anonymous", "From");
+          const safeSubject = rejectHeaderInjection(subject || "(no subject)", "Subject");
           const wantAttach = !!(o.attachPublicKey && o.senderArmoredPublic && String(o.senderArmoredPublic).trim());
-          const ccJoin = (o.ccDisplay || []).filter(Boolean).join(", ");
-          const bccJoin = (o.bccDisplay || []).filter(Boolean).join(", ");
-          const irt = String(o.inReplyTo || "").trim();
-          const refs = String(o.references || "").trim();
+          const ccJoin = (o.ccDisplay || []).filter(Boolean).map((a) => rejectHeaderInjection(a, "Cc")).join(", ");
+          const bccJoin = (o.bccDisplay || []).filter(Boolean).map((a) => rejectHeaderInjection(a, "Bcc")).join(", ");
+          const irt = rejectHeaderInjection(String(o.inReplyTo || "").trim(), "In-Reply-To");
+          const refs = rejectHeaderInjection(String(o.references || "").trim(), "References");
           const pushAddrHeaders = (lines) => {
-            lines.push(`To: ${(to || []).join(", ")}`);
+            lines.push(`To: ${(to || []).map((a) => rejectHeaderInjection(a, "To")).join(", ")}`);
             if (ccJoin) lines.push(`Cc: ${ccJoin}`);
             if (bccJoin) lines.push(`Bcc: ${bccJoin}`);
-            lines.push(`Subject: ${subject || "(no subject)"}`);
+            lines.push(`Subject: ${safeSubject}`);
             if (irt) lines.push(`In-Reply-To: ${irt}`);
             if (refs) lines.push(`References: ${refs}`);
           };
           if (!wantAttach) {
             const lines = [];
             lines.push(`Date: ${(/* @__PURE__ */ new Date()).toUTCString()}`);
-            lines.push(`From: ${from || "anonymous"}`);
+            lines.push(`From: ${safeFrom}`);
             pushAddrHeaders(lines);
             lines.push('Content-Type: text/plain; charset="utf-8"; protected-headers="v1"');
             lines.push("Content-Transfer-Encoding: 8bit");
@@ -14644,7 +14653,7 @@ ${body || ""}`;
           const keyBody = normalizeCRLF(String(o.senderArmoredPublic).trim()).replace(/\r\n$/, "");
           const head = [
             `Date: ${(/* @__PURE__ */ new Date()).toUTCString()}`,
-            `From: ${from || "anonymous"}`
+            `From: ${safeFrom}`
           ];
           pushAddrHeaders(head);
           head.push(
@@ -15870,7 +15879,7 @@ ${body || ""}`;
     }
     const fetchPromise = (async () => {
       try {
-        const resp = await fetch(`/api/v1/mail/sender-icon?domain=${encodeURIComponent(domain)}`);
+        const resp = await fetch(elvishApiUrl(`/api/v1/mail/sender-icon?domain=${encodeURIComponent(domain)}`));
         if (!resp.ok) return null;
         const data = await resp.json();
         setCachedSenderIcon(domain, data);
@@ -17549,9 +17558,17 @@ ${body || ""}`;
     if (!anchorId || removedSet.has(anchorId) || !ids.includes(anchorId)) anchorId = ids[0];
     return { ids, anchorId, focusId };
   }
+  function initialMailView() {
+    try {
+      const v = new URLSearchParams(window.location.search).get("view");
+      if (v === "admin" || v === "settings" || v === "mail") return v;
+    } catch (_) {
+    }
+    return "mail";
+  }
   function MailApp() {
     const [me, setMe] = useState5(null);
-    const [view, setView] = useState5("mail");
+    const [view, setView] = useState5(initialMailView);
     const [adminEmbedStatus, setAdminEmbedStatus] = useState5("idle");
     const [adminEmbedFailReason, setAdminEmbedFailReason] = useState5(null);
     const adminEmbedScriptRef = useRef3(false);
@@ -17639,7 +17656,7 @@ ${body || ""}`;
     }, []);
     useEffect5(() => {
       let cancelled = false;
-      fetch("/api/auth/me", { credentials: "include" }).then((r) => r.ok ? r.json() : null).then((j) => {
+      fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" }).then((r) => r.ok ? r.json() : null).then((j) => {
         if (cancelled) return;
         if (j && j.user) setMe(j.user);
         else setMe(false);
@@ -18715,7 +18732,7 @@ ${body || ""}`;
         onClick: () => window.location.reload()
       },
       "Reload"
-    )) : /* @__PURE__ */ import_react8.default.createElement(FullScreenStatus, { message: "Loading settings\u2026" })) : showAdminIntent && !showAdmin ? /* @__PURE__ */ import_react8.default.createElement("main", { className: "mail-admin-host mail-admin-embed-loading" }, adminEmbedStatus === "error" ? /* @__PURE__ */ import_react8.default.createElement("div", { style: { padding: 24, maxWidth: 520 } }, /* @__PURE__ */ import_react8.default.createElement("p", { className: "mail-msg-body", style: { marginBottom: 12 } }, "Could not load the operator panel."), adminEmbedFailReason === "forbidden" ? /* @__PURE__ */ import_react8.default.createElement("p", { className: "mail-msg-body", style: { marginBottom: 12 } }, "The server returned HTTP 403 for operator JavaScript. When asset gating is enabled, use an admin session in this browser (for example open ", /* @__PURE__ */ import_react8.default.createElement("a", { href: "/admin/" }, "/admin/"), " once so cookies are set), then return here.") : null, /* @__PURE__ */ import_react8.default.createElement("p", { className: "mail-msg-body", style: { marginBottom: 0 } }, "Please reload the page and try again. If the problem persists, check the browser console for errors."), /* @__PURE__ */ import_react8.default.createElement(
+    )) : /* @__PURE__ */ import_react8.default.createElement(FullScreenStatus, { message: "Loading settings\u2026" })) : showAdminIntent && !showAdmin ? /* @__PURE__ */ import_react8.default.createElement("main", { className: "mail-admin-host mail-admin-embed-loading" }, adminEmbedStatus === "error" ? /* @__PURE__ */ import_react8.default.createElement("div", { style: { padding: 24, maxWidth: 520 } }, /* @__PURE__ */ import_react8.default.createElement("p", { className: "mail-msg-body", style: { marginBottom: 12 } }, "Could not load the operator panel."), adminEmbedFailReason === "forbidden" ? /* @__PURE__ */ import_react8.default.createElement("p", { className: "mail-msg-body", style: { marginBottom: 12 } }, "The server returned HTTP 403 for operator JavaScript. Sign in with an operator account on this origin, then reload this page.") : null, /* @__PURE__ */ import_react8.default.createElement("p", { className: "mail-msg-body", style: { marginBottom: 0 } }, "Please reload the page and try again. If the problem persists, check the browser console for errors."), /* @__PURE__ */ import_react8.default.createElement(
       "button",
       {
         type: "button",

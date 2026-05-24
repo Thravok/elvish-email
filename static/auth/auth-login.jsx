@@ -53,7 +53,7 @@ function LoginPage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/auth/signup-config")
+    fetch(elvishApiUrl("/api/auth/signup-config"))
       .then((r) => r.json().catch(() => ({})))
       .then((j) => {
         setMailDomain(typeof j.mail_domain === "string" ? j.mail_domain : "");
@@ -79,7 +79,7 @@ function LoginPage() {
       if (typeof window.ElvishKeyVault !== "undefined" && typeof window.ElvishKeygen !== "undefined") {
         const perfStartedAt = window.ElvishPerf && window.ElvishPerf.start ? window.ElvishPerf.start() : 0;
         setMsg("Unlocking encryption keys…");
-        const meRes = await fetch("/api/v1/account-key/me", { credentials: "include" });
+        const meRes = await fetch(elvishApiUrl("/api/v1/account-key/me"), { credentials: "include" });
         if (meRes.ok) {
           const me = await meRes.json();
           if (me.bootstrapped) {
@@ -109,7 +109,7 @@ function LoginPage() {
     if (capWidgetURL) {
       body.cap_token = capToken.trim();
     }
-    const res = await fetch("/api/auth/login", {
+    const res = await fetch(elvishApiUrl("/api/auth/login"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -141,8 +141,8 @@ function LoginPage() {
         if (!window.ElvishSRP) throw new Error("SRP subsystem not loaded");
         const beginExtra = capWidgetURL ? { cap_token: capToken.trim() } : undefined;
         result = await window.ElvishSRP.exchange(
-          "/api/auth/login/begin",
-          "/api/auth/login/finish",
+          elvishApiUrl("/api/auth/login/begin"),
+          elvishApiUrl("/api/auth/login/finish"),
           u,
           password,
           undefined,
@@ -181,7 +181,7 @@ function LoginPage() {
     setMsg(mfaMethod === "recovery" ? "Checking recovery code…" : "Checking authenticator code…");
     try {
       const endpoint = mfaMethod === "recovery" ? "/api/auth/2fa/login/recovery" : "/api/auth/2fa/login/totp";
-      const res = await fetch(endpoint, {
+      const res = await fetch(elvishApiUrl(endpoint), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -204,7 +204,7 @@ function LoginPage() {
     setPhase("mfa_loading");
     setMsg("Waiting for your security key…");
     try {
-      const beginRes = await fetch("/api/auth/2fa/login/webauthn/begin", {
+      const beginRes = await fetch(elvishApiUrl("/api/auth/2fa/login/webauthn/begin"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -213,7 +213,7 @@ function LoginPage() {
       const begin = await beginRes.json().catch(() => ({}));
       if (!beginRes.ok) throw new Error(begin.error || "Security key challenge failed");
       const credential = await window.ElvishWebAuthn.getAssertion(begin.options);
-      const finishRes = await fetch("/api/auth/2fa/login/webauthn/finish", {
+      const finishRes = await fetch(elvishApiUrl("/api/auth/2fa/login/webauthn/finish"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

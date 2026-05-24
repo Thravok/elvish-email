@@ -13,7 +13,7 @@ When you publish your own deployment, point the site footer **Source** link at y
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — dev commands, conventions, code map
 - **[AGENTS.md](AGENTS.md)** — short orientation for automation / AI assistants
 
-Go HTTP server **`elvishserver`** serves HTML (same templates as before), static assets from `static/`, JSON API under `/api/`, and the React admin at `/admin/`. **Defaults** still come from `content/home.json` and Markdown in `content/blog/` when the SQL database has no posts yet. By default the process **refuses to start** until **CockroachDB/Postgres** (`COCKROACH_DSN`) and **Valkey** are configured in the environment **and** respond to a health ping (see `ELVISH_ALLOW_EMPTY_DB` below for the rare static-only case).
+Go HTTP server **`elvishserver`** serves HTML (same templates as before), static assets from `static/`, JSON API under `/api/`, and the operator panel embedded in the mail client at **`/mail?view=admin`**. **Defaults** still come from `content/home.json` and Markdown in `content/blog/` when the SQL database has no posts yet. By default the process **refuses to start** until **CockroachDB/Postgres** (`COCKROACH_DSN`) and **Valkey** are configured in the environment **and** respond to a health ping (see `ELVISH_ALLOW_EMPTY_DB` below for the rare static-only case).
 
 **Feeds** (at site root): RSS `/feed.xml`, Atom `/atom.xml`, [JSON Feed 1.1](https://jsonfeed.org/version/1.1) `/feed.json`. `<link rel="alternate">` is emitted on home, log index, and post pages.
 
@@ -28,9 +28,9 @@ Use **`make dev-once`** for a single local run without file watching; it also au
 
 For site-only work without Scylla/S3 locally, run **`SKIP_AUTO_DB_UP=1 SKIP_MAIL_BACKENDS=1 make dev`** so the server starts without booting the Docker mail stack (mail APIs stay unavailable until you export `SCYLLA_*` / `BLOB_S3_*`).
 
-Open `http://127.0.0.1:8765/`. Admin: `http://127.0.0.1:8765/admin/`.
+Open `http://127.0.0.1:8765/`. Operator panel: `http://127.0.0.1:8765/mail?view=admin` (requires admin session).
 
-**Auth pages (browser):** `/register` and `/login` — same API as the modals; after success, admins go to `/admin/`, others to `/`.
+**Auth pages (browser):** `/register` and `/login` — same API as the modals; after success, admins typically open `/mail?view=admin`, others go to `/mail` or `/`.
 
 ### Local databases (Docker Compose)
 
@@ -45,7 +45,7 @@ make db-up
 
 This starts **CockroachDB** on `127.0.0.1:26257`, **Valkey** on `127.0.0.1:6379`, **ScyllaDB** on `127.0.0.1:9042`, and **MinIO** (S3 API on `127.0.0.1:8333`, console on `127.0.0.1:9001`). It also applies the Scylla schema and creates the default blob bucket. It does **not** start the `api` / `frontend` compose services — use **`docker compose up -d`** if you want the full containerized stack. Stop with **`make db-down`**. To remove containers **and** persisted compose volumes (fresh databases), run **`make db-clean`**.
 
-**Full stack (`docker compose up -d`):** traffic is meant to enter through **frontend** on `127.0.0.1:8765`, which proxies `/api/` to **api** on the internal network. The **api** service is not published on a host port by default so clients cannot bypass the proxy and spoof `X-Forwarded-For` against rate limits. To reach **elvishserver** directly from the host (debugging), add `ports: ["8766:8765"]` under `api` in a [Compose override](https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/) file; only use `ELVISH_TRUST_FORWARDED_FOR=1` when a **trusted** reverse proxy sets or strips forwarded headers (see the environment table below).
+**Full stack (`make compose-up` or `docker compose --profile full up -d`):** **frontend** on `127.0.0.1:8765` serves static assets and proxies SSR to **api**; **mail-mta** exposes SMTP on host `2525`→container `25` and `2587`→`587`. Use **`make dev-api`** / **`make dev-mta`** on the host to run split roles without Docker. Production Coolify layout: [docs/deploy-coolify.md](docs/deploy-coolify.md) and [ADR 0015](docs/adr/0015-multi-service-deployment.md).
 
 **Scylla:** The first time it allocates its volume, startup can take **1–2 minutes** before CQL on `9042` is ready. Compose waits for a real `cqlsh` probe (not just nodetool) before **`scylla-init`** applies [`internal/scyllastore/schema.cql`](internal/scyllastore/schema.cql); if init ever races again, [`docker/scylla-init.sh`](docker/scylla-init.sh) retries for several minutes.
 
@@ -62,7 +62,7 @@ With a non-empty **`COCKROACH_DSN`**, **`elvishserver` applies embedded SQL migr
 Set **`ELVISH_ALLOW_EMPTY_DB=1`** only to run **without** those backends (static HTML from disk; register/login and admin persistence unavailable).
 
 - **Register / login:** `POST /api/auth/register`, `POST /api/auth/login` (HTTP-only cookie `elvish_session`), or open **`/register`** / **`/login`** in the browser.
-- **Bootstrap for admin:** `GET /api/bootstrap.json` (admin also falls back to `/admin/bootstrap.json` if present).
+- **Bootstrap for admin:** `GET /api/bootstrap.json`.
 - **OpenPGP public keys:** `POST /api/pgp/keys` (**admin** session) — listed at `/pgp/keys.json`, each at `/pgp/key/<fingerprint16>.asc`.
 - **Migrate disk posts → SQL:** `make migrate` or `go run ./cmd/elvishserver -root . -migrate`. **`POST /api/migrate/posts`** does the same import over HTTP and requires an **admin** session.
 - **Admin E2E:** `make test-e2e` (Playwright under [`e2e/`](e2e/); see [`e2e/README.md`](e2e/README.md)).
@@ -97,7 +97,7 @@ Markdown is rendered with [Goldmark](https://github.com/yuin/goldmark).
 
 ## Deploy
 
-Run **`elvishserver`** behind your reverse proxy (TLS, HTTP/2, etc.) with env for Cockroach/Postgres and Valkey. **Protect `/admin/`** at the edge until you rely on API auth alone.
+Run **`elvishserver`** behind your reverse proxy (TLS, HTTP/2, etc.) with env for Cockroach/Postgres and Valkey. Operator routes under `/api/admin/*` and `/dist/mail-admin-embed.js` require an admin session when Valkey is configured.
 
 **Caching:** HTML references `/page.css` and `/site.js` with `?v=` from `content/home.json` `hash_short` (fallback: `version`). The service worker (`static/sw.js`) is served with injected version lines. Bump `hash_short` when you change CSS/JS.
 
@@ -129,6 +129,12 @@ curl -sI http://127.0.0.1:8765/api/auth/me | grep -i cache-control
 | `ELVISH_TRUST_FORWARDED_FOR` | `1` or `true` to use `X-Real-IP` / `X-Forwarded-For` for rate limits (enable only behind a trusted reverse proxy that strips client-spoofed headers) |
 | `ELVISH_CONTENT_CACHE_SEC` | In-process TTL for parsed site config and posts in `elvishserver` (default `10`; `0` disables) |
 | `ELVISH_ALLOW_EMPTY_DB` | `1` or `true` to allow startup **without** `COCKROACH_DSN` / `VALKEY_ADDR` (static-only; not for production) |
+| `ELVISH_COMPONENT` | Deployment role: `api`, `mta`, `all` (comma-separated; default `all`). See [ADR 0015](docs/adr/0015-multi-service-deployment.md). |
+| `ELVISH_HTTP_ENABLED` | `0`/`false` disables the HTTP listener (default off for `mta`-only). |
+| `ELVISH_BACKGROUND_JOBS` | `1`/`true` runs retention/account-deletion/uptime sweepers (default on for `api`/`all`; set on one API replica when scaled). |
+| `ELVISH_WEB_ORIGINS` | Comma-separated browser origins allowed for credentialed CORS to `/api/*` (e.g. `https://app.example.com`). |
+| `ELVISH_COOKIE_DOMAIN` | Optional cookie `Domain` for split-origin deploys (e.g. `.example.com`). |
+| `ELVISH_API_PUBLIC_URL` | Public API base URL injected into frontend static shells (e.g. `https://api.example.com`). |
 | `SKIP_AUTO_DB_UP` | Set to `1` with **`make dev`** / **`make dev-once`** to skip the automatic `make db-up` preflight |
 | `SKIP_MAIL_BACKENDS` | Set to `1` with **`make dev`** / **`make dev-once`** to skip injecting default `SCYLLA_*` / `BLOB_S3_*` (use when Docker mail backends are stopped; mail routes return 503 unless you export those vars yourself) |
 

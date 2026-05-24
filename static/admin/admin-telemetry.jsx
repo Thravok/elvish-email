@@ -17,7 +17,7 @@ function SecTelemetry() {
   });
 
   useE_t(() => {
-    fetch("/api/auth/me", { credentials: "include" })
+    fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" })
       .then((r) => r.json())
       .then((j) => setMe(j.user || null))
       .catch(() => setMe(null));
@@ -26,7 +26,7 @@ function SecTelemetry() {
   const load = () => {
     setErr("");
     setMsg("");
-    fetch("/api/admin/telemetry", { credentials: "include" })
+    fetch(elvishApiUrl("/api/admin/telemetry"), { credentials: "include" })
       .then((r) => {
         if (r.status === 401 || r.status === 403) throw new Error("admin login required");
         if (!r.ok) throw new Error(String(r.status));
@@ -54,7 +54,7 @@ function SecTelemetry() {
     setSaving(true);
     setErr("");
     setMsg("");
-    fetch("/api/admin/telemetry", {
+    fetch(elvishApiUrl("/api/admin/telemetry"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -82,7 +82,7 @@ function SecTelemetry() {
     setErr("");
     setMsg("");
     try {
-      const r = await fetch("/api/admin/telemetry/export", {
+      const r = await fetch(elvishApiUrl("/api/admin/telemetry/export"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

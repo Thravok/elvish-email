@@ -337,7 +337,7 @@
   }
 
   async function loadMeta(token) {
-    const resp = await fetch(`/api/v1/protected-links/${encodeURIComponent(token)}/meta`, { credentials: "omit" });
+    const resp = await fetch(elvishApiUrl(`/api/v1/protected-links/${encodeURIComponent(token)}/meta`), { credentials: "omit" });
     if (resp.status === 404) {
       throw new Error("link not found");
     }
@@ -368,7 +368,7 @@
   }
 
   async function unlockAndDecrypt(token, password) {
-    const resp = await fetch(`/api/v1/protected-links/${encodeURIComponent(token)}/open`, {
+    const resp = await fetch(elvishApiUrl(`/api/v1/protected-links/${encodeURIComponent(token)}/open`), {
       method: "POST", credentials: "omit",
       headers: { "content-type": "application/json" },
       body: "{}",

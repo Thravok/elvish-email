@@ -54,7 +54,7 @@ function RegisterPage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/auth/signup-config")
+    fetch(elvishApiUrl("/api/auth/signup-config"))
       .then((r) => r.json().catch(() => ({})))
       .then((j) => {
         setMailDomain(typeof j.mail_domain === "string" ? j.mail_domain : "");
@@ -180,7 +180,7 @@ function RegisterPage() {
       const identityWrappedB64 = window.ElvishKeygen.bytesToB64(
         new TextEncoder().encode(keys.identity.wrapped_secret_armored)
       );
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch(elvishApiUrl("/api/auth/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

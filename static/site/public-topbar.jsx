@@ -18,7 +18,7 @@ function renderDefaultTopbarAuth({ me, loggedIn, label, logoutNext, loginHref, r
     return (
       <>
         <span className="nav-session dim" title={me.email || ""}>{label}</span>
-        {me.is_admin && <a href="/admin/" className="navlink">PANEL</a>}
+        {me.is_admin && <a href="/mail?view=admin" className="navlink">PANEL</a>}
         {showMailLink && <a href="/mail" className="navlink">MAIL</a>}
         <form className="nav-inline-form" action="/auth/logout" method="post">
           <input type="hidden" name="next" value={logoutNext} />
@@ -51,7 +51,7 @@ function ElvishPublicTopbar({
   const [time, setTime] = useState(() => new Date());
 
   const loadMe = () => {
-    fetch("/api/auth/me", { credentials: "include" })
+    fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" })
       .then((r) => r.json().catch(() => ({})))
       .then((j) => {
         if (j && j.user) setFetchedMe(j.user);
@@ -61,7 +61,7 @@ function ElvishPublicTopbar({
   };
 
   useEffect(() => {
-    fetch("/api/site/topbar.json")
+    fetch(elvishApiUrl("/api/site/topbar.json"))
       .then((r) => r.ok ? r.json() : null)
       .then((j) => {
         if (j) {

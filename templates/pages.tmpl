@@ -19,7 +19,7 @@
     {{- if .NavAuth.LoggedIn}}
     <span class="nav-session dim" title="{{.NavAuth.Email}}">{{if .NavAuth.Name}}{{.NavAuth.Name}}{{else}}{{.NavAuth.Email}}{{end}}</span>
     {{- if .NavAuth.IsAdmin}}
-    <a href="/admin/" class="navlink">PANEL</a>
+    <a href="/mail?view=admin" class="navlink">PANEL</a>
     {{- end}}
     <a href="/mail" class="btn primary">▸ OPEN MAIL</a>
     <form class="nav-inline-form" action="/auth/logout" method="post">

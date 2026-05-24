@@ -219,7 +219,7 @@ function SecPerformance() {
   const [exporting, setExporting] = useS_p(false);
 
   useE_p(() => {
-    fetch("/api/auth/me", { credentials: "include" })
+    fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" })
       .then((r) => r.json())
       .then((j) => setMe(j.user || null))
       .catch(() => setMe(null));
@@ -229,7 +229,7 @@ function SecPerformance() {
     setLoading(true);
     setErr("");
     setMsg("");
-    fetch(`/api/admin/performance?days=${encodeURIComponent(days)}`, { credentials: "include" })
+    fetch(elvishApiUrl(`/api/admin/performance?days=${encodeURIComponent(days)}`), { credentials: "include" })
       .then((r) => {
         if (r.status === 401 || r.status === 403) throw new Error("admin login required");
         if (!r.ok) throw new Error(String(r.status));
@@ -250,7 +250,7 @@ function SecPerformance() {
     setErr("");
     setMsg("");
     try {
-      const r = await fetch("/api/admin/performance/export", {
+      const r = await fetch(elvishApiUrl("/api/admin/performance/export"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

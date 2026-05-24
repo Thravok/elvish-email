@@ -15,7 +15,7 @@ function SecAuthCaptcha() {
   });
 
   useE_c(() => {
-    fetch("/api/auth/me", { credentials: "include" })
+    fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" })
       .then((r) => r.json())
       .then((j) => setMe(j.user || null))
       .catch(() => setMe(null));
@@ -24,7 +24,7 @@ function SecAuthCaptcha() {
   const load = () => {
     setErr("");
     setMsg("");
-    fetch("/api/admin/auth-captcha", { credentials: "include" })
+    fetch(elvishApiUrl("/api/admin/auth-captcha"), { credentials: "include" })
       .then((r) => {
         if (r.status === 401 || r.status === 403) throw new Error("admin login required");
         if (!r.ok) throw new Error(String(r.status));
@@ -50,7 +50,7 @@ function SecAuthCaptcha() {
     setSaving(true);
     setErr("");
     setMsg("");
-    fetch("/api/admin/auth-captcha", {
+    fetch(elvishApiUrl("/api/admin/auth-captcha"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

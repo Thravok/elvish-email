@@ -58,6 +58,8 @@ type Server struct {
 	sessions          *session.Store
 	eng               *render.Engine
 	cookieSecure      bool
+	cookieDomain      string
+	webOrigins        []string
 	telemetry         *telemetry.Service
 	toolCalls         *toolcalls.Store
 	uptimeSnap        *uptime.RedisStore
@@ -225,6 +227,8 @@ func New(opts Options, bundle *db.Bundle) (*Server, error) {
 		sessions:          sess,
 		eng:               eng,
 		cookieSecure:      opts.CookieSecure,
+		cookieDomain:      loadCookieDomain(),
+		webOrigins:        loadWebOrigins(),
 		telemetry:         telemetry.New(st),
 		toolCalls:         tc,
 		uptimeSnap:        up,
@@ -268,7 +272,9 @@ func (s *Server) writeBytes(w http.ResponseWriter, context string, p []byte) {
 
 // Handler returns the root http.Handler.
 func (s *Server) Handler() http.Handler {
-	return SecureHeaders(GzipHandler(http.HandlerFunc(s.serveHTTP)))
+	var h http.Handler = http.HandlerFunc(s.serveHTTP)
+	h = CORSMiddleware(s.webOrigins, h)
+	return SecureHeaders(GzipHandler(h))
 }
 
 // ServeHTTP implements the elvish site router.

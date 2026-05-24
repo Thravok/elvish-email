@@ -58,11 +58,7 @@ func (s *Server) requireAdminUIAccess(w http.ResponseWriter, r *http.Request, st
 }
 
 var operatorDistBasenames = map[string]struct{}{
-	"admin-bundle.js":               {},
-	"admin-blog-bundle.js":          {},
-	"admin-modals-bundle.js":        {},
-	"admin-tools-preview-bundle.js": {},
-	"mail-admin-embed.js":           {},
+	"mail-admin-embed.js": {},
 }
 
 // isOperatorDistAsset reports whether rel (URL path with forward slashes, no leading slash)

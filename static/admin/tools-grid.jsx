@@ -104,7 +104,7 @@ function ToolsGrid({ query }) {
 
   const refreshCounts = useCallback_tg(async () => {
     try {
-      const res = await fetch("/api/tools/calls", { cache: "no-store" });
+      const res = await fetch(elvishApiUrl("/api/tools/calls"), { cache: "no-store" });
       if (!res.ok) return;
       const data = await res.json();
       if (!data) return;

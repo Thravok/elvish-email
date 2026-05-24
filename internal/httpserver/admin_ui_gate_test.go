@@ -12,14 +12,14 @@ func TestIsOperatorDistAsset(t *testing.T) {
 		rel  string
 		want bool
 	}{
-		{"dist/admin-bundle.js", true},
 		{"dist/mail-admin-embed.js", true},
+		{"dist/admin-bundle.js", false},
 		{"dist/mail-settings-lazy.js", false},
-		{"dist/admin-blog-bundle.js", true},
+		{"dist/admin-blog-bundle.js", false},
 		{"dist/mail-bundle.js", false},
 		{"dist/auth-login-bundle.js", false},
 		{"admin/foo.js", false},
-		{"dist/../dist/admin-bundle.js", false},
+		{"dist/../dist/mail-admin-embed.js", false},
 	}
 	for _, tc := range tests {
 		if got := isOperatorDistAsset(tc.rel); got != tc.want {
@@ -107,8 +107,21 @@ func TestAdminRedirectsToMail(t *testing.T) {
 		t.Fatalf("expected redirect, got status = %d body=%q", rec.Code, rec.Body.String())
 	}
 	loc := rec.Header().Get("Location")
-	if loc != "/mail" {
-		t.Fatalf("expected redirect to /mail, got Location=%q", loc)
+	if loc != "/mail?view=admin" {
+		t.Fatalf("expected redirect to /mail?view=admin, got Location=%q", loc)
+	}
+}
+
+func TestAdminCSSServed(t *testing.T) {
+	t.Parallel()
+	srv, err := New(Options{Root: testRepoRoot(t), CookieSecure: false}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin/admin.css", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /admin/admin.css: status = %d", rec.Code)
 	}
 }
 
@@ -119,7 +132,7 @@ func TestOperatorDistPublicWhenSessionsDisabled(t *testing.T) {
 		t.Fatal(err)
 	}
 	rec := httptest.NewRecorder()
-	srv.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/dist/admin-bundle.js", nil))
+	srv.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/dist/mail-admin-embed.js", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d", rec.Code)
 	}

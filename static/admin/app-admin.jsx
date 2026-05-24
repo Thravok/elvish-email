@@ -65,7 +65,7 @@ function mergeServerBootstrap(prev, payload) {
 
 /** Keys sent to PUT /api/admin/site/home (must match server merge). */
 function buildHomeAdminPayload(state) {
-  const keys = ["site", "tweak_defaults", "terminal", "tools", "log_page", "ticker_home", "support"];
+  const keys = ["site", "tweak_defaults", "nav", "footer", "hero", "terminal", "tools", "log_page", "ticker_home", "support"];
   const o = {};
   for (const k of keys) {
     if (state[k] !== undefined) o[k] = state[k];
@@ -146,11 +146,38 @@ const ADMIN_SECTION_DEFS = [
     key: "SecAuthCaptcha",
     icon: "captcha",
     searchKeywords: ["cap", "captcha", "trycap", "login", "register", "siteverify", "widget", "srp"]
+  },
+  {
+    id: "content",
+    num: "10",
+    label: "Content",
+    description: "Nav, hero, tools, blog, and OpenPGP signing for the public site.",
+    key: "SecContentHub",
+    icon: "site",
+    searchKeywords: ["nav", "footer", "hero", "blog", "tools", "ticker", "terminal", "pgp", "signing"]
+  },
+  {
+    id: "uptime",
+    num: "11",
+    label: "Uptime",
+    description: "Configure probe intervals, endpoints, and run history for site monitoring.",
+    key: "SecUptime",
+    icon: "performance",
+    searchKeywords: ["uptime", "probe", "monitor", "health"]
   }
 ];
 
 const ADMIN_DIFF_KEYS = [
-  "site"
+  "site",
+  "nav",
+  "footer",
+  "hero",
+  "terminal",
+  "tools",
+  "log_page",
+  "ticker_home",
+  "support",
+  "tweak_defaults"
 ];
 
 function buildAdminDiff(savedJson, currentState) {
@@ -190,6 +217,8 @@ const ADMIN_COMMANDS = [
   { id: "goto.telemetry", name: "Goto · Telemetry", scope: "ADMIN", glyph: "▸" },
   { id: "goto.performance", name: "Goto · Performance", scope: "ADMIN", glyph: "▸" },
   { id: "goto.auth-captcha", name: "Goto · Cap / Login CAPTCHA", scope: "ADMIN", glyph: "▸", shortcut: "g c" },
+  { id: "goto.content", name: "Goto · Content", scope: "ADMIN", glyph: "▸" },
+  { id: "goto.uptime", name: "Goto · Uptime", scope: "ADMIN", glyph: "▸" },
   { id: "commit", name: "Save site bundle (MongoDB)", scope: "STATE", glyph: "▸", shortcut: "⌘S" },
   { id: "about", name: "About ELVISH", scope: "META", glyph: "▸" },
   { id: "auth.login", name: "Login (modal)", scope: "AUTH", glyph: "▸" },
@@ -231,7 +260,7 @@ function AdminApp({ embedded, onLeaveEmbedded } = {}) {
           <div className="adm-page" style={{ padding: 24 }}>
             <div className="ftk">// LOAD ERROR</div>
             <p style={{ marginTop: 8 }}>
-              Missing component <code>{s.key}</code> for section <code>{s.id}</code>. Check the console and script order in <code>admin/index.html</code>.
+              Missing component <code>{s.key}</code> for section <code>{s.id}</code>. Check the console and mail-admin-embed bundle load order.
             </p>
           </div>
         );
@@ -293,11 +322,7 @@ function AdminApp({ embedded, onLeaveEmbedded } = {}) {
     (async () => {
       try {
         devLog("admin bootstrap: GET /api/bootstrap.json");
-        let r = await fetch("/api/bootstrap.json", { cache: "no-store" });
-        if (!r.ok) {
-          devLog("admin bootstrap: falling back to /admin/bootstrap.json", r.status);
-          r = await fetch("/admin/bootstrap.json", { cache: "no-store" });
-        }
+        const r = await fetch(elvishApiUrl("/api/bootstrap.json"), { cache: "no-store" });
         if (!r.ok || cancelled) {
           devLog("admin bootstrap: no JSON (offline or 404)", r.status, "cancelled=", cancelled);
           return;
@@ -379,10 +404,6 @@ function AdminApp({ embedded, onLeaveEmbedded } = {}) {
     if (id === "commit") {
       if (dirty) setDialog("publish");
       else setNotify({ kind: "ok", title: "In sync", body: "No unsaved changes." });
-      return;
-    }
-    if (id === "palette.modals") {
-      window.location.href = "/admin/modals.html";
       return;
     }
     if (id === "about") {
@@ -571,7 +592,7 @@ function AdminApp({ embedded, onLeaveEmbedded } = {}) {
             onSaveMongo={
               persistHome
                 ? async () => {
-                    const r = await fetch("/api/admin/site/home", {
+                    const r = await fetch(elvishApiUrl("/api/admin/site/home"), {
                       method: "PUT",
                       credentials: "include",
                       headers: { "Content-Type": "application/json" },
@@ -637,30 +658,3 @@ function ElvishMailAdminPanel(props) {
   );
 }
 window.ElvishMailAdminPanel = ElvishMailAdminPanel;
-
-(function mountAdminStandalone() {
-  if (document.documentElement.getAttribute("data-admin-standalone") !== "1") {
-    return;
-  }
-  const el = document.getElementById("root");
-  if (!el) {
-    console.error("[elvish admin] #root missing — cannot mount");
-    return;
-  }
-  try {
-    const root = ReactDOM.createRoot(el);
-    root.render(
-      <AdminErrorBoundary>
-        <AdminApp />
-      </AdminErrorBoundary>
-    );
-    devLog("admin React root attached");
-  } catch (err) {
-    console.error("[elvish admin] createRoot failed", err);
-    el.textContent = "";
-    const pre = document.createElement("pre");
-    pre.style.cssText = "padding:16px;font:12px monospace;color:#b00;white-space:pre-wrap";
-    pre.textContent = "Admin failed to start.\n\n" + String((err && err.stack) || err);
-    el.appendChild(pre);
-  }
-})();

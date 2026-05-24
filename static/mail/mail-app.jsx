@@ -1878,9 +1878,19 @@ function mailListSelectionAfterRemoving(prev, removedSet) {
   return { ids, anchorId, focusId };
 }
 
+function initialMailView() {
+  try {
+    const v = new URLSearchParams(window.location.search).get("view");
+    if (v === "admin" || v === "settings" || v === "mail") return v;
+  } catch (_) {
+    /* ignore */
+  }
+  return "mail";
+}
+
 function MailApp() {
   const [me, setMe] = useState(null); // {email,...} | false (anon) | null (loading)
-  const [view, setView] = useState("mail"); // 'mail' | 'settings' | 'admin'
+  const [view, setView] = useState(initialMailView); // 'mail' | 'settings' | 'admin'
   const [adminEmbedStatus, setAdminEmbedStatus] = useState("idle"); // idle|loading|ready|error
   const [adminEmbedFailReason, setAdminEmbedFailReason] = useState(null); // null|'forbidden'|'unknown'
   const adminEmbedScriptRef = useRef(false);
@@ -1971,7 +1981,7 @@ function MailApp() {
   // Load /api/auth/me to determine login state.
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/auth/me", { credentials: "include" })
+    fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" })
       .then((r) => r.ok ? r.json() : null)
       .then((j) => {
         if (cancelled) return;
@@ -3132,7 +3142,7 @@ function MailApp() {
               <p className="mail-msg-body" style={{ marginBottom: 12 }}>Could not load the operator panel.</p>
               {adminEmbedFailReason === "forbidden" ? (
                 <p className="mail-msg-body" style={{ marginBottom: 12 }}>
-                  The server returned HTTP 403 for operator JavaScript. When asset gating is enabled, use an admin session in this browser (for example open <a href="/admin/">/admin/</a> once so cookies are set), then return here.
+                  The server returned HTTP 403 for operator JavaScript. Sign in with an operator account on this origin, then reload this page.
                 </p>
               ) : null}
               <p className="mail-msg-body" style={{ marginBottom: 0 }}>

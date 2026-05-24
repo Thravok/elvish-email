@@ -14468,7 +14468,7 @@
       return /* @__PURE__ */ import_react.default.createElement("span", { className: "dim", style: { fontSize: 10 } }, "\u2026");
     }
     if (loggedIn) {
-      return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null, /* @__PURE__ */ import_react.default.createElement("span", { className: "nav-session dim", title: me.email || "" }, label), me.is_admin && /* @__PURE__ */ import_react.default.createElement("a", { href: "/admin/", className: "navlink" }, "PANEL"), showMailLink && /* @__PURE__ */ import_react.default.createElement("a", { href: "/mail", className: "navlink" }, "MAIL"), /* @__PURE__ */ import_react.default.createElement("form", { className: "nav-inline-form", action: "/auth/logout", method: "post" }, /* @__PURE__ */ import_react.default.createElement("input", { type: "hidden", name: "next", value: logoutNext }), /* @__PURE__ */ import_react.default.createElement("button", { type: "submit", className: "navlink" }, "LOGOUT")));
+      return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null, /* @__PURE__ */ import_react.default.createElement("span", { className: "nav-session dim", title: me.email || "" }, label), me.is_admin && /* @__PURE__ */ import_react.default.createElement("a", { href: "/mail?view=admin", className: "navlink" }, "PANEL"), showMailLink && /* @__PURE__ */ import_react.default.createElement("a", { href: "/mail", className: "navlink" }, "MAIL"), /* @__PURE__ */ import_react.default.createElement("form", { className: "nav-inline-form", action: "/auth/logout", method: "post" }, /* @__PURE__ */ import_react.default.createElement("input", { type: "hidden", name: "next", value: logoutNext }), /* @__PURE__ */ import_react.default.createElement("button", { type: "submit", className: "navlink" }, "LOGOUT")));
     }
     return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null, /* @__PURE__ */ import_react.default.createElement("a", { href: loginHref, className: "navlink" }, "LOGIN"), /* @__PURE__ */ import_react.default.createElement("a", { href: registerHref, className: "navlink" }, "REGISTER"));
   }
@@ -14487,13 +14487,13 @@
     const [fetchedMe, setFetchedMe] = useState(null);
     const [time, setTime] = useState(() => /* @__PURE__ */ new Date());
     const loadMe = () => {
-      fetch("/api/auth/me", { credentials: "include" }).then((r) => r.json().catch(() => ({}))).then((j) => {
+      fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" }).then((r) => r.json().catch(() => ({}))).then((j) => {
         if (j && j.user) setFetchedMe(j.user);
         else setFetchedMe(false);
       }).catch(() => setFetchedMe(false));
     };
     useEffect2(() => {
-      fetch("/api/site/topbar.json").then((r) => r.ok ? r.json() : null).then((j) => {
+      fetch(elvishApiUrl("/api/site/topbar.json")).then((r) => r.ok ? r.json() : null).then((j) => {
         if (j) {
           setNav(j.nav || []);
         }
@@ -14591,7 +14591,7 @@
       }
     }, []);
     useEffect3(() => {
-      fetch("/api/auth/signup-config").then((r) => r.json().catch(() => ({}))).then((j) => {
+      fetch(elvishApiUrl("/api/auth/signup-config")).then((r) => r.json().catch(() => ({}))).then((j) => {
         setMailDomain(typeof j.mail_domain === "string" ? j.mail_domain : "");
         const c = j.cap;
         if (c && c.enabled === true && typeof c.widget_api_endpoint === "string" && c.widget_api_endpoint.trim()) {
@@ -14699,7 +14699,7 @@
         const identityWrappedB64 = window.ElvishKeygen.bytesToB64(
           new TextEncoder().encode(keys.identity.wrapped_secret_armored)
         );
-        const res = await fetch("/api/auth/register", {
+        const res = await fetch(elvishApiUrl("/api/auth/register"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +20,11 @@ const srpPasswordSentinel = "$srp$"
 // DisabledPasswordHash returns the sentinel hash used to disable user logins.
 func DisabledPasswordHash() string {
 	return disabledPasswordSentinel
+}
+
+// SRPPasswordHash is the password_hash placeholder for SRP-authenticated accounts.
+func SRPPasswordHash() string {
+	return srpPasswordSentinel
 }
 
 // IsDisabledPasswordHash reports whether passwordHash is the disabled-user sentinel.
@@ -257,8 +263,45 @@ func (s *Store) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	return nil
 }
 
+// AdminUserListFilter narrows operator directory queries.
+type AdminUserListFilter struct {
+	Query  string // email or name substring (ILIKE)
+	Status string // "", "all", "active", "disabled"
+	Admin  *bool  // nil = any
+}
+
+// CountAdminUsers returns users with is_admin=true.
+func (s *Store) CountAdminUsers(ctx context.Context) (int64, error) {
+	if s == nil || s.pool == nil {
+		return 0, errors.New("store: nil")
+	}
+	var n int64
+	err := s.pool.QueryRow(ctx, `SELECT count(*) FROM users WHERE is_admin = true`).Scan(&n)
+	return n, err
+}
+
+// UpdateUserIsAdmin sets or clears operator privileges.
+func (s *Store) UpdateUserIsAdmin(ctx context.Context, userID uuid.UUID, isAdmin bool) error {
+	if s == nil || s.pool == nil {
+		return errors.New("store: nil")
+	}
+	tag, err := s.pool.Exec(ctx, `UPDATE users SET is_admin = $2 WHERE id = $1`, userID, isAdmin)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // ListUsers returns a paginated list of users, optionally filtered by email substring.
 func (s *Store) ListUsers(ctx context.Context, offset, limit int, query string) ([]models.User, int64, error) {
+	return s.ListUsersAdmin(ctx, offset, limit, AdminUserListFilter{Query: query, Status: "all"})
+}
+
+// ListUsersAdmin returns users for the operator directory with optional filters.
+func (s *Store) ListUsersAdmin(ctx context.Context, offset, limit int, f AdminUserListFilter) ([]models.User, int64, error) {
 	if s == nil || s.pool == nil {
 		return nil, 0, errors.New("store: nil")
 	}
@@ -269,28 +312,44 @@ func (s *Store) ListUsers(ctx context.Context, offset, limit int, query string) 
 		offset = 0
 	}
 
-	var total int64
-	var rows pgx.Rows
-	var err error
-
-	if query != "" {
-		pattern := "%" + query + "%"
-		err = s.pool.QueryRow(ctx, `SELECT count(*) FROM users WHERE email ILIKE $1`, pattern).Scan(&total)
-		if err != nil {
-			return nil, 0, err
-		}
-		rows, err = s.pool.Query(ctx,
-			`SELECT id, email, name, is_admin, created_at, ui_theme FROM users WHERE email ILIKE $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-			pattern, limit, offset)
-	} else {
-		err = s.pool.QueryRow(ctx, `SELECT count(*) FROM users`).Scan(&total)
-		if err != nil {
-			return nil, 0, err
-		}
-		rows, err = s.pool.Query(ctx,
-			`SELECT id, email, name, is_admin, created_at, ui_theme FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
-			limit, offset)
+	where := []string{"1=1"}
+	args := make([]any, 0, 4)
+	if q := strings.TrimSpace(f.Query); q != "" {
+		pattern := "%" + q + "%"
+		args = append(args, pattern)
+		where = append(where, "email ILIKE $"+strconv.Itoa(len(args))+" OR name ILIKE $"+strconv.Itoa(len(args)))
 	}
+	switch strings.ToLower(strings.TrimSpace(f.Status)) {
+	case "", "all":
+		// no filter
+	case "active":
+		args = append(args, disabledPasswordSentinel)
+		where = append(where, "password_hash <> $"+strconv.Itoa(len(args)))
+	case "disabled":
+		args = append(args, disabledPasswordSentinel)
+		where = append(where, "password_hash = $"+strconv.Itoa(len(args)))
+	default:
+		return nil, 0, errors.New("store: invalid status filter")
+	}
+	if f.Admin != nil {
+		args = append(args, *f.Admin)
+		where = append(where, "is_admin = $"+strconv.Itoa(len(args)))
+	}
+	whereSQL := strings.Join(where, " AND ")
+
+	var total int64
+	if err := s.pool.QueryRow(ctx, `SELECT count(*) FROM users WHERE `+whereSQL, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	listArgs := append(append([]any{}, args...), limit, offset)
+	limitArg := len(args) + 1
+	offsetArg := len(args) + 2
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, email, name, password_hash, auth_method, is_admin, created_at, ui_theme
+		 FROM users WHERE `+whereSQL+` ORDER BY created_at DESC LIMIT $`+strconv.Itoa(limitArg)+` OFFSET $`+strconv.Itoa(offsetArg),
+		listArgs...,
+	)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -299,7 +358,7 @@ func (s *Store) ListUsers(ctx context.Context, offset, limit int, query string) 
 	users := make([]models.User, 0)
 	for rows.Next() {
 		var u models.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.Name, &u.IsAdmin, &u.CreatedAt, &u.UITheme); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.Name, &u.PasswordHash, &u.AuthMethod, &u.IsAdmin, &u.CreatedAt, &u.UITheme); err != nil {
 			return nil, 0, err
 		}
 		users = append(users, u)

@@ -262,7 +262,7 @@
         const logged = document.documentElement.hasAttribute("data-user-ui-theme");
         if (logged) {
           window
-            .fetch("/api/auth/appearance", {
+            .fetch(elvishApiUrl("/api/auth/appearance"), {
               method: "PATCH",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -634,7 +634,7 @@
     window.setInterval(() => {
       const perfStartedAt = window.ElvishPerf && window.ElvishPerf.start ? window.ElvishPerf.start() : 0;
       window
-        .fetch("/api/uptime.json", { cache: "no-store" })
+        .fetch(elvishApiUrl("/api/uptime.json"), { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
         .then((j) => {
           if (j) renderPayload(j);

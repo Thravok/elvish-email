@@ -255,7 +255,7 @@ func (s *Server) apiAdminTestAuthPosture(w http.ResponseWriter, r *http.Request)
 	loginAudit, loginErr := s.auditHTMLShell("static/auth/login.html", []string{`/auth/srp.js`, `/auth/keygen.js`, `/auth/unlock.js`})
 	registerAudit, registerErr := s.auditHTMLShell("static/auth/register.html", []string{`/auth/srp.js`, `/auth/keygen.js`, `/auth/unlock.js`})
 	mailAudit, mailErr := s.auditHTMLShell("static/mail/index.html", []string{`/auth/srp.js`, `/auth/keygen.js`, `/auth/unlock.js`})
-	adminAudit, adminErr := s.auditHTMLShell("static/admin/index.html", []string{`/vendor/react-18.3.1.development.js`, `/vendor/react-dom-18.3.1.development.js`, `/vendor/babel-7.29.0.min.js`})
+	adminAudit, adminErr := s.auditHTMLShell("static/mail/index.html", nil)
 	unlockSource, unlockErr := s.readProjectText("static/auth/unlock.js")
 	storeStats := map[string]any{"configured": false}
 	if s.store != nil {
@@ -313,7 +313,7 @@ func (s *Server) apiAdminTestPrivacyPosture(w http.ResponseWriter, r *http.Reque
 	registerAudit, registerErr := s.auditHTMLShell("static/auth/register.html", nil)
 	mailAudit, mailErr := s.auditHTMLShell("static/mail/index.html", nil)
 	protectedAudit, protectedErr := s.auditHTMLShell("static/protected/index.html", nil)
-	adminAudit, adminErr := s.auditHTMLShell("static/admin/index.html", nil)
+	adminAudit, adminErr := s.auditHTMLShell("static/mail/index.html", nil)
 	unlockSource, unlockErr := s.readProjectText("static/auth/unlock.js")
 	pipeSource, pipeErr := s.readProjectText("internal/mailpipe/pipe.go")
 	resp := map[string]any{

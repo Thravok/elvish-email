@@ -10,6 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@300;400;500;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;family=Space+Grotesk:wght@400;700&amp;family=Anton&amp;display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/styles.css{{assetQ .Site}}"/>
 <link rel="stylesheet" href="/page.css{{assetQ .Site}}"/>
+<script src="/shared/api-config.js{{assetQ .Site}}"></script>
+<script src="/shared/api-fetch.js{{assetQ .Site}}" defer></script>
 <script src="/perf.js{{assetQ .Site}}" defer></script>
 <script src="/site.js{{assetQ .Site}}" defer></script>
 {{end}}
@@ -71,7 +73,7 @@
       {{- if .NavAuth.LoggedIn}}
       <span class="nav-session dim" title="{{.NavAuth.Email}}">{{if .NavAuth.Name}}{{.NavAuth.Name}}{{else}}{{.NavAuth.Email}}{{end}}</span>
       {{- if .NavAuth.IsAdmin}}
-      <a href="/admin/" class="navlink">PANEL</a>
+      <a href="/mail?view=admin" class="navlink">PANEL</a>
       {{- end}}
       <a href="/mail" class="navlink">MAIL</a>
       <form class="nav-inline-form" action="/auth/logout" method="post">

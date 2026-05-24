@@ -134,7 +134,7 @@
   }
 
   async function fetchIdentityRows() {
-    const r = await fetch("/api/v1/identities", { credentials: "include" });
+    const r = await fetch(elvishApiUrl("/api/v1/identities"), { credentials: "include" });
     if (!r.ok) throw new Error("identities fetch failed (" + r.status + ")");
     const j = await r.json();
     return Array.isArray(j.identities) ? j.identities : [];

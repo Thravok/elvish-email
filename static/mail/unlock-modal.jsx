@@ -84,7 +84,7 @@ import * as React from "react";
       let cancelled = false;
       (async () => {
         try {
-          const r = await fetch("/api/v1/account-key/me", { credentials: "include" });
+          const r = await fetch(elvishApiUrl("/api/v1/account-key/me"), { credentials: "include" });
           if (!r.ok) return;
           const j = await r.json();
           if (!cancelled) setNeedsBootstrap(!j.bootstrapped);
@@ -107,7 +107,7 @@ import * as React from "react";
         }
         setActiveStage("session");
         setStep("Checking your signed-in session…");
-        const meAuthRes = await fetch("/api/auth/me", { credentials: "include" });
+        const meAuthRes = await fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" });
         if (!meAuthRes.ok) throw new Error("not logged in (refresh and try again)");
         const meAuth = await meAuthRes.json();
         const userEmail = meAuth && meAuth.user && meAuth.user.email;
@@ -115,14 +115,14 @@ import * as React from "react";
 
         setActiveStage("secure");
         setStep(needsBootstrap ? "Generating account keys for this device…" : "Fetching your encrypted account key…");
-        const meRes = await fetch("/api/v1/account-key/me", { credentials: "include" });
+        const meRes = await fetch(elvishApiUrl("/api/v1/account-key/me"), { credentials: "include" });
         if (!meRes.ok) throw new Error("account key fetch failed (" + meRes.status + ")");
         let me = await meRes.json();
 
         if (!me.bootstrapped) {
           setStep("No keys yet — generating account + identity in your browser…");
           await bootstrapNew(userEmail, password);
-          const refetch = await fetch("/api/v1/account-key/me", { credentials: "include" });
+          const refetch = await fetch(elvishApiUrl("/api/v1/account-key/me"), { credentials: "include" });
           if (!refetch.ok) throw new Error("account key re-fetch failed (" + refetch.status + ")");
           me = await refetch.json();
           if (!me.bootstrapped) throw new Error("bootstrap upload did not persist");
@@ -133,7 +133,7 @@ import * as React from "react";
         await window.ElvishKeyVault.unlockAccount(me, password, { sessionEmail: userEmail });
 
         setStep("Checking your sender identities…");
-        let idRes = await fetch("/api/v1/identities", { credentials: "include" });
+        let idRes = await fetch(elvishApiUrl("/api/v1/identities"), { credentials: "include" });
         if (!idRes.ok) throw new Error("identities fetch failed (" + idRes.status + ")");
         let idJson = await idRes.json();
         let list = Array.isArray(idJson.identities) ? idJson.identities : [];
@@ -141,7 +141,7 @@ import * as React from "react";
         if (list.length === 0) {
           setStep("Creating a default sender identity for " + userEmail + "…");
           await mintIdentity(userEmail, me.armored_public);
-          idRes = await fetch("/api/v1/identities", { credentials: "include" });
+          idRes = await fetch(elvishApiUrl("/api/v1/identities"), { credentials: "include" });
           if (idRes.ok) {
             idJson = await idRes.json();
             list = Array.isArray(idJson.identities) ? idJson.identities : [];
@@ -165,7 +165,7 @@ import * as React from "react";
       const identityWrappedB64 = window.ElvishKeygen.bytesToB64(
         new TextEncoder().encode(keys.identity.wrapped_secret_armored)
       );
-      const r = await fetch("/api/v1/account-key/bootstrap", {
+      const r = await fetch(elvishApiUrl("/api/v1/account-key/bootstrap"), {
         method: "POST", credentials: "include",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -201,7 +201,7 @@ import * as React from "react";
       });
       const wrappedArmored = await window.ElvishKeygen.pgpWrapToAccount(idKp.privateKey, accountArmoredPublic);
       const wrappedB64 = window.ElvishKeygen.bytesToB64(new TextEncoder().encode(wrappedArmored));
-      const r = await fetch("/api/v1/identities", {
+      const r = await fetch(elvishApiUrl("/api/v1/identities"), {
         method: "POST", credentials: "include",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

@@ -19,7 +19,7 @@ function SecUptime() {
   const [clearing, setClearing] = useS_u(false);
 
   useE_u(() => {
-    fetch("/api/auth/me", { credentials: "include" })
+    fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" })
       .then((r) => r.json())
       .then((j) => setMe(j.user || null))
       .catch(() => setMe(null));
@@ -28,7 +28,7 @@ function SecUptime() {
   const load = () => {
     setErr("");
     setMsg("");
-    fetch("/api/admin/uptime", { credentials: "include" })
+    fetch(elvishApiUrl("/api/admin/uptime"), { credentials: "include" })
       .then((r) => {
         if (r.status === 401 || r.status === 403) throw new Error("admin login required");
         if (!r.ok) throw new Error(String(r.status));
@@ -57,7 +57,7 @@ function SecUptime() {
     setSaving(true);
     setErr("");
     setMsg("");
-    fetch("/api/admin/uptime", {
+    fetch(elvishApiUrl("/api/admin/uptime"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -286,7 +286,7 @@ function SecUptime() {
                     setClearing(true);
                     setErr("");
                     setMsg("");
-                    fetch("/api/admin/uptime/runs", { method: "DELETE", credentials: "include" })
+                    fetch(elvishApiUrl("/api/admin/uptime/runs"), { method: "DELETE", credentials: "include" })
                       .then(async (r) => {
                         const j = await r.json().catch(() => ({}));
                         if (!r.ok) throw new Error(j.error || String(r.status));

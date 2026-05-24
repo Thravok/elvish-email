@@ -150,15 +150,7 @@ func (s *Server) issueLoginSession(w http.ResponseWriter, ctx context.Context, u
 	if err != nil {
 		return err
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     sessionCookie,
-		Value:    tok,
-		Path:     "/",
-		MaxAge:   int((14 * 24 * time.Hour).Seconds()),
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   s.cookieSecure,
-	})
+	http.SetCookie(w, s.newSessionCookie(sessionCookie, tok, int((14*24*time.Hour).Seconds())))
 	return nil
 }
 

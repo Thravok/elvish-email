@@ -1,6 +1,6 @@
 # Elvish E2E (Playwright)
 
-Browser and API smoke tests for **`/admin/`** and admin JSON routes.
+Browser and API smoke tests for the **mail-embedded operator panel** (`/mail?view=admin`) and admin JSON routes.
 
 ## Prerequisites
 

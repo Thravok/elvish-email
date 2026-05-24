@@ -14468,7 +14468,7 @@
       return /* @__PURE__ */ import_react.default.createElement("span", { className: "dim", style: { fontSize: 10 } }, "\u2026");
     }
     if (loggedIn) {
-      return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null, /* @__PURE__ */ import_react.default.createElement("span", { className: "nav-session dim", title: me.email || "" }, label), me.is_admin && /* @__PURE__ */ import_react.default.createElement("a", { href: "/admin/", className: "navlink" }, "PANEL"), showMailLink && /* @__PURE__ */ import_react.default.createElement("a", { href: "/mail", className: "navlink" }, "MAIL"), /* @__PURE__ */ import_react.default.createElement("form", { className: "nav-inline-form", action: "/auth/logout", method: "post" }, /* @__PURE__ */ import_react.default.createElement("input", { type: "hidden", name: "next", value: logoutNext }), /* @__PURE__ */ import_react.default.createElement("button", { type: "submit", className: "navlink" }, "LOGOUT")));
+      return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null, /* @__PURE__ */ import_react.default.createElement("span", { className: "nav-session dim", title: me.email || "" }, label), me.is_admin && /* @__PURE__ */ import_react.default.createElement("a", { href: "/mail?view=admin", className: "navlink" }, "PANEL"), showMailLink && /* @__PURE__ */ import_react.default.createElement("a", { href: "/mail", className: "navlink" }, "MAIL"), /* @__PURE__ */ import_react.default.createElement("form", { className: "nav-inline-form", action: "/auth/logout", method: "post" }, /* @__PURE__ */ import_react.default.createElement("input", { type: "hidden", name: "next", value: logoutNext }), /* @__PURE__ */ import_react.default.createElement("button", { type: "submit", className: "navlink" }, "LOGOUT")));
     }
     return /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null, /* @__PURE__ */ import_react.default.createElement("a", { href: loginHref, className: "navlink" }, "LOGIN"), /* @__PURE__ */ import_react.default.createElement("a", { href: registerHref, className: "navlink" }, "REGISTER"));
   }
@@ -14487,13 +14487,13 @@
     const [fetchedMe, setFetchedMe] = useState(null);
     const [time, setTime] = useState(() => /* @__PURE__ */ new Date());
     const loadMe = () => {
-      fetch("/api/auth/me", { credentials: "include" }).then((r) => r.json().catch(() => ({}))).then((j) => {
+      fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" }).then((r) => r.json().catch(() => ({}))).then((j) => {
         if (j && j.user) setFetchedMe(j.user);
         else setFetchedMe(false);
       }).catch(() => setFetchedMe(false));
     };
     useEffect2(() => {
-      fetch("/api/site/topbar.json").then((r) => r.ok ? r.json() : null).then((j) => {
+      fetch(elvishApiUrl("/api/site/topbar.json")).then((r) => r.ok ? r.json() : null).then((j) => {
         if (j) {
           setNav(j.nav || []);
         }
@@ -14589,7 +14589,7 @@
       }
     }, []);
     useEffect3(() => {
-      fetch("/api/auth/signup-config").then((r) => r.json().catch(() => ({}))).then((j) => {
+      fetch(elvishApiUrl("/api/auth/signup-config")).then((r) => r.json().catch(() => ({}))).then((j) => {
         setMailDomain(typeof j.mail_domain === "string" ? j.mail_domain : "");
         const c = j.cap;
         if (c && c.enabled === true && typeof c.widget_api_endpoint === "string" && c.widget_api_endpoint.trim()) {
@@ -14611,7 +14611,7 @@
         if (typeof window.ElvishKeyVault !== "undefined" && typeof window.ElvishKeygen !== "undefined") {
           const perfStartedAt = window.ElvishPerf && window.ElvishPerf.start ? window.ElvishPerf.start() : 0;
           setMsg("Unlocking encryption keys\u2026");
-          const meRes = await fetch("/api/v1/account-key/me", { credentials: "include" });
+          const meRes = await fetch(elvishApiUrl("/api/v1/account-key/me"), { credentials: "include" });
           if (meRes.ok) {
             const me = await meRes.json();
             if (me.bootstrapped) {
@@ -14640,7 +14640,7 @@
       if (capWidgetURL) {
         body.cap_token = capToken.trim();
       }
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(elvishApiUrl("/api/auth/login"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -14671,8 +14671,8 @@
           if (!window.ElvishSRP) throw new Error("SRP subsystem not loaded");
           const beginExtra = capWidgetURL ? { cap_token: capToken.trim() } : void 0;
           result = await window.ElvishSRP.exchange(
-            "/api/auth/login/begin",
-            "/api/auth/login/finish",
+            elvishApiUrl("/api/auth/login/begin"),
+            elvishApiUrl("/api/auth/login/finish"),
             u,
             password,
             void 0,
@@ -14710,7 +14710,7 @@
       setMsg(mfaMethod === "recovery" ? "Checking recovery code\u2026" : "Checking authenticator code\u2026");
       try {
         const endpoint = mfaMethod === "recovery" ? "/api/auth/2fa/login/recovery" : "/api/auth/2fa/login/totp";
-        const res = await fetch(endpoint, {
+        const res = await fetch(elvishApiUrl(endpoint), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -14732,7 +14732,7 @@
       setPhase("mfa_loading");
       setMsg("Waiting for your security key\u2026");
       try {
-        const beginRes = await fetch("/api/auth/2fa/login/webauthn/begin", {
+        const beginRes = await fetch(elvishApiUrl("/api/auth/2fa/login/webauthn/begin"), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -14741,7 +14741,7 @@
         const begin = await beginRes.json().catch(() => ({}));
         if (!beginRes.ok) throw new Error(begin.error || "Security key challenge failed");
         const credential = await window.ElvishWebAuthn.getAssertion(begin.options);
-        const finishRes = await fetch("/api/auth/2fa/login/webauthn/finish", {
+        const finishRes = await fetch(elvishApiUrl("/api/auth/2fa/login/webauthn/finish"), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

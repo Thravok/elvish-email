@@ -203,6 +203,15 @@ func main() {
 	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	components := parseDeploymentComponents()
+	logger.Info("deployment components",
+		"ELVISH_COMPONENT", strings.TrimSpace(os.Getenv("ELVISH_COMPONENT")),
+		"http", components.HTTP,
+		"smtp", components.SMTP,
+		"mail_worker", components.MailWorker,
+		"background_jobs", components.BackgroundJobs,
+	)
+
 	mailDomain := strings.TrimSpace(os.Getenv("ELVISH_MAIL_DOMAIN"))
 	hostName := strings.TrimSpace(os.Getenv("ELVISH_HOSTNAME"))
 	if hostName == "" {
@@ -302,9 +311,7 @@ func main() {
 	}
 
 	if mm != nil && scy != nil && blb != nil {
-		var (
-			signer *dkim.Signer
-		)
+		var signer *dkim.Signer
 		smtpTLSConfig := smtpServerTLSConfig(logger)
 		outboundSMTPClientTLS := smtpClientTLSConfig()
 		dkimSelector, dkimDomain, dkimKeyPath, _ := dkimSettingsForRoot(*root, mailDomain)
@@ -336,21 +343,25 @@ func main() {
 		if err := os.MkdirAll(dkimDomainsDir, 0o700); err != nil {
 			logger.Warn("dkim domains dir mkdir", "err", err, "path", dkimDomainsDir)
 		}
-		w := mailworker.New(mailworker.Config{
-			Hostname: hostName, DKIMSelector: dkimSelector, DKIMSigner: signer, DKIMDomain: dkimDomain,
-			DKIMDomainsDir: dkimDomainsDir,
-			RelayKey:       relay, ClientTLSConfig: outboundSMTPClientTLS,
-			Logger: logger, Interval: 3 * time.Second, BatchSize: 10, Telemetry: srv.Telemetry(),
-		}, mm, scy, blb)
-		srv.WithMailWorker(w)
-		w.Start(rootCtx)
-		logger.Info("mail outbox worker started")
-		if links != nil {
-			startProtectedLinkSweeper(rootCtx, logger, links, blb, srv.Telemetry())
-			logger.Info("protected-link sweeper started")
+		if components.MailWorker {
+			w := mailworker.New(mailworker.Config{
+				Hostname: hostName, DKIMSelector: dkimSelector, DKIMSigner: signer, DKIMDomain: dkimDomain,
+				DKIMDomainsDir: dkimDomainsDir,
+				RelayKey:       relay, ClientTLSConfig: outboundSMTPClientTLS,
+				Logger: logger, Interval: 3 * time.Second, BatchSize: 10, Telemetry: srv.Telemetry(),
+			}, mm, scy, blb)
+			srv.WithMailWorker(w)
+			w.Start(rootCtx)
+			logger.Info("mail outbox worker started")
 		}
-		startMailRetentionSweeper(rootCtx, logger, mm, scy, blb, srv.Telemetry())
-		logger.Info("mail retention sweeper started")
+		if components.BackgroundJobs {
+			if links != nil {
+				startProtectedLinkSweeper(rootCtx, logger, links, blb, srv.Telemetry())
+				logger.Info("protected-link sweeper started")
+			}
+			startMailRetentionSweeper(rootCtx, logger, mm, scy, blb, srv.Telemetry())
+			logger.Info("mail retention sweeper started")
+		}
 
 		pipe := mailpipe.New(blb, scy, mm, logger)
 		pipe.Telemetry = srv.Telemetry()
@@ -362,39 +373,41 @@ func main() {
 		if bundle != nil && bundle.Valkey() != nil {
 			smtpRL = ratelimit.New(bundle.Valkey(), "")
 		}
-		if sa := strings.TrimSpace(os.Getenv("ELVISH_SMTP_ADDR")); sa != "" && mailDomain != "" {
-			be := newSMTPBackend(pipe, logger, false, stForAuth, mm, srv.Telemetry(), smtpRL)
-			s, serr := smtpserver.New(smtpserver.Config{
-				Addr: sa, Hostname: hostName, Mode: smtpserver.ModeMX, Logger: logger, TLSConfig: smtpTLSConfig,
-			}, be)
-			if serr != nil {
-				logger.Error("smtp inbound new", "err", serr)
-			} else {
-				go func() {
-					if err := s.ListenAndServe(rootCtx); err != nil {
-						logger.Error("smtp inbound exited", "err", err)
-					}
-				}()
-				logger.Info("smtp inbound listening", "addr", sa, "domain", mailDomain)
+		if components.SMTP {
+			if sa := strings.TrimSpace(os.Getenv("ELVISH_SMTP_ADDR")); sa != "" && mailDomain != "" {
+				be := newSMTPBackend(pipe, logger, false, stForAuth, mm, srv.Telemetry(), smtpRL)
+				s, serr := smtpserver.New(smtpserver.Config{
+					Addr: sa, Hostname: hostName, Mode: smtpserver.ModeMX, Logger: logger, TLSConfig: smtpTLSConfig,
+				}, be)
+				if serr != nil {
+					logger.Error("smtp inbound new", "err", serr)
+				} else {
+					go func() {
+						if err := s.ListenAndServe(rootCtx); err != nil {
+							logger.Error("smtp inbound exited", "err", err)
+						}
+					}()
+					logger.Info("smtp inbound listening", "addr", sa, "domain", mailDomain)
+				}
+			} else if sa := strings.TrimSpace(os.Getenv("ELVISH_SMTP_ADDR")); sa != "" && mailDomain == "" {
+				logger.Warn("ELVISH_SMTP_ADDR set but ELVISH_MAIL_DOMAIN empty; inbound SMTP disabled")
 			}
-		} else if sa := strings.TrimSpace(os.Getenv("ELVISH_SMTP_ADDR")); sa != "" && mailDomain == "" {
-			logger.Warn("ELVISH_SMTP_ADDR set but ELVISH_MAIL_DOMAIN empty; inbound SMTP disabled")
-		}
-		if ss := strings.TrimSpace(os.Getenv("ELVISH_SMTP_SUBMISSION_ADDR")); ss != "" {
-			be := newSMTPBackend(pipe, logger, true, stForAuth, mm, srv.Telemetry(), smtpRL)
-			s, serr := smtpserver.New(smtpserver.Config{
-				Addr: ss, Hostname: hostName, Mode: smtpserver.ModeSubmission, Logger: logger,
-				TLSConfig: smtpTLSConfig, AllowPlainAuth: envTruthyMain("ELVISH_SMTP_ALLOW_PLAIN_AUTH"),
-			}, be)
-			if serr != nil {
-				logger.Error("smtp submission new", "err", serr)
-			} else {
-				go func() {
-					if err := s.ListenAndServe(rootCtx); err != nil {
-						logger.Error("smtp submission exited", "err", err)
-					}
-				}()
-				logger.Info("smtp submission listening", "addr", ss)
+			if ss := strings.TrimSpace(os.Getenv("ELVISH_SMTP_SUBMISSION_ADDR")); ss != "" {
+				be := newSMTPBackend(pipe, logger, true, stForAuth, mm, srv.Telemetry(), smtpRL)
+				s, serr := smtpserver.New(smtpserver.Config{
+					Addr: ss, Hostname: hostName, Mode: smtpserver.ModeSubmission, Logger: logger,
+					TLSConfig: smtpTLSConfig, AllowPlainAuth: envTruthyMain("ELVISH_SMTP_ALLOW_PLAIN_AUTH"),
+				}, be)
+				if serr != nil {
+					logger.Error("smtp submission new", "err", serr)
+				} else {
+					go func() {
+						if err := s.ListenAndServe(rootCtx); err != nil {
+							logger.Error("smtp submission exited", "err", err)
+						}
+					}()
+					logger.Info("smtp submission listening", "addr", ss)
+				}
 			}
 		}
 	} else if strictDB {
@@ -402,22 +415,31 @@ func main() {
 	}
 
 	var backgroundWg sync.WaitGroup
-	if !uptimeDisabled() {
-		if base := uptimeProbeBase(*addr); base != "" {
-			backgroundWg.Add(1)
-			go func() {
-				defer backgroundWg.Done()
-				srv.RunUptimeLoop(rootCtx, base)
-			}()
-			logger.Info("uptime background", "base", base)
+	if components.BackgroundJobs {
+		if !uptimeDisabled() {
+			if base := uptimeProbeBase(*addr); base != "" {
+				backgroundWg.Add(1)
+				go func() {
+					defer backgroundWg.Done()
+					srv.RunUptimeLoop(rootCtx, base)
+				}()
+				logger.Info("uptime background", "base", base)
+			}
 		}
+		backgroundWg.Add(1)
+		go func() {
+			defer backgroundWg.Done()
+			srv.RunAccountDeletionLoop(rootCtx)
+		}()
+		logger.Info("account deletion sweeper started")
 	}
-	backgroundWg.Add(1)
-	go func() {
-		defer backgroundWg.Done()
-		srv.RunAccountDeletionLoop(rootCtx)
-	}()
-	logger.Info("account deletion sweeper started")
+
+	if !components.HTTP {
+		logger.Info("HTTP listener disabled (ELVISH_COMPONENT / ELVISH_HTTP_ENABLED)")
+		<-rootCtx.Done()
+		backgroundWg.Wait()
+		return
+	}
 
 	h := srv.Handler()
 	logger.Info("elvishserver listening", "url", "http://127.0.0.1"+*addr+"/", "root", *root)

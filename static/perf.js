@@ -73,13 +73,14 @@
     const body = JSON.stringify({ events });
     if (useBeacon && navigator && typeof navigator.sendBeacon === "function") {
       try {
-        const ok = navigator.sendBeacon("/api/telemetry/browser", new Blob([body], { type: "application/json" }));
+        const beaconURL = typeof elvishApiUrl === "function" ? elvishApiUrl("/api/telemetry/browser") : "/api/telemetry/browser";
+        const ok = navigator.sendBeacon(beaconURL, new Blob([body], { type: "application/json" }));
         if (ok) return;
       } catch (_) {
         // fall back to fetch below
       }
     }
-    fetch("/api/telemetry/browser", {
+    fetch(elvishApiUrl("/api/telemetry/browser"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,

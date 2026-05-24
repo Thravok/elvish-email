@@ -173,13 +173,13 @@ export async function lookupKey(email) {
 }
 
 export async function listIdentities() {
-  const resp = await fetch('/api/v1/identities', { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl('/api/v1/identities'), { credentials: 'include' });
   if (!resp.ok) throw new Error(`identities list ${resp.status}`);
   return resp.json();
 }
 
 export async function setDefaultIdentity(fingerprint) {
-  const resp = await fetch(`/api/v1/identities/${encodeURIComponent(fingerprint)}/default`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/identities/${encodeURIComponent(fingerprint)}/default`), {
     method: 'POST', credentials: 'include',
   });
   if (!resp.ok) throw new Error(`identity default ${resp.status}`);
@@ -187,7 +187,7 @@ export async function setDefaultIdentity(fingerprint) {
 }
 
 export async function deleteIdentity(fingerprint) {
-  const resp = await fetch(`/api/v1/identities/${encodeURIComponent(fingerprint)}`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/identities/${encodeURIComponent(fingerprint)}`), {
     method: 'DELETE', credentials: 'include',
   });
   if (!resp.ok) throw new Error(`identity delete ${resp.status}`);
@@ -195,7 +195,7 @@ export async function deleteIdentity(fingerprint) {
 }
 
 export async function updateIdentityProfile(fingerprint, payload) {
-  const resp = await fetch(`/api/v1/identities/${encodeURIComponent(fingerprint)}`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/identities/${encodeURIComponent(fingerprint)}`), {
     method: 'PATCH',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -283,7 +283,7 @@ export async function createProtectedLink(body) {
 
 // Address book — per-user saved / trusted OpenPGP public keys (not the global resolver cache).
 export async function getContactKey(email) {
-  const resp = await fetch(`/api/v1/keys/contacts/${encodeURIComponent(email)}`, { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl(`/api/v1/keys/contacts/${encodeURIComponent(email)}`), { credentials: 'include' });
   if (resp.status === 404) return null;
   if (!resp.ok) throw new Error(`contacts get ${resp.status}`);
   return resp.json();
@@ -294,7 +294,7 @@ export async function putContactKey({ email, armoredPublic, source, trusted }) {
   const body = { email, armored_public: armoredPublic, source: source || 'manual' };
   if (trusted === false) body.trusted = false;
   if (trusted === true) body.trusted = true;
-  const resp = await fetch('/api/v1/keys/contacts', {
+  const resp = await fetch(elvishApiUrl('/api/v1/keys/contacts'), {
     method: 'POST', credentials: 'include',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
@@ -308,7 +308,7 @@ export async function putContactKey({ email, armoredPublic, source, trusted }) {
 
 export async function deleteContactKey(email, fingerprint) {
   const q = fingerprint ? `?fingerprint=${encodeURIComponent(fingerprint)}` : '';
-  const resp = await fetch(`/api/v1/keys/contacts/${encodeURIComponent(email)}${q}`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/keys/contacts/${encodeURIComponent(email)}${q}`), {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -321,16 +321,16 @@ export async function deleteContactKey(email, fingerprint) {
 
 export async function listContactKeys(opts) {
   const q = opts && opts.trustedOnly ? '?trusted=1' : '';
-  const resp = await fetch(`/api/v1/keys/contacts${q}`, { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl(`/api/v1/keys/contacts${q}`), { credentials: 'include' });
   if (!resp.ok) throw new Error(`contacts list ${resp.status}`);
   return resp.json();
 }
 
 export async function changePassword(currentPassword, newPassword) {
-  const meRes = await fetch('/api/v1/account-key/me', { credentials: 'include' });
+  const meRes = await fetch(elvishApiUrl('/api/v1/account-key/me'), { credentials: 'include' });
   if (!meRes.ok) throw new Error(`account key ${meRes.status}`);
   const me = await meRes.json();
-  const authRes = await fetch('/api/auth/me', { credentials: 'include' });
+  const authRes = await fetch(elvishApiUrl('/api/auth/me'), { credentials: 'include' });
   if (!authRes.ok) throw new Error(`auth me ${authRes.status}`);
   const auth = await authRes.json();
   const username = auth && auth.user && auth.user.username;
@@ -341,7 +341,7 @@ export async function changePassword(currentPassword, newPassword) {
   if (!window.ElvishSRP) throw new Error('SRP not loaded');
   const ak = await window.ElvishKeygen.rewrapAccountForNewPassword(me, currentPassword, newPassword);
   const srp = await window.ElvishSRP.createRegistration(username, newPassword);
-  return await window.ElvishSRP.exchange('/api/auth/password/begin', '/api/auth/password/finish', username, currentPassword, {
+  return await window.ElvishSRP.exchange(elvishApiUrl('/api/auth/password/begin'), elvishApiUrl('/api/auth/password/finish'), username, currentPassword, {
     new_srp_salt_b64: srp.srp_salt_b64,
     new_srp_verifier_b64: srp.srp_verifier_b64,
     new_srp_group: srp.srp_group,
@@ -356,13 +356,13 @@ export async function changePassword(currentPassword, newPassword) {
 }
 
 async function runAccountDeleteAction(password, confirmation, finishPath) {
-  const authRes = await fetch('/api/auth/me', { credentials: 'include' });
+  const authRes = await fetch(elvishApiUrl('/api/auth/me'), { credentials: 'include' });
   if (!authRes.ok) throw new Error(`auth me ${authRes.status}`);
   const auth = await authRes.json();
   const username = auth && auth.user && auth.user.username;
   if (!username) throw new Error('missing auth username');
   if (!window.ElvishSRP) throw new Error('SRP not loaded');
-  return await window.ElvishSRP.exchange('/api/auth/account-delete/begin', finishPath, username, password, {
+  return await window.ElvishSRP.exchange(elvishApiUrl('/api/auth/account-delete/begin'), elvishApiUrl(finishPath), username, password, {
     confirmation,
   });
 }
@@ -376,7 +376,7 @@ export async function scheduleAccountDeletion(password, confirmation) {
 }
 
 export async function cancelAccountDeletion() {
-  const resp = await fetch('/api/auth/account-delete/cancel', {
+  const resp = await fetch(elvishApiUrl('/api/auth/account-delete/cancel'), {
     method: 'POST',
     credentials: 'include',
   });
@@ -386,14 +386,14 @@ export async function cancelAccountDeletion() {
 }
 
 export async function getDeletePolicy() {
-  const resp = await fetch('/api/v1/account/delete-policy', { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl('/api/v1/account/delete-policy'), { credentials: 'include' });
   const body = await resp.json().catch(() => ({}));
   if (!resp.ok) throw new Error(body.error || `delete policy ${resp.status}`);
   return body;
 }
 
 export async function setDeletePolicy(payload) {
-  const resp = await fetch('/api/v1/account/delete-policy', {
+  const resp = await fetch(elvishApiUrl('/api/v1/account/delete-policy'), {
     method: 'PUT',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -405,13 +405,13 @@ export async function setDeletePolicy(payload) {
 }
 
 export async function getBillingStatus() {
-  const resp = await fetch('/api/v1/billing/status', { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl('/api/v1/billing/status'), { credentials: 'include' });
   if (!resp.ok) throw new Error(`billing ${resp.status}`);
   return resp.json();
 }
 
 export async function createIdentity(payload) {
-  const resp = await fetch('/api/v1/identities', {
+  const resp = await fetch(elvishApiUrl('/api/v1/identities'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -499,7 +499,7 @@ export async function createGeneratedIdentity({
   if (!window.openpgp || !window.ElvishKeygen) {
     throw new Error('OpenPGP / keygen not loaded - refresh the page');
   }
-  const meRes = await fetch('/api/v1/account-key/me', { credentials: 'include' });
+  const meRes = await fetch(elvishApiUrl('/api/v1/account-key/me'), { credentials: 'include' });
   if (!meRes.ok) throw new Error(`Could not load account key (${meRes.status})`);
   const me = await meRes.json();
   if (!me.bootstrapped) {
@@ -542,13 +542,13 @@ export async function createGeneratedIdentity({
 }
 
 export async function listMailboxFolders() {
-  const resp = await fetch('/api/v1/mailbox/folders', { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl('/api/v1/mailbox/folders'), { credentials: 'include' });
   if (!resp.ok) throw new Error(`folders ${resp.status}`);
   return resp.json();
 }
 
 export async function createMailboxFolder(name) {
-  const resp = await fetch('/api/v1/mailbox/folders', {
+  const resp = await fetch(elvishApiUrl('/api/v1/mailbox/folders'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -562,7 +562,7 @@ export async function createMailboxFolder(name) {
 }
 
 export async function deleteMailboxFolder(name) {
-  const resp = await fetch(`/api/v1/mailbox/folders/${encodeURIComponent(name)}`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/mailbox/folders/${encodeURIComponent(name)}`), {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -574,13 +574,13 @@ export async function deleteMailboxFolder(name) {
 }
 
 export async function listFilters() {
-  const resp = await fetch('/api/v1/filters', { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl('/api/v1/filters'), { credentials: 'include' });
   if (!resp.ok) throw new Error(`filters ${resp.status}`);
   return resp.json();
 }
 
 export async function createFilter(body) {
-  const resp = await fetch('/api/v1/filters', {
+  const resp = await fetch(elvishApiUrl('/api/v1/filters'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -594,7 +594,7 @@ export async function createFilter(body) {
 }
 
 export async function updateFilter(id, body) {
-  const resp = await fetch(`/api/v1/filters/${encodeURIComponent(id)}`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/filters/${encodeURIComponent(id)}`), {
     method: 'PUT',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -608,7 +608,7 @@ export async function updateFilter(id, body) {
 }
 
 export async function deleteFilter(id) {
-  const resp = await fetch(`/api/v1/filters/${encodeURIComponent(id)}`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/filters/${encodeURIComponent(id)}`), {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -620,20 +620,20 @@ export async function deleteFilter(id) {
 }
 
 export async function listCustomDomains() {
-  const resp = await fetch('/api/v1/custom-domains', { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl('/api/v1/custom-domains'), { credentials: 'include' });
   if (!resp.ok) throw new Error(`domains ${resp.status}`);
   return resp.json();
 }
 
 /** Domains the current user may use for new identities (host + owned + operator-shared). */
 export async function listUsableDomains() {
-  const resp = await fetch('/api/v1/mail/usable-domains', { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl('/api/v1/mail/usable-domains'), { credentials: 'include' });
   if (!resp.ok) throw new Error(`usable-domains ${resp.status}`);
   return resp.json();
 }
 
 export async function addCustomDomain(domain) {
-  const resp = await fetch('/api/v1/custom-domains', {
+  const resp = await fetch(elvishApiUrl('/api/v1/custom-domains'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -647,7 +647,7 @@ export async function addCustomDomain(domain) {
 }
 
 export async function deleteCustomDomain(domain) {
-  const resp = await fetch(`/api/v1/custom-domains/${encodeURIComponent(domain)}`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/custom-domains/${encodeURIComponent(domain)}`), {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -659,7 +659,7 @@ export async function deleteCustomDomain(domain) {
 }
 
 export async function verifyCustomDomain(domain) {
-  const resp = await fetch(`/api/v1/custom-domains/${encodeURIComponent(domain)}/verify`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/custom-domains/${encodeURIComponent(domain)}/verify`), {
     method: 'POST',
     credentials: 'include',
   });
@@ -674,7 +674,7 @@ export async function setDomainCatchall(domain, identityFingerprint) {
   const body = identityFingerprint == null || identityFingerprint === ''
     ? { identity_fingerprint: null }
     : { identity_fingerprint: identityFingerprint };
-  const resp = await fetch(`/api/v1/custom-domains/${encodeURIComponent(domain)}/catchall`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/custom-domains/${encodeURIComponent(domain)}/catchall`), {
     method: 'PUT',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -688,13 +688,13 @@ export async function setDomainCatchall(domain, identityFingerprint) {
 }
 
 export async function listSMTPCredentials() {
-  const resp = await fetch('/api/v1/smtp-submission', { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl('/api/v1/smtp-submission'), { credentials: 'include' });
   if (!resp.ok) throw new Error(`smtp list ${resp.status}`);
   return resp.json();
 }
 
 export async function createSMTPCredential(body) {
-  const resp = await fetch('/api/v1/smtp-submission', {
+  const resp = await fetch(elvishApiUrl('/api/v1/smtp-submission'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -708,7 +708,7 @@ export async function createSMTPCredential(body) {
 }
 
 export async function regenerateSMTPCredential(id) {
-  const resp = await fetch(`/api/v1/smtp-submission/${encodeURIComponent(id)}/regenerate`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/smtp-submission/${encodeURIComponent(id)}/regenerate`), {
     method: 'POST',
     credentials: 'include',
   });
@@ -720,7 +720,7 @@ export async function regenerateSMTPCredential(id) {
 }
 
 export async function deleteSMTPCredential(id) {
-  const resp = await fetch(`/api/v1/smtp-submission/${encodeURIComponent(id)}`, {
+  const resp = await fetch(elvishApiUrl(`/api/v1/smtp-submission/${encodeURIComponent(id)}`), {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -732,7 +732,7 @@ export async function deleteSMTPCredential(id) {
 }
 
 export async function getTwoFactorStatus() {
-  const resp = await fetch('/api/auth/2fa', { credentials: 'include' });
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa'), { credentials: 'include' });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.error || `2fa status ${resp.status}`);
@@ -741,7 +741,7 @@ export async function getTwoFactorStatus() {
 }
 
 export async function beginTOTPSetup(label) {
-  const resp = await fetch('/api/auth/2fa/totp/begin', {
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa/totp/begin'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -753,7 +753,7 @@ export async function beginTOTPSetup(label) {
 }
 
 export async function confirmTOTPSetup(setupId, code) {
-  const resp = await fetch('/api/auth/2fa/totp/confirm', {
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa/totp/confirm'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -765,7 +765,7 @@ export async function confirmTOTPSetup(setupId, code) {
 }
 
 export async function verifyTwoFactorTOTP(code) {
-  const resp = await fetch('/api/auth/2fa/verify/totp', {
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa/verify/totp'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -777,7 +777,7 @@ export async function verifyTwoFactorTOTP(code) {
 }
 
 export async function verifyTwoFactorRecovery(code) {
-  const resp = await fetch('/api/auth/2fa/verify/recovery', {
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa/verify/recovery'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -789,7 +789,7 @@ export async function verifyTwoFactorRecovery(code) {
 }
 
 export async function regenerateRecoveryCodes() {
-  const resp = await fetch('/api/auth/2fa/recovery/regenerate', {
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa/recovery/regenerate'), {
     method: 'POST',
     credentials: 'include',
   });
@@ -799,7 +799,7 @@ export async function regenerateRecoveryCodes() {
 }
 
 export async function beginWebAuthnRegistration() {
-  const resp = await fetch('/api/auth/2fa/webauthn/register/begin', {
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa/webauthn/register/begin'), {
     method: 'POST',
     credentials: 'include',
   });
@@ -809,7 +809,7 @@ export async function beginWebAuthnRegistration() {
 }
 
 export async function finishWebAuthnRegistration(challengeId, credential, label) {
-  const resp = await fetch('/api/auth/2fa/webauthn/register/finish', {
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa/webauthn/register/finish'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -821,7 +821,7 @@ export async function finishWebAuthnRegistration(challengeId, credential, label)
 }
 
 export async function beginWebAuthnVerification() {
-  const resp = await fetch('/api/auth/2fa/verify/webauthn/begin', {
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa/verify/webauthn/begin'), {
     method: 'POST',
     credentials: 'include',
   });
@@ -831,7 +831,7 @@ export async function beginWebAuthnVerification() {
 }
 
 export async function finishWebAuthnVerification(challengeId, credential) {
-  const resp = await fetch('/api/auth/2fa/verify/webauthn/finish', {
+  const resp = await fetch(elvishApiUrl('/api/auth/2fa/verify/webauthn/finish'), {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
@@ -843,7 +843,7 @@ export async function finishWebAuthnVerification(challengeId, credential) {
 }
 
 export async function deleteTOTPFactor(id) {
-  const resp = await fetch(`/api/auth/2fa/totp/${encodeURIComponent(id)}`, {
+  const resp = await fetch(elvishApiUrl(`/api/auth/2fa/totp/${encodeURIComponent(id)}`), {
     method: 'DELETE',
     credentials: 'include',
   });
@@ -853,7 +853,7 @@ export async function deleteTOTPFactor(id) {
 }
 
 export async function deleteWebAuthnCredential(id) {
-  const resp = await fetch(`/api/auth/2fa/webauthn/${encodeURIComponent(id)}`, {
+  const resp = await fetch(elvishApiUrl(`/api/auth/2fa/webauthn/${encodeURIComponent(id)}`), {
     method: 'DELETE',
     credentials: 'include',
   });

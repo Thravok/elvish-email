@@ -48,10 +48,6 @@ async function main() {
     { entry: "mail-entry.jsx", out: "mail-bundle.js" },
     { entry: "auth-login-entry.jsx", out: "auth-login-bundle.js" },
     { entry: "auth-register-entry.jsx", out: "auth-register-bundle.js" },
-    { entry: "admin-entry.jsx", out: "admin-bundle.js" },
-    { entry: "admin-modals-entry.jsx", out: "admin-modals-bundle.js" },
-    { entry: "admin-blog-entry.jsx", out: "admin-blog-bundle.js" },
-    { entry: "admin-tools-preview-entry.jsx", out: "admin-tools-preview-bundle.js" },
   ];
 
   for (const b of bundles) {

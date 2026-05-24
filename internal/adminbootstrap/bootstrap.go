@@ -1,4 +1,4 @@
-// Package adminbootstrap emits JSON for the static /admin React panel (bootstrap.json).
+// Package adminbootstrap emits JSON for the mail-embedded operator panel (GET /api/bootstrap.json).
 package adminbootstrap
 
 import (

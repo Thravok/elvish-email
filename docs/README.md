@@ -16,6 +16,7 @@ Design notes, architecture, and feature specs for the **ELVish** server and clie
 | Document | Description |
 |----------|-------------|
 | [architecture.md](architecture.md) | High-level system diagram and data planes |
+| [deploy-coolify.md](deploy-coolify.md) | Coolify Docker Compose deployment (domains, magic vars, SMTP) |
 | [e2ee-mail-spec.md](e2ee-mail-spec.md) | End-to-end encrypted mail product and protocol notes |
 | [backend-settings-api.md](backend-settings-api.md) | Mail settings / account API implementation checklist |
 | [runbooks/support-mailbox.md](runbooks/support-mailbox.md) | Support inbox provisioning, admin contact emails, `security.txt`, and triage notes |

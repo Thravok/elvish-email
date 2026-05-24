@@ -951,15 +951,26 @@ func (s *Server) serveSecurityTxt(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// isAdminStaticAsset reports whether a path under /admin/ is a safe static file
+// (styles/scripts) required by the mail-embedded operator panel.
+func isAdminStaticAsset(rel string) bool {
+	if rel == "" || strings.Contains(rel, "..") {
+		return false
+	}
+	switch strings.ToLower(filepath.Ext(rel)) {
+	case ".css", ".js", ".json":
+		return true
+	default:
+		return false
+	}
+}
+
 func (s *Server) serveAdminOrStatic(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Admin panel is now embedded in the mail client.
-	// Redirect all /admin requests to /mail where the admin panel is accessible
-	// for users with operator privileges.
 	rel := strings.TrimPrefix(r.URL.Path, "/admin")
 	rel = strings.TrimPrefix(rel, "/")
 
@@ -973,6 +984,18 @@ func (s *Server) serveAdminOrStatic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Redirect to mail client where admin is now embedded
-	http.Redirect(w, r, "/mail", http.StatusFound)
+	if rel != "" && isAdminStaticAsset(rel) {
+		full := filepath.Join(s.staticRoot, "admin", filepath.FromSlash(rel))
+		fi, err := os.Stat(full)
+		if err != nil || fi.IsDir() {
+			http.NotFound(w, r)
+			return
+		}
+		setCacheStaticFromPath(w, r, "admin/"+rel)
+		http.ServeFile(w, r, full)
+		return
+	}
+
+	// Operator panel lives in the mail client (section hashes are client-only: /mail?view=admin#users).
+	http.Redirect(w, r, "/mail?view=admin", http.StatusFound)
 }

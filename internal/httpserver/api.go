@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
 	"elvish/internal/adminbootstrap"
@@ -69,6 +70,12 @@ func adminEmailConfigured(email string) bool {
 }
 
 func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet && r.URL.Path == "/api/healthz" {
+		w.Header().Set("Cache-Control", "no-store")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+		return
+	}
 	if r.Method == http.MethodGet {
 		switch r.URL.Path {
 		case "/api/openapi.yaml":
@@ -297,13 +304,17 @@ func userAuthJSON(u *models.User) map[string]any {
 	if u == nil {
 		return nil
 	}
-	return map[string]any{
+	out := map[string]any{
 		"email":    u.Email,
 		"username": UsernameFromCanonicalEmail(u.Email),
 		"name":     u.Name,
 		"is_admin": u.IsAdmin,
 		"ui_theme": normalizeUITheme(u.UITheme),
 	}
+	if u.ID != uuid.Nil {
+		out["id"] = u.ID.String()
+	}
+	return out
 }
 
 type regBody struct {
@@ -486,15 +497,7 @@ func (s *Server) issueSession(w http.ResponseWriter, ctx context.Context, u *mod
 	if err != nil {
 		return err
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     sessionCookie,
-		Value:    tok,
-		Path:     "/",
-		MaxAge:   int((14 * 24 * time.Hour).Seconds()),
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   s.cookieSecure,
-	})
+	http.SetCookie(w, s.newSessionCookie(sessionCookie, tok, int((14*24*time.Hour).Seconds())))
 	return nil
 }
 
@@ -517,15 +520,7 @@ func (s *Server) clearBrowserSession(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     sessionCookie,
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   s.cookieSecure,
-	})
+	http.SetCookie(w, s.newSessionCookie(sessionCookie, "", -1))
 }
 
 func (s *Server) apiMe(w http.ResponseWriter, r *http.Request) {

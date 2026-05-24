@@ -485,6 +485,18 @@
 .f-err { color: var(--accent); font-size: 10px; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
 .f-ok { color: var(--ok); font-size: 10px; margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
 
+.user-status-badge {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+}
+.user-status-active { border-color: var(--ok); color: var(--ok); }
+.user-status-disabled { border-color: var(--warn); color: var(--warn); }
+.user-status-scheduled-delete { border-color: var(--accent); color: var(--accent); }
+
 .inp-with-validate {
   position: relative;
 }

@@ -9,7 +9,7 @@ function Topbar({ active }) {
   } else if (active === "manifesto") {
     activeNavId = "manifesto";
   } else if (active === "admin") {
-    centerAfterNav = <a href="/admin/" className="navlink active" aria-current="page">PANEL</a>;
+    centerAfterNav = <a href="/mail?view=admin" className="navlink active" aria-current="page">PANEL</a>;
   } else if (active === "log") {
     centerAfterNav = <a href="/log/" className="navlink active" aria-current="page">LOG</a>;
   } else if (active === "modals") {
@@ -34,7 +34,7 @@ function Topbar({ active }) {
         return (
           <>
             <span className="nav-session dim" title={me.email || ""}>{label}</span>
-            {me.is_admin && active !== "admin" && <a href="/admin/" className="navlink">PANEL</a>}
+            {me.is_admin && active !== "admin" && <a href="/mail?view=admin" className="navlink">PANEL</a>}
             <form className="nav-inline-form" action="/auth/logout" method="post">
               <input type="hidden" name="next" value={window.location.pathname} />
               <button type="submit" className="navlink">LOGOUT</button>
@@ -62,7 +62,7 @@ function Footer() {
           <li><a href="/manifesto/">Security</a></li>
           <li><a href="/login">Log in</a></li>
           <li><a href="/register">Register</a></li>
-          <li><a href="/admin/">Panel</a></li>
+          <li><a href="/mail?view=admin">Panel</a></li>
           <li><a href="#">Source</a></li>
         </ul>
       </div>

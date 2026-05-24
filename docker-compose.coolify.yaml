@@ -1,32 +1,80 @@
-# Elvish — Coolify production deployment
-#
-# This compose file is designed for Coolify deployments. The api service is the
-# main entrypoint; Coolify will assign it a domain and generate SERVICE_URL_API_8765.
-#
-# ┌─────────────────────────────────────────────────────────────────────────────┐
-# │ REQUIRED VARIABLES (must set before deployment)                             │
-# │                                                                             │
-# │   ELVISH_MAIL_DOMAIN  - Primary mail domain (e.g., mail.example.com)        │
-# │                         Required for SMTP to function correctly.            │
-# └─────────────────────────────────────────────────────────────────────────────┘
-#
-# Optional overrides (Coolify UI):
-#   - ELVISH_MAIL_DOMAIN: Primary mail domain (e.g., mail.example.com)
-#   - ELVISH_HOSTNAME: SMTP hostname for HELO (defaults to ELVISH_MAIL_DOMAIN)
-#   - ELVISH_DKIM_SELECTOR, ELVISH_DKIM_DOMAIN: DKIM signing config
-#   - BLOB_S3_ACCESS_KEY, BLOB_S3_SECRET_KEY: Override default MinIO credentials
-#   - ELVISH_SMTP_TLS_CERT_PATH, ELVISH_SMTP_TLS_KEY_PATH: TLS for inbound/submission SMTP
-#
-# Coolify magic variables used:
-#   - SERVICE_URL_API_8765: Auto-generated public URL for the API service
-#   - SERVICE_PASSWORD_64_VALKEY: Auto-generated Valkey password
-#   - SERVICE_USER_MINIO / SERVICE_PASSWORD_64_MINIO: Auto-generated MinIO credentials
-#   - SERVICE_BASE64_MFA: Auto-generated MFA encryption key
+# Elvish — Coolify production (Docker Compose is the source of truth).
+# Operator guide: docs/deploy-coolify.md
+
+x-api-environment: &api_environment
+  - SERVICE_URL_API_8765
+  - SERVICE_FQDN_API
+  - SERVICE_URL_PUBLIC
+  - SERVICE_FQDN_PUBLIC
+  - SERVICE_PASSWORD_64_VALKEY
+  - SERVICE_USER_MINIO
+  - SERVICE_PASSWORD_64_MINIO
+  - SERVICE_BASE64_64
+  - COCKROACH_DSN=postgres://root@cockroach:26257/defaultdb?sslmode=disable
+  - VALKEY_ADDR=valkey:6379
+  - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
+  - VALKEY_DB=${VALKEY_DB:-0}
+  - SCYLLA_HOSTS=scylla:9042
+  - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
+  - SCYLLA_USERNAME=${SCYLLA_USERNAME:-}
+  - SCYLLA_PASSWORD=${SCYLLA_PASSWORD:-}
+  - BLOB_S3_ENDPOINT=http://minio:9000
+  - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
+  - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
+  - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
+  - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
+  - BLOB_S3_FORCE_PATH_STYLE=1
+  - ELVISH_COMPONENT=api
+  - ELVISH_BACKGROUND_JOBS=${ELVISH_BACKGROUND_JOBS:-0}
+  - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:?}
+  - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-${ELVISH_MAIL_DOMAIN}}
+  # API canonical URL (OIDC, WKD, mail links) — must be SERVICE_URL_* (includes scheme), not FQDN alone.
+  - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-$SERVICE_URL_API_8765}
+  - ELVISH_UPTIME_BASE_URL=${ELVISH_UPTIME_BASE_URL:-$SERVICE_URL_API_8765}
+  - ELVISH_WEB_ORIGINS=${ELVISH_WEB_ORIGINS:-$SERVICE_URL_PUBLIC}
+  - ELVISH_COOKIE_DOMAIN=${ELVISH_COOKIE_DOMAIN:?}
+  - ELVISH_SMTP_ADDR=
+  - ELVISH_SMTP_SUBMISSION_ADDR=
+  - COOKIE_SECURE=${COOKIE_SECURE:?1}
+  - ELVISH_TRUST_FORWARDED_FOR=1
+  - ELVISH_MFA_KEY_SEED=${SERVICE_BASE64_64}
+  - ELVISH_AUTO_GEN_MFA_KEY=${ELVISH_AUTO_GEN_MFA_KEY:-0}
+  - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64}}
+  - ELVISH_DKIM_SELECTOR=${ELVISH_DKIM_SELECTOR:-}
+  - ELVISH_DKIM_DOMAIN=${ELVISH_DKIM_DOMAIN:-}
+  - ELVISH_UPTIME_DISABLED=${ELVISH_UPTIME_DISABLED:-0}
+  - ELVISH_ALLOW_EMPTY_DB=0
+
+x-mta-environment: &mta_environment
+  - COCKROACH_DSN=postgres://root@cockroach:26257/defaultdb?sslmode=disable
+  - VALKEY_ADDR=valkey:6379
+  - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
+  - VALKEY_DB=${VALKEY_DB:-0}
+  - SCYLLA_HOSTS=scylla:9042
+  - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
+  - SCYLLA_USERNAME=${SCYLLA_USERNAME:-}
+  - SCYLLA_PASSWORD=${SCYLLA_PASSWORD:-}
+  - BLOB_S3_ENDPOINT=http://minio:9000
+  - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
+  - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
+  - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
+  - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
+  - BLOB_S3_FORCE_PATH_STYLE=1
+  - ELVISH_COMPONENT=mta
+  - ELVISH_HTTP_ENABLED=${ELVISH_HTTP_ENABLED:-0}
+  - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:?}
+  - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-${ELVISH_MAIL_DOMAIN}}
+  - ELVISH_SMTP_ADDR=${ELVISH_SMTP_ADDR:-:25}
+  - ELVISH_SMTP_SUBMISSION_ADDR=${ELVISH_SMTP_SUBMISSION_ADDR:-:587}
+  - ELVISH_SMTP_ALLOW_PLAIN_AUTH=${ELVISH_SMTP_ALLOW_PLAIN_AUTH:-0}
+  - ELVISH_SMTP_TLS_CERT_PATH=${ELVISH_SMTP_TLS_CERT_PATH:-}
+  - ELVISH_SMTP_TLS_KEY_PATH=${ELVISH_SMTP_TLS_KEY_PATH:-}
+  - ELVISH_DKIM_SELECTOR=${ELVISH_DKIM_SELECTOR:-}
+  - ELVISH_DKIM_DOMAIN=${ELVISH_DKIM_DOMAIN:-}
+  - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64}}
+  - ELVISH_ALLOW_EMPTY_DB=0
 
 services:
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Primary Application
-  # ─────────────────────────────────────────────────────────────────────────────
   api:
     build:
       context: .
@@ -44,103 +92,77 @@ services:
         condition: service_completed_successfully
       minio-init:
         condition: service_completed_successfully
-    environment:
-      # ─────────────────────────────────────────────────────────────────────────
-      # REQUIRED: Mail domain (deployment will fail if not set)
-      # ─────────────────────────────────────────────────────────────────────────
-      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:?}
-      - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-${ELVISH_MAIL_DOMAIN}}
-
-      # ─────────────────────────────────────────────────────────────────────────
-      # Magic URLs: Auto-generated by Coolify based on assigned domains
-      # ─────────────────────────────────────────────────────────────────────────
-      # SERVICE_FQDN_API generates the domain for this service
-      - SERVICE_FQDN_API
-      # Use the magic URL for public base URL (auto-set by Coolify domain assignment)
-      - ELVISH_PUBLIC_BASE_URL=$SERVICE_URL_API
-      - ELVISH_UPTIME_BASE_URL=${ELVISH_UPTIME_BASE_URL:-$SERVICE_URL_API}
-
-      # ─────────────────────────────────────────────────────────────────────────
-      # Database connections (internal Docker networking)
-      # ─────────────────────────────────────────────────────────────────────────
-      - COCKROACH_DSN=postgres://root@cockroach:26257/defaultdb?sslmode=disable
-      - VALKEY_ADDR=valkey:6379
-      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
-      - VALKEY_DB=${VALKEY_DB:-0}
-
-      # ─────────────────────────────────────────────────────────────────────────
-      # ScyllaDB (mail message store)
-      # ─────────────────────────────────────────────────────────────────────────
-      - SCYLLA_HOSTS=scylla:9042
-      - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:?elvish_mail}
-      - SCYLLA_USERNAME=${SCYLLA_USERNAME:-}
-      - SCYLLA_PASSWORD=${SCYLLA_PASSWORD:-}
-
-      # ─────────────────────────────────────────────────────────────────────────
-      # S3-compatible blob storage (MinIO) — Magic credentials
-      # ─────────────────────────────────────────────────────────────────────────
-      - BLOB_S3_ENDPOINT=http://minio:9000
-      - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
-      - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
-      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
-      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
-      - BLOB_S3_FORCE_PATH_STYLE=1
-
-      # ─────────────────────────────────────────────────────────────────────────
-      # Session & Security
-      # ─────────────────────────────────────────────────────────────────────────
-      # Coolify deploys HTTPS by default
-      - COOKIE_SECURE=${COOKIE_SECURE:?1}
-      # Trust X-Forwarded-For from Coolify's Traefik proxy
-      - ELVISH_TRUST_FORWARDED_FOR=1
-      # Magic seed: Use auto-generated base64 as MFA key seed (or auto-gen on first boot)
-      - ELVISH_MFA_KEY_SEED=${SERVICE_BASE64_64}
-      - ELVISH_AUTO_GEN_MFA_KEY=${ELVISH_AUTO_GEN_MFA_KEY:-0}
-
-      # Public URL — Coolify generates this automatically
-      - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-${SERVICE_URL_API_8765}}
-      - ELVISH_UPTIME_BASE_URL=${ELVISH_UPTIME_BASE_URL:-${SERVICE_URL_API_8765}}
-
-      # MFA encryption key — use a stable Coolify-generated secret by default
-      - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_MFA}}
-
-      # Mail domain configuration
-      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-}
-      - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-${ELVISH_MAIL_DOMAIN}}
-
-      # SMTP server addresses
-      - ELVISH_SMTP_ADDR=${ELVISH_SMTP_ADDR:-:25}
-      - ELVISH_SMTP_SUBMISSION_ADDR=${ELVISH_SMTP_SUBMISSION_ADDR:-:587}
-      - ELVISH_SMTP_ALLOW_PLAIN_AUTH=${ELVISH_SMTP_ALLOW_PLAIN_AUTH:-0}
-
-      # DKIM signing
-      - ELVISH_DKIM_SELECTOR=${ELVISH_DKIM_SELECTOR:-}
-      - ELVISH_DKIM_DOMAIN=${ELVISH_DKIM_DOMAIN:-}
-
-      # TLS for SMTP (mount certs via volume if needed)
-      - ELVISH_SMTP_TLS_CERT_PATH=${ELVISH_SMTP_TLS_CERT_PATH:-}
-      - ELVISH_SMTP_TLS_KEY_PATH=${ELVISH_SMTP_TLS_KEY_PATH:-}
-
-      # ─────────────────────────────────────────────────────────────────────────
-      # Telemetry / Operational
-      # ─────────────────────────────────────────────────────────────────────────
-      - ELVISH_UPTIME_DISABLED=${ELVISH_UPTIME_DISABLED:-0}
-      - ELVISH_ALLOW_EMPTY_DB=${ELVISH_ALLOW_EMPTY_DB:-0}
+    environment: *api_environment
     volumes:
-      # Persistent data directory for DKIM keys, relay key
       - elvish_data:/app/data
-    ports:
-      # SMTP inbound (MX) — receives mail from other servers
-      - "25:25"
-      # SMTP submission — authenticated client mail submission
-      - "587:587"
-      # SMTPS (implicit TLS submission) — optional, uncomment if needed
-      # - "465:465"
     restart: unless-stopped
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Databases
-  # ─────────────────────────────────────────────────────────────────────────────
+  # Browser-facing site (name `public` → Coolify magic SERVICE_FQDN_PUBLIC / SERVICE_URL_PUBLIC).
+  public:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile.prod
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      - SERVICE_URL_PUBLIC
+      - SERVICE_FQDN_PUBLIC
+      - SERVICE_URL_API_8765
+      - ELVISH_API_PUBLIC_URL=${ELVISH_API_PUBLIC_URL:-$SERVICE_URL_API_8765}
+    restart: unless-stopped
+
+  mail-mta:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      cockroach:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      scylla:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      scylla-init:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    environment: *mta_environment
+    volumes:
+      - elvish_data:/app/data
+    ports:
+      - "25:25"
+      - "587:587"
+    restart: unless-stopped
+
+  mail-mta-2:
+    profiles: [dual-mta]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      cockroach:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      scylla:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      scylla-init:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    environment: *mta_environment
+    volumes:
+      - elvish_data:/app/data
+    ports:
+      - "25:25"
+      - "587:587"
+    restart: unless-stopped
+
   cockroach:
     image: cockroachdb/cockroach:v24.2.4
     hostname: cockroach
@@ -151,8 +173,7 @@ services:
       - --cache=${COCKROACH_CACHE:-256MiB}
       - --max-sql-memory=${COCKROACH_MAX_SQL_MEMORY:-256MiB}
     environment:
-      # Magic URL: Coolify generates UI URL when domain is assigned with :8080
-      - SERVICE_URL_COCKROACH-UI_8080
+      - SERVICE_URL_COCKROACH_8080
     volumes:
       - elvish_crdb_data:/cockroach/cockroach-data
     healthcheck:
@@ -165,11 +186,27 @@ services:
 
   valkey:
     image: redis:7-alpine
-    command: ["redis-server", "--save", "60", "1", "--appendonly", "yes", "--requirepass", "${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}"]
+    command:
+      - redis-server
+      - --save
+      - "60"
+      - "1"
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
     volumes:
       - elvish_valkey_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}", "ping"]
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "--no-auth-warning",
+          "-a",
+          "${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}",
+          "ping",
+        ]
       interval: 10s
       timeout: 5s
       retries: 8
@@ -185,7 +222,6 @@ services:
       - --overprovisioned
       - "1"
       - --reactor-backend=epoll
-      # Single-node app deployments often run on constrained hosts.
       - --developer-mode
       - "1"
     volumes:
@@ -204,6 +240,7 @@ services:
 
   scylla-init:
     image: scylladb/scylla:5.4
+    exclude_from_hc: true
     depends_on:
       scylla:
         condition: service_healthy
@@ -223,8 +260,9 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
-      MINIO_ROOT_PASSWORD: ${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
+      - SERVICE_URL_MINIO_9001
+      - MINIO_ROOT_USER=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
+      - MINIO_ROOT_PASSWORD=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
     volumes:
       - elvish_minio_data:/data
     healthcheck:
@@ -241,13 +279,14 @@ services:
 
   minio-init:
     image: minio/mc:latest
+    exclude_from_hc: true
     depends_on:
       minio:
         condition: service_healthy
     environment:
-      BLOB_S3_ACCESS_KEY: ${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
-      BLOB_S3_SECRET_KEY: ${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
-      BLOB_S3_BUCKET: ${BLOB_S3_BUCKET:-elvish-mail}
+      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
+      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
+      - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
     entrypoint:
       - /bin/sh
       - -c
@@ -263,117 +302,7 @@ services:
 
 volumes:
   elvish_crdb_data:
-    driver: local
   elvish_valkey_data:
-    driver: local
   elvish_scylla_data:
-    driver: local
   elvish_minio_data:
-    driver: local
   elvish_data:
-    driver: local
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Coolify Configuration Notes
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# MAGIC VARIABLES USED IN THIS FILE:
-#
-#   SERVICE_FQDN_API              → FQDN for the API (e.g., app.example.com)
-#   SERVICE_URL_API               → Full URL for API (e.g., https://app.example.com)
-#   SERVICE_URL_COCKROACH-UI_8080 → CockroachDB web UI access
-#   SERVICE_URL_MINIO-CONSOLE_9001→ MinIO console web access
-#   SERVICE_USER_MINIO            → Auto-generated username (16 chars)
-#   SERVICE_PASSWORD_MINIO        → Auto-generated password (secure)
-#   SERVICE_PASSWORD_VALKEY       → Auto-generated Redis password
-#   SERVICE_BASE64_64             → Random 64-char base64 for MFA key seed
-#
-# REQUIRED VARIABLES (red border in UI if empty):
-#
-#   ELVISH_MAIL_DOMAIN            → Must set your mail domain before deploy
-#
-# REQUIRED WITH DEFAULTS (prefilled but editable):
-#
-#   BLOB_S3_BUCKET                → Default: elvish-mail
-#   SCYLLA_KEYSPACE               → Default: elvish_mail
-#   COOKIE_SECURE                 → Default: 1 (HTTPS)
-#
-# ─────────────────────────────────────────────────────────────────────────────
-# DEPLOYMENT STEPS:
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# 1. DOMAIN ASSIGNMENT:
-#    In Coolify UI, assign your domain to the `api` service. The app listens
-#    on container port 8765, so enter: https://your-domain.com:8765
-#
-#    For optional web UIs, assign domains with ports:
-#      - CockroachDB UI: https://db.your-domain.com:8080
-#      - MinIO Console:  https://minio.your-domain.com:9001
-#
-# 3. MAGIC VARIABLES:
-#    - SERVICE_URL_API_8765: Auto-set by Coolify to the API's public URL
-#    - SERVICE_PASSWORD_64_VALKEY: Auto-generated secure password for Valkey
-#    - SERVICE_USER_MINIO / SERVICE_PASSWORD_64_MINIO: Auto-generated MinIO credentials
-#    - SERVICE_BASE64_MFA: Auto-generated MFA encryption key
-#
-# 3. HEALTH CHECKS:
-#    The API uses a distroless image without shell utilities. Configure
-#    Coolify's built-in HTTP health check:
-#      Health Check Path: /api/uptime.json
-#      Health Check Port: 8765
-#      Health Check Interval: 30s
-#
-# 4. SMTP PORTS (enabled by default):
-#    - Port 25: Inbound MX (receives mail from other servers)
-#    - Port 587: Submission (authenticated client submission)
-#    - Port 465: SMTPS (implicit TLS) — uncomment in ports if needed
-#    To disable SMTP, set ELVISH_SMTP_ADDR and ELVISH_SMTP_SUBMISSION_ADDR to empty
-#
-# 5. TLS CERTIFICATES (for SMTP STARTTLS):
-#    Mount your certificates via Coolify's storage config:
-#      volumes:
-#        - type: bind
-#          source: /path/to/fullchain.pem
-#          target: /app/data/smtp-cert.pem
-#          read_only: true
-#        - type: bind
-#          source: /path/to/privkey.pem
-#          target: /app/data/smtp-key.pem
-#          read_only: true
-#    And set:
-#      ELVISH_SMTP_TLS_CERT_PATH=/app/data/smtp-cert.pem
-#      ELVISH_SMTP_TLS_KEY_PATH=/app/data/smtp-key.pem
-#
-# 6. DKIM SIGNING:
-#    Generate a DKIM key and configure:
-#      ELVISH_DKIM_SELECTOR=mail
-#      ELVISH_DKIM_DOMAIN=example.com
-#    Mount the private key to /app/data/dkim.pem
-#    Add DNS TXT record: mail._domainkey.example.com
-#
-# 7. RESOURCE LIMITS (recommended for production):
-#    Add deploy.resources to services as needed:
-#      deploy:
-#        resources:
-#          limits:
-#            cpus: '2'
-#            memory: 4G
-#          reservations:
-#            cpus: '0.5'
-#            memory: 512M
-#
-# 8. RESOURCE TUNING:
-#    Override resource allocation via environment variables:
-#      COCKROACH_CACHE=512MiB
-#      COCKROACH_MAX_SQL_MEMORY=512MiB
-#      SCYLLA_SMP=4
-#      SCYLLA_MEMORY=4G
-#
-# 9. BACKUPS:
-#    Named volumes store all persistent data:
-#      - elvish_crdb_data: PostgreSQL/CockroachDB
-#      - elvish_valkey_data: Redis sessions/cache
-#      - elvish_scylla_data: Mail message metadata
-#      - elvish_minio_data: Email body blobs
-#      - elvish_data: App keys (DKIM, relay)
-#    Use Coolify's backup feature or external volume snapshots.

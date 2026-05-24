@@ -744,7 +744,7 @@
     } else if (active === "manifesto") {
       activeNavId = "manifesto";
     } else if (active === "admin") {
-      centerAfterNav = /* @__PURE__ */ React.createElement("a", { href: "/admin/", className: "navlink active", "aria-current": "page" }, "PANEL");
+      centerAfterNav = /* @__PURE__ */ React.createElement("a", { href: "/mail?view=admin", className: "navlink active", "aria-current": "page" }, "PANEL");
     } else if (active === "log") {
       centerAfterNav = /* @__PURE__ */ React.createElement("a", { href: "/log/", className: "navlink active", "aria-current": "page" }, "LOG");
     } else if (active === "modals") {
@@ -761,13 +761,13 @@
           if (!loggedIn) {
             return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("a", { href: "/login", className: "navlink" }, "LOGIN"), /* @__PURE__ */ React.createElement("a", { href: "/register", className: "navlink" }, "REGISTER"));
           }
-          return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("span", { className: "nav-session dim", title: me.email || "" }, label), me.is_admin && active !== "admin" && /* @__PURE__ */ React.createElement("a", { href: "/admin/", className: "navlink" }, "PANEL"), /* @__PURE__ */ React.createElement("form", { className: "nav-inline-form", action: "/auth/logout", method: "post" }, /* @__PURE__ */ React.createElement("input", { type: "hidden", name: "next", value: window.location.pathname }), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "navlink" }, "LOGOUT")));
+          return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("span", { className: "nav-session dim", title: me.email || "" }, label), me.is_admin && active !== "admin" && /* @__PURE__ */ React.createElement("a", { href: "/mail?view=admin", className: "navlink" }, "PANEL"), /* @__PURE__ */ React.createElement("form", { className: "nav-inline-form", action: "/auth/logout", method: "post" }, /* @__PURE__ */ React.createElement("input", { type: "hidden", name: "next", value: window.location.pathname }), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "navlink" }, "LOGOUT")));
         }
       }
     );
   }
   function Footer() {
-    return /* @__PURE__ */ React.createElement("footer", { className: "footer" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// IDENT"), /* @__PURE__ */ React.createElement("div", { className: "brand", style: { fontSize: 18, marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dot" }), "ELVISH"), /* @__PURE__ */ React.createElement("div", { className: "dim" }, "An anonymous workshop.", /* @__PURE__ */ React.createElement("br", null), "Tools rendered free.", /* @__PURE__ */ React.createElement("br", null), "No login. No price. No pitch.")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// PAGES"), /* @__PURE__ */ React.createElement("ul", null, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/" }, "Home")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/mail" }, "Mail")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/manifesto/" }, "Security")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/login" }, "Log in")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/register" }, "Register")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/admin/" }, "Panel")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "#" }, "Source")))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// PROTOCOL"), /* @__PURE__ */ React.createElement("ul", { className: "dim" }, /* @__PURE__ */ React.createElement("li", null, "License \u2014 AGPL-3.0"), /* @__PURE__ */ React.createElement("li", null, "Hash \u2014 e2ee01f4"), /* @__PURE__ */ React.createElement("li", null, "Build \u2014 nightly \xB7 26.05.10"), /* @__PURE__ */ React.createElement("li", null, "Encryption \u2014 OpenPGP"))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// SIGN"), /* @__PURE__ */ React.createElement("div", { className: "ascii" }, `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+    return /* @__PURE__ */ React.createElement("footer", { className: "footer" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// IDENT"), /* @__PURE__ */ React.createElement("div", { className: "brand", style: { fontSize: 18, marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dot" }), "ELVISH"), /* @__PURE__ */ React.createElement("div", { className: "dim" }, "An anonymous workshop.", /* @__PURE__ */ React.createElement("br", null), "Tools rendered free.", /* @__PURE__ */ React.createElement("br", null), "No login. No price. No pitch.")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// PAGES"), /* @__PURE__ */ React.createElement("ul", null, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/" }, "Home")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/mail" }, "Mail")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/manifesto/" }, "Security")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/login" }, "Log in")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/register" }, "Register")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "/mail?view=admin" }, "Panel")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: "#" }, "Source")))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// PROTOCOL"), /* @__PURE__ */ React.createElement("ul", { className: "dim" }, /* @__PURE__ */ React.createElement("li", null, "License \u2014 AGPL-3.0"), /* @__PURE__ */ React.createElement("li", null, "Hash \u2014 e2ee01f4"), /* @__PURE__ */ React.createElement("li", null, "Build \u2014 nightly \xB7 26.05.10"), /* @__PURE__ */ React.createElement("li", null, "Encryption \u2014 OpenPGP"))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// SIGN"), /* @__PURE__ */ React.createElement("div", { className: "ascii" }, `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
 \u2502   \u2588\u2588\u2588\u2588  \u2588\u2588\u2588\u2588   \u2502
 \u2502   \u2588\u2588 \u2588  \u2588 \u2588\u2588   \u2502
 \u2502   \u2588\u2588\u2588\u2588  \u2588\u2588\u2588\u2588   \u2502
@@ -1013,7 +1013,7 @@
       setPhase("checking");
       setErrDetail("");
       try {
-        const res = await fetch("/api/auth/login", {
+        const res = await fetch(elvishApiUrl("/api/auth/login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -1063,7 +1063,7 @@
       setPhase("checking");
       setErrDetail("");
       try {
-        const res = await fetch("/api/auth/register", {
+        const res = await fetch(elvishApiUrl("/api/auth/register"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -1110,7 +1110,7 @@
       setPhase("checking");
       setErrDetail("");
       try {
-        const res = await fetch("/api/auth/login", {
+        const res = await fetch(elvishApiUrl("/api/auth/login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -1123,7 +1123,7 @@
           return;
         }
         if (j && j.mfa_required) {
-          window.location.href = "/login?next=" + encodeURIComponent("/admin/");
+          window.location.href = "/login?next=" + encodeURIComponent("/mail?view=admin");
           return;
         }
         setPhase("ok");
@@ -1239,7 +1239,7 @@
         return;
       }
       try {
-        const res = await fetch("/api/pgp/keys", {
+        const res = await fetch(elvishApiUrl("/api/pgp/keys"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -1466,7 +1466,7 @@
             { href: "/manifesto/", label: "Security" },
             { href: "/login", label: "Log in" },
             { href: "/register", label: "Register" },
-            { href: "/admin/", label: "Panel" },
+            { href: "/mail?view=admin", label: "Panel" },
             { href: "#", label: "Source" }
           ],
           protocol: [
@@ -1857,7 +1857,7 @@
       setProbeOut(null);
       setProbeBusy(true);
       try {
-        const r = await fetch("/api/admin/uptime/test-probe", {
+        const r = await fetch(elvishApiUrl("/api/admin/uptime/test-probe"), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -2098,8 +2098,46 @@
       }
     ));
   }
+  function buildPostMarkdown(post) {
+    const isoDate = String(post.date || "").replace(/\./g, "-");
+    const tagsYaml = post.tags && post.tags.length ? "[" + post.tags.map((t) => JSON.stringify(t)).join(", ") + "]" : "[]";
+    return `---
+title: ${JSON.stringify(post.title || "")}
+date: ${isoDate}
+time: ${post.time || "00:00"}
+slug: ${post.slug}
+type: ${post.type || "notes"}
+tags: ${tagsYaml}
+draft: ${post.draft ? "true" : "false"}
+---
+
+${post.body || ""}
+`;
+  }
+  async function publishPostToAPI(post) {
+    if (post.draft) {
+      throw new Error("Draft posts cannot be saved to the database. Mark the post public first.");
+    }
+    const body = {
+      slug: post.slug,
+      body_markdown: buildPostMarkdown({ ...post, draft: false })
+    };
+    if ((post.openpgp_sig || "").trim()) body.detached_openpgp_sig = post.openpgp_sig.trim();
+    if ((post.minisig || "").trim()) body.detached_minisig = post.minisig.trim();
+    const res = await fetch(elvishApiUrl("/api/posts"), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || "publish failed");
+    return j;
+  }
   function PostEditor({ post, metricsPreview, onChange, onClose, onDelete }) {
     const [tab, setTab] = useS_a3("write");
+    const [pubBusy, setPubBusy] = useS_a3(false);
+    const [pubMsg, setPubMsg] = useS_a3("");
     const setF = (k, v) => onChange({ ...post, [k]: v });
     const mp = metricsPreview || {};
     return /* @__PURE__ */ React.createElement("div", { className: "adm-card", style: { marginTop: 14, borderColor: "var(--accent)" } }, /* @__PURE__ */ React.createElement("div", { className: "adm-card-h", style: { background: "rgba(255,87,34,0.06)" } }, /* @__PURE__ */ React.createElement("div", { className: "l" }, "EDITING \xB7 ", post.title || "(untitled)"), /* @__PURE__ */ React.createElement("div", { className: "r", style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("div", { className: "seg", style: { marginRight: 8 } }, /* @__PURE__ */ React.createElement("button", { className: tab === "write" ? "on" : "", onClick: () => setTab("write") }, "WRITE"), /* @__PURE__ */ React.createElement("button", { className: tab === "meta" ? "on" : "", onClick: () => setTab("meta") }, "META"), /* @__PURE__ */ React.createElement("button", { className: tab === "raw" ? "on" : "", onClick: () => setTab("raw") }, "RAW")), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: onClose }, "close"))), /* @__PURE__ */ React.createElement("div", { className: "adm-card-b" }, tab === "write" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "split-2" }, /* @__PURE__ */ React.createElement(A2.FRow, { label: "Slug", req: true, hint: "URL path /log/<slug>/" }, /* @__PURE__ */ React.createElement(A2.Input, { value: post.slug, onChange: (v) => setF("slug", v.toLowerCase().replace(/[^a-z0-9-]/g, "-")) })), /* @__PURE__ */ React.createElement(A2.FRow, { label: "Visibility", hint: "draft = hidden from site & feeds" }, /* @__PURE__ */ React.createElement(A2.Toggle, { checked: !post.draft, onChange: (v) => setF("draft", !v), label: post.draft ? "DRAFT" : "PUBLIC" }))), /* @__PURE__ */ React.createElement("div", { className: "split-2" }, /* @__PURE__ */ React.createElement(A2.FRow, { label: "Type", hint: "e.g. security, release \u2014 used in log chrome" }, /* @__PURE__ */ React.createElement(
@@ -2132,7 +2170,25 @@ ${(post.openpgp_sig || "").trim() ? `
 # + detached OpenPGP armored (${(post.openpgp_sig || "").trim().length} chars) \u2192 POST /api/posts as detached_openpgp_sig
 ` : ""}${(post.minisig || "").trim() ? `
 # + minisig (${(post.minisig || "").trim().length} chars) \u2192 POST /api/posts as detached_minisig
-` : ""}`), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginTop: 14 } }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm danger", onClick: onDelete }, "delete post"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setF("draft", true) }, "save as draft"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", onClick: () => {
+` : ""}`), pubMsg && /* @__PURE__ */ React.createElement("div", { className: "auth-status " + (pubMsg.startsWith("Saved") ? "ok" : "err"), style: { marginTop: 10 } }, pubMsg), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginTop: 14, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm danger", onClick: onDelete }, "delete post"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setF("draft", true) }, "save as draft"), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        className: "btn-sm",
+        disabled: pubBusy,
+        onClick: async () => {
+          setPubBusy(true);
+          setPubMsg("");
+          try {
+            await publishPostToAPI(post);
+            setPubMsg("Saved to database.");
+          } catch (e) {
+            setPubMsg(String(e.message || e));
+          }
+          setPubBusy(false);
+        }
+      },
+      pubBusy ? "\u2026" : "save to database"
+    ), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", onClick: () => {
       setF("draft", false);
       onClose();
     } }, "publish & close")))));
@@ -2142,6 +2198,8 @@ ${(post.openpgp_sig || "").trim() ? `
     const [filter, setFilter] = useS_a3("all");
     const [q, setQ] = useS_a3("");
     const [pendingDel, setPendingDel] = useS_a3(null);
+    const [migrateBusy, setMigrateBusy] = useS_a3(false);
+    const [migrateMsg, setMigrateMsg] = useS_a3("");
     const M2 = window.VModals;
     const setPosts = (v) => set({ ...state, posts: v });
     const filtered = state.posts.map((p, i) => ({ p, i })).filter(({ p }) => {
@@ -2170,7 +2228,29 @@ ${(post.openpgp_sig || "").trim() ? `
         (p) => !!(p.openpgp_sig || "").trim() || !!(p.minisig || "").trim() || !!(p.signature_kind || "").trim() || p.signed
       ).length
     }), [state.posts]);
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A2.H, { num: "08", title: "BLOG POSTS", sub: `${state.posts.length} posts \xB7 ${counts.draft} drafts \xB7 ${counts.signed} signed` }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Posts live at ", /* @__PURE__ */ React.createElement("code", null, "content/blog/YYYY-MM-DD-slug.md"), " with YAML front matter. Drafts are excluded from site and feeds. Bytes/reach come from ", /* @__PURE__ */ React.createElement("code", null, "content/blog/metrics.json"), " (slug overlay), not the per-post editor."), /* @__PURE__ */ React.createElement(A2.Card, { title: "POSTS", right: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("input", { className: "inp", style: { width: 200, marginRight: 8 }, placeholder: "search title/body\u2026", value: q, onChange: (e) => setQ(e.target.value) }), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", onClick: add }, "+ new post")) }, /* @__PURE__ */ React.createElement("div", { className: "cl-filterbar", style: { borderTop: 0, borderLeft: 0, borderRight: 0 } }, /* @__PURE__ */ React.createElement("span", { className: "tiny dim" }, "FILTER \u25B8"), [
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A2.H, { num: "08", title: "BLOG POSTS", sub: `${state.posts.length} posts \xB7 ${counts.draft} drafts \xB7 ${counts.signed} signed` }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Posts live at ", /* @__PURE__ */ React.createElement("code", null, "content/blog/YYYY-MM-DD-slug.md"), " with YAML front matter. Drafts are excluded from site and feeds. Bytes/reach come from ", /* @__PURE__ */ React.createElement("code", null, "content/blog/metrics.json"), " (slug overlay), not the per-post editor."), /* @__PURE__ */ React.createElement(A2.Card, { title: "POSTS", right: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn-sm",
+        style: { marginRight: 8 },
+        disabled: migrateBusy,
+        onClick: async () => {
+          setMigrateBusy(true);
+          setMigrateMsg("");
+          try {
+            const res = await fetch(elvishApiUrl("/api/migrate/posts"), { method: "POST", credentials: "include" });
+            const j = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(j.error || "migrate failed");
+            setMigrateMsg(`Imported ${j.upserted ?? 0} post(s) from disk. Reload to refresh.`);
+          } catch (e) {
+            setMigrateMsg(String(e.message || e));
+          }
+          setMigrateBusy(false);
+        }
+      },
+      migrateBusy ? "\u2026" : "import from disk"
+    ), /* @__PURE__ */ React.createElement("input", { className: "inp", style: { width: 200, marginRight: 8 }, placeholder: "search title/body\u2026", value: q, onChange: (e) => setQ(e.target.value) }), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", onClick: add }, "+ new post")) }, migrateMsg && /* @__PURE__ */ React.createElement("div", { className: "f-help", style: { marginBottom: 10 } }, migrateMsg), /* @__PURE__ */ React.createElement("div", { className: "cl-filterbar", style: { borderTop: 0, borderLeft: 0, borderRight: 0 } }, /* @__PURE__ */ React.createElement("span", { className: "tiny dim" }, "FILTER \u25B8"), [
       { id: "all", label: `ALL (${counts.all})` },
       { id: "public", label: `PUBLIC (${counts.public})` },
       { id: "draft", label: `DRAFT (${counts.draft})` },
@@ -2255,7 +2335,7 @@ ${(post.openpgp_sig || "").trim() ? `
       }
       setPhase("uploading");
       try {
-        const res = await fetch("/api/pgp/keys", {
+        const res = await fetch(elvishApiUrl("/api/pgp/keys"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -2301,6 +2381,42 @@ ${(post.openpgp_sig || "").trim() ? `
     }
   });
 
+  // ../static/admin/admin-content-hub.jsx
+  function SecContentHub({ state, set, dirty, onPublish }) {
+    const [tab, setTab] = useS_hub("nav");
+    const def = CONTENT_TABS.find((t) => t.id === tab) || CONTENT_TABS[0];
+    const Comp = window[def.key];
+    const sectionProps = { state, set, dirty, onPublish };
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A3.H, { num: "10", title: "CONTENT", sub: "site chrome \xB7 tools \xB7 blog \xB7 signing" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain", style: { marginBottom: 12 } }, "Public site presentation blocks. Changes save with the main site bundle (", /* @__PURE__ */ React.createElement("code", null, "PUT /api/admin/site/home"), "); blog posts use the posts API when published from the Blog tab."), /* @__PURE__ */ React.createElement("div", { className: "filters", style: { marginBottom: 16, flexWrap: "wrap" } }, CONTENT_TABS.map((t) => /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        key: t.id,
+        type: "button",
+        className: "btn-sm" + (tab === t.id ? " active" : ""),
+        onClick: () => setTab(t.id)
+      },
+      t.label
+    ))), typeof Comp === "function" ? /* @__PURE__ */ React.createElement(Comp, { ...sectionProps }) : /* @__PURE__ */ React.createElement("div", { className: "f-err" }, "Missing editor component ", /* @__PURE__ */ React.createElement("code", null, def.key), "."));
+  }
+  var A3, useS_hub, CONTENT_TABS;
+  var init_admin_content_hub = __esm({
+    "../static/admin/admin-content-hub.jsx"() {
+      A3 = window.adm;
+      ({ useState: useS_hub } = React);
+      CONTENT_TABS = [
+        { id: "nav", label: "Nav & footer", key: "SecNav" },
+        { id: "hero", label: "Hero", key: "SecHero" },
+        { id: "terminal", label: "Terminal", key: "SecTerminal" },
+        { id: "log", label: "Log page", key: "SecLogPage" },
+        { id: "ticker", label: "Ticker", key: "SecTicker" },
+        { id: "tools", label: "Tools", key: "SecTools" },
+        { id: "blog", label: "Blog", key: "SecPosts" },
+        { id: "signing", label: "OpenPGP", key: "SecSigningPGP" }
+      ];
+      window.SecContentHub = SecContentHub;
+    }
+  });
+
   // ../static/admin/admin-uptime.jsx
   function SecUptime() {
     const [me, setMe] = useS_u(null);
@@ -2318,12 +2434,12 @@ ${(post.openpgp_sig || "").trim() ? `
     const [showClearConfirm, setShowClearConfirm] = useS_u(false);
     const [clearing, setClearing] = useS_u(false);
     useE_u(() => {
-      fetch("/api/auth/me", { credentials: "include" }).then((r) => r.json()).then((j) => setMe(j.user || null)).catch(() => setMe(null));
+      fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" }).then((r) => r.json()).then((j) => setMe(j.user || null)).catch(() => setMe(null));
     }, []);
     const load = () => {
       setErr("");
       setMsg("");
-      fetch("/api/admin/uptime", { credentials: "include" }).then((r) => {
+      fetch(elvishApiUrl("/api/admin/uptime"), { credentials: "include" }).then((r) => {
         if (r.status === 401 || r.status === 403) throw new Error("admin login required");
         if (!r.ok) throw new Error(String(r.status));
         return r.json();
@@ -2347,7 +2463,7 @@ ${(post.openpgp_sig || "").trim() ? `
       setSaving(true);
       setErr("");
       setMsg("");
-      fetch("/api/admin/uptime", {
+      fetch(elvishApiUrl("/api/admin/uptime"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -2378,21 +2494,21 @@ ${(post.openpgp_sig || "").trim() ? `
       setForm((f) => ({ ...f, endpoints: f.endpoints.filter((_, j) => j !== i) }));
     };
     if (!me) {
-      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A3.H, { num: "11", title: "UPTIME", sub: "HTTP checks \xB7 logs \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, /* @__PURE__ */ React.createElement("a", { href: "/login" }, "Log in"), " to manage uptime."));
+      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A4.H, { num: "11", title: "UPTIME", sub: "HTTP checks \xB7 logs \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, /* @__PURE__ */ React.createElement("a", { href: "/login" }, "Log in"), " to manage uptime."));
     }
     if (!me.is_admin) {
-      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A3.H, { num: "11", title: "UPTIME", sub: "HTTP checks \xB7 logs \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Your account is not an admin. Set ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "ELVISH_ADMIN_EMAILS"), " or promote the first registered user."));
+      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A4.H, { num: "11", title: "UPTIME", sub: "HTTP checks \xB7 logs \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Your account is not an admin. Set ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "ELVISH_ADMIN_EMAILS"), " or promote the first registered user."));
     }
     const latest = data && data.latest;
     const agg = data && data.aggregate;
     const runs = data && data.runs || [];
-    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-uptime-panel" }, /* @__PURE__ */ React.createElement(A3.H, { num: "11", title: "UPTIME", sub: "in-process probes \xB7 SQL logs \xB7 public /api/uptime.json" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Monitoring is ", /* @__PURE__ */ React.createElement("strong", null, "on by default"), " (5m). Interval, probe base URL, and ", /* @__PURE__ */ React.createElement("strong", null, "other HTTP checks"), " below persist in CockroachDB/Postgres when enabled. Static rows live in ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "content/uptime.json"), "; per-tool monitors live under ", /* @__PURE__ */ React.createElement("strong", null, "TOOLS"), ". Use ", /* @__PURE__ */ React.createElement("strong", null, "other checks"), " for extra hosts (CDN, Vaultwarden, APIs) that are not a home tool card."), data && data.note && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, data.note), err && /* @__PURE__ */ React.createElement("div", { className: "auth-status err", style: { marginBottom: 12 } }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "auth-status ok", style: { marginBottom: 12 } }, msg), /* @__PURE__ */ React.createElement(A3.Card, { title: "SETTINGS", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm primary", disabled: saving || !data?.persist, onClick: save }, saving ? "\u2026" : "\u25B8 save") }, !data?.persist && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, "Save disabled until the database pool is configured."), /* @__PURE__ */ React.createElement(A3.FRow, { label: "Enabled", hint: "Turn all HTTP checks off without restarting the server." }, /* @__PURE__ */ React.createElement(A3.Toggle, { checked: form.enabled, onChange: (v) => setForm((f) => ({ ...f, enabled: v })), label: form.enabled ? "ON" : "OFF" })), /* @__PURE__ */ React.createElement(A3.FRow, { label: "Interval", req: true, hint: "Go duration, e.g. 5m, 10m, 1h (minimum 10s enforced server-side)." }, /* @__PURE__ */ React.createElement(A3.Input, { value: form.interval, onChange: (v) => setForm((f) => ({ ...f, interval: v })) })), /* @__PURE__ */ React.createElement(A3.FRow, { label: "Probe base URL", hint: "Leave empty to use ELVISH_UPTIME_BASE_URL / listen address fallback." }, /* @__PURE__ */ React.createElement(A3.Input, { value: form.base_url, onChange: (v) => setForm((f) => ({ ...f, base_url: v })), placeholder: "https://your-public-host" })), /* @__PURE__ */ React.createElement(A3.FRow, { label: "Include tools from home", hint: "Adds GET/HEAD per tool: default open_href rules else /{slug}/; skipped when a tool has an enabled uptime monitor (that check runs separately). Hidden tools omitted." }, /* @__PURE__ */ React.createElement(A3.Toggle, { checked: form.include_tools_from_home, onChange: (v) => setForm((f) => ({ ...f, include_tools_from_home: v })), label: form.include_tools_from_home ? "YES" : "NO" })), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "ftk", style: { marginBottom: 6 } }, "// OTHER MONITORING"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 11, lineHeight: 1.5, margin: "0 0 10px" } }, "Arbitrary HTTP targets (HEAD or GET). Each row needs a stable ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "id"), " (shows on ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "/status/"), ") and a full URL or a path under the probe base above. Saved with ", /* @__PURE__ */ React.createElement("strong", null, "\u25B8 save"), "."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm primary", disabled: !data?.persist, onClick: addEndpoint }, "+ add check")), form.endpoints.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "dim", style: { marginTop: 10, fontSize: 11 } }, "No extra checks \u2014 optional."), form.endpoints.map((ep, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "split-3", style: { marginTop: 12, alignItems: "flex-end" } }, /* @__PURE__ */ React.createElement(A3.FRow, { label: "ID", req: true, hint: "Probe key, e.g. cdn_edge or vault_health." }, /* @__PURE__ */ React.createElement(A3.Input, { value: ep.id, onChange: (v) => setEp(i, { id: v }) })), /* @__PURE__ */ React.createElement(A3.FRow, { label: "URL or path", req: true, hint: "https://\u2026 or /path under probe base." }, /* @__PURE__ */ React.createElement(A3.Input, { value: ep.url, onChange: (v) => setEp(i, { url: v }) })), /* @__PURE__ */ React.createElement(A3.FRow, { label: "Method" }, /* @__PURE__ */ React.createElement(A3.Seg, { value: (ep.method || "HEAD").toUpperCase(), onChange: (v) => setEp(i, { method: v }), options: [{ value: "HEAD", label: "HEAD" }, { value: "GET", label: "GET" }] })), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm danger", onClick: () => delEp(i) }, "remove")))), /* @__PURE__ */ React.createElement(A3.Card, { title: "LIVE SNAPSHOT", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm", onClick: load }, "refresh") }, !latest && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No probe completed yet."), latest && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "checked_at"), " \xB7 ", String(latest.checked_at || "")), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "monthly (UTC)"), latest.stats_period_utc ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, " \xB7 ", latest.stats_period_utc) : null, " ", "\xB7 ", latest.overall_uptime_pct != null ? latest.overall_uptime_pct.toFixed(2) : "\u2014", "%", " ", "(", latest.overall_ok || 0, " ok / ", (latest.overall_ok || 0) + (latest.overall_fail || 0), " total)"), /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table", style: { width: "100%", marginTop: 12, borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "id"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "url"), /* @__PURE__ */ React.createElement("th", null, "ok"), /* @__PURE__ */ React.createElement("th", null, "ms"), /* @__PURE__ */ React.createElement("th", null, "status"))), /* @__PURE__ */ React.createElement("tbody", null, (latest.targets || []).map((t) => /* @__PURE__ */ React.createElement("tr", { key: t.id + t.url }, /* @__PURE__ */ React.createElement("td", { style: { fontFamily: "var(--mono)" } }, t.id), /* @__PURE__ */ React.createElement("td", { className: "dim", style: { maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, t.url), /* @__PURE__ */ React.createElement("td", null, t.ok ? "\u25CF" : "\u25CB"), /* @__PURE__ */ React.createElement("td", null, t.latency_ms), /* @__PURE__ */ React.createElement("td", null, t.status_code, t.error ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, " \xB7 ", t.error) : null))))))), /* @__PURE__ */ React.createElement(A3.Card, { title: "THIS MONTH (UTC) \xB7 AGGREGATE" }, !agg && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No aggregate yet (first successful probe with Mongo will create it)."), agg && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12 } }, agg.period_ym && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "period_ym"), " \xB7 ", agg.period_ym), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "started_at"), " \xB7 ", agg.started_at || "\u2014"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "updated_at"), " \xB7 ", agg.updated_at || "\u2014"), /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table", style: { width: "100%", marginTop: 12, borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "target"), /* @__PURE__ */ React.createElement("th", null, "ok"), /* @__PURE__ */ React.createElement("th", null, "fail"), /* @__PURE__ */ React.createElement("th", null, "%"))), /* @__PURE__ */ React.createElement("tbody", null, Object.entries(agg.targets || {}).map(([k, v]) => {
+    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-uptime-panel" }, /* @__PURE__ */ React.createElement(A4.H, { num: "11", title: "UPTIME", sub: "in-process probes \xB7 SQL logs \xB7 public /api/uptime.json" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Monitoring is ", /* @__PURE__ */ React.createElement("strong", null, "on by default"), " (5m). Interval, probe base URL, and ", /* @__PURE__ */ React.createElement("strong", null, "other HTTP checks"), " below persist in CockroachDB/Postgres when enabled. Static rows live in ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "content/uptime.json"), "; per-tool monitors live under ", /* @__PURE__ */ React.createElement("strong", null, "TOOLS"), ". Use ", /* @__PURE__ */ React.createElement("strong", null, "other checks"), " for extra hosts (CDN, Vaultwarden, APIs) that are not a home tool card."), data && data.note && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, data.note), err && /* @__PURE__ */ React.createElement("div", { className: "auth-status err", style: { marginBottom: 12 } }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "auth-status ok", style: { marginBottom: 12 } }, msg), /* @__PURE__ */ React.createElement(A4.Card, { title: "SETTINGS", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm primary", disabled: saving || !data?.persist, onClick: save }, saving ? "\u2026" : "\u25B8 save") }, !data?.persist && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, "Save disabled until the database pool is configured."), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Enabled", hint: "Turn all HTTP checks off without restarting the server." }, /* @__PURE__ */ React.createElement(A4.Toggle, { checked: form.enabled, onChange: (v) => setForm((f) => ({ ...f, enabled: v })), label: form.enabled ? "ON" : "OFF" })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Interval", req: true, hint: "Go duration, e.g. 5m, 10m, 1h (minimum 10s enforced server-side)." }, /* @__PURE__ */ React.createElement(A4.Input, { value: form.interval, onChange: (v) => setForm((f) => ({ ...f, interval: v })) })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Probe base URL", hint: "Leave empty to use ELVISH_UPTIME_BASE_URL / listen address fallback." }, /* @__PURE__ */ React.createElement(A4.Input, { value: form.base_url, onChange: (v) => setForm((f) => ({ ...f, base_url: v })), placeholder: "https://your-public-host" })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Include tools from home", hint: "Adds GET/HEAD per tool: default open_href rules else /{slug}/; skipped when a tool has an enabled uptime monitor (that check runs separately). Hidden tools omitted." }, /* @__PURE__ */ React.createElement(A4.Toggle, { checked: form.include_tools_from_home, onChange: (v) => setForm((f) => ({ ...f, include_tools_from_home: v })), label: form.include_tools_from_home ? "YES" : "NO" })), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "ftk", style: { marginBottom: 6 } }, "// OTHER MONITORING"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 11, lineHeight: 1.5, margin: "0 0 10px" } }, "Arbitrary HTTP targets (HEAD or GET). Each row needs a stable ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "id"), " (shows on ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "/status/"), ") and a full URL or a path under the probe base above. Saved with ", /* @__PURE__ */ React.createElement("strong", null, "\u25B8 save"), "."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm primary", disabled: !data?.persist, onClick: addEndpoint }, "+ add check")), form.endpoints.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "dim", style: { marginTop: 10, fontSize: 11 } }, "No extra checks \u2014 optional."), form.endpoints.map((ep, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "split-3", style: { marginTop: 12, alignItems: "flex-end" } }, /* @__PURE__ */ React.createElement(A4.FRow, { label: "ID", req: true, hint: "Probe key, e.g. cdn_edge or vault_health." }, /* @__PURE__ */ React.createElement(A4.Input, { value: ep.id, onChange: (v) => setEp(i, { id: v }) })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "URL or path", req: true, hint: "https://\u2026 or /path under probe base." }, /* @__PURE__ */ React.createElement(A4.Input, { value: ep.url, onChange: (v) => setEp(i, { url: v }) })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Method" }, /* @__PURE__ */ React.createElement(A4.Seg, { value: (ep.method || "HEAD").toUpperCase(), onChange: (v) => setEp(i, { method: v }), options: [{ value: "HEAD", label: "HEAD" }, { value: "GET", label: "GET" }] })), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm danger", onClick: () => delEp(i) }, "remove")))), /* @__PURE__ */ React.createElement(A4.Card, { title: "LIVE SNAPSHOT", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm", onClick: load }, "refresh") }, !latest && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No probe completed yet."), latest && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "checked_at"), " \xB7 ", String(latest.checked_at || "")), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "monthly (UTC)"), latest.stats_period_utc ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, " \xB7 ", latest.stats_period_utc) : null, " ", "\xB7 ", latest.overall_uptime_pct != null ? latest.overall_uptime_pct.toFixed(2) : "\u2014", "%", " ", "(", latest.overall_ok || 0, " ok / ", (latest.overall_ok || 0) + (latest.overall_fail || 0), " total)"), /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table", style: { width: "100%", marginTop: 12, borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "id"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "url"), /* @__PURE__ */ React.createElement("th", null, "ok"), /* @__PURE__ */ React.createElement("th", null, "ms"), /* @__PURE__ */ React.createElement("th", null, "status"))), /* @__PURE__ */ React.createElement("tbody", null, (latest.targets || []).map((t) => /* @__PURE__ */ React.createElement("tr", { key: t.id + t.url }, /* @__PURE__ */ React.createElement("td", { style: { fontFamily: "var(--mono)" } }, t.id), /* @__PURE__ */ React.createElement("td", { className: "dim", style: { maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, t.url), /* @__PURE__ */ React.createElement("td", null, t.ok ? "\u25CF" : "\u25CB"), /* @__PURE__ */ React.createElement("td", null, t.latency_ms), /* @__PURE__ */ React.createElement("td", null, t.status_code, t.error ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, " \xB7 ", t.error) : null))))))), /* @__PURE__ */ React.createElement(A4.Card, { title: "THIS MONTH (UTC) \xB7 AGGREGATE" }, !agg && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No aggregate yet (first successful probe with Mongo will create it)."), agg && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12 } }, agg.period_ym && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "period_ym"), " \xB7 ", agg.period_ym), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "started_at"), " \xB7 ", agg.started_at || "\u2014"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "updated_at"), " \xB7 ", agg.updated_at || "\u2014"), /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table", style: { width: "100%", marginTop: 12, borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "target"), /* @__PURE__ */ React.createElement("th", null, "ok"), /* @__PURE__ */ React.createElement("th", null, "fail"), /* @__PURE__ */ React.createElement("th", null, "%"))), /* @__PURE__ */ React.createElement("tbody", null, Object.entries(agg.targets || {}).map(([k, v]) => {
       const t = v || {};
       const n = (t.ok || 0) + (t.fail || 0);
       const pct = n ? (100 * (t.ok || 0) / n).toFixed(2) : "\u2014";
       return /* @__PURE__ */ React.createElement("tr", { key: k }, /* @__PURE__ */ React.createElement("td", { style: { fontFamily: "var(--mono)" } }, t.id || k), /* @__PURE__ */ React.createElement("td", null, t.ok || 0), /* @__PURE__ */ React.createElement("td", null, t.fail || 0), /* @__PURE__ */ React.createElement("td", null, pct));
     }))))), /* @__PURE__ */ React.createElement(
-      A3.Card,
+      A4.Card,
       {
         title: "RUN LOG",
         right: /* @__PURE__ */ React.createElement("span", { style: { display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "newest first"), /* @__PURE__ */ React.createElement(
@@ -2421,7 +2537,7 @@ ${(post.openpgp_sig || "").trim() ? `
           setClearing(true);
           setErr("");
           setMsg("");
-          fetch("/api/admin/uptime/runs", { method: "DELETE", credentials: "include" }).then(async (r) => {
+          fetch(elvishApiUrl("/api/admin/uptime/runs"), { method: "DELETE", credentials: "include" }).then(async (r) => {
             const j = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(j.error || String(r.status));
             return j;
@@ -2435,10 +2551,10 @@ ${(post.openpgp_sig || "").trim() ? `
       clearing ? "Clearing..." : "Clear Log"
     ))))));
   }
-  var A3, useS_u, useE_u;
+  var A4, useS_u, useE_u;
   var init_admin_uptime = __esm({
     "../static/admin/admin-uptime.jsx"() {
-      A3 = window.adm;
+      A4 = window.adm;
       ({ useState: useS_u, useEffect: useE_u } = React);
       window.SecUptime = SecUptime;
     }
@@ -2459,12 +2575,12 @@ ${(post.openpgp_sig || "").trim() ? `
       export_enabled: true
     });
     useE_t(() => {
-      fetch("/api/auth/me", { credentials: "include" }).then((r) => r.json()).then((j) => setMe(j.user || null)).catch(() => setMe(null));
+      fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" }).then((r) => r.json()).then((j) => setMe(j.user || null)).catch(() => setMe(null));
     }, []);
     const load = () => {
       setErr("");
       setMsg("");
-      fetch("/api/admin/telemetry", { credentials: "include" }).then((r) => {
+      fetch(elvishApiUrl("/api/admin/telemetry"), { credentials: "include" }).then((r) => {
         if (r.status === 401 || r.status === 403) throw new Error("admin login required");
         if (!r.ok) throw new Error(String(r.status));
         return r.json();
@@ -2487,7 +2603,7 @@ ${(post.openpgp_sig || "").trim() ? `
       setSaving(true);
       setErr("");
       setMsg("");
-      fetch("/api/admin/telemetry", {
+      fetch(elvishApiUrl("/api/admin/telemetry"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -2510,7 +2626,7 @@ ${(post.openpgp_sig || "").trim() ? `
       setErr("");
       setMsg("");
       try {
-        const r = await fetch("/api/admin/telemetry/export", {
+        const r = await fetch(elvishApiUrl("/api/admin/telemetry/export"), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -2574,12 +2690,12 @@ ${(post.openpgp_sig || "").trim() ? `
       secret: ""
     });
     useE_c(() => {
-      fetch("/api/auth/me", { credentials: "include" }).then((r) => r.json()).then((j) => setMe(j.user || null)).catch(() => setMe(null));
+      fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" }).then((r) => r.json()).then((j) => setMe(j.user || null)).catch(() => setMe(null));
     }, []);
     const load = () => {
       setErr("");
       setMsg("");
-      fetch("/api/admin/auth-captcha", { credentials: "include" }).then((r) => {
+      fetch(elvishApiUrl("/api/admin/auth-captcha"), { credentials: "include" }).then((r) => {
         if (r.status === 401 || r.status === 403) throw new Error("admin login required");
         if (!r.ok) throw new Error(String(r.status));
         return r.json();
@@ -2600,7 +2716,7 @@ ${(post.openpgp_sig || "").trim() ? `
       setSaving(true);
       setErr("");
       setMsg("");
-      fetch("/api/admin/auth-captcha", {
+      fetch(elvishApiUrl("/api/admin/auth-captcha"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -2789,13 +2905,13 @@ ${(post.openpgp_sig || "").trim() ? `
     const [loading, setLoading] = useS_p(false);
     const [exporting, setExporting] = useS_p(false);
     useE_p(() => {
-      fetch("/api/auth/me", { credentials: "include" }).then((r) => r.json()).then((j) => setMe(j.user || null)).catch(() => setMe(null));
+      fetch(elvishApiUrl("/api/auth/me"), { credentials: "include" }).then((r) => r.json()).then((j) => setMe(j.user || null)).catch(() => setMe(null));
     }, []);
     const load = () => {
       setLoading(true);
       setErr("");
       setMsg("");
-      fetch(`/api/admin/performance?days=${encodeURIComponent(days)}`, { credentials: "include" }).then((r) => {
+      fetch(elvishApiUrl(`/api/admin/performance?days=${encodeURIComponent(days)}`), { credentials: "include" }).then((r) => {
         if (r.status === 401 || r.status === 403) throw new Error("admin login required");
         if (!r.ok) throw new Error(String(r.status));
         return r.json();
@@ -2810,7 +2926,7 @@ ${(post.openpgp_sig || "").trim() ? `
       setErr("");
       setMsg("");
       try {
-        const r = await fetch("/api/admin/performance/export", {
+        const r = await fetch(elvishApiUrl("/api/admin/performance/export"), {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -2907,7 +3023,7 @@ ${(post.openpgp_sig || "").trim() ? `
 
   // ../static/admin/admin-email-sections.jsx
   async function apiJSON(url, opts) {
-    const res = await fetch(url, {
+    const res = await fetch(elvishApiUrl(url), {
       credentials: "include",
       ...opts || {},
       headers: {
@@ -2920,7 +3036,7 @@ ${(post.openpgp_sig || "").trim() ? `
     return json;
   }
   async function apiForm(url, formData) {
-    const res = await fetch(url, {
+    const res = await fetch(elvishApiUrl(url), {
       method: "POST",
       credentials: "include",
       body: formData
@@ -2965,7 +3081,9 @@ ${(post.openpgp_sig || "").trim() ? `
     return btoa(s);
   }
   function sanitizeAttachmentName(name) {
-    return String(name || "attachment.bin").replace(/[\r\n"]/g, "").trim() || "attachment.bin";
+    const raw = String(name || "").replace(/[\r\n\x00"]/g, "").replace(/[/\\]/g, "_").trim();
+    if (!raw) return "attachment.bin";
+    return raw.length > 255 ? raw.slice(0, 255) : raw;
   }
   function sanitizeAttachmentType(type) {
     const raw = String(type || "").trim().toLowerCase();
@@ -3116,29 +3234,40 @@ ${(post.openpgp_sig || "").trim() ? `
     }
     return records;
   }
-  function UserDetailModal({ user, onClose, onDisable, onDelete, busy }) {
+  function userAccountStatusLabel(u) {
+    if (u && u.scheduled_delete_at) return "Scheduled delete";
+    if (u && u.disabled) return "Disabled";
+    return "Active";
+  }
+  function UserDetailModal({ user, currentUserId, onClose, onDisable, onEnable, onToggleAdmin, onDelete, busy }) {
     const [detailUser, setDetailUser] = useSt(user);
+    const [loadErr, setLoadErr] = useSt("");
     useEf(() => {
       if (!user) {
         setDetailUser(null);
+        setLoadErr("");
         return;
       }
       setDetailUser(user);
+      setLoadErr("");
       let cancelled = false;
       (async () => {
         try {
-          const d = await apiJSON(`/api/admin/users/${encodeURIComponent(user.id)}?expand=mail`);
+          const d = await apiJSON(`/api/admin/users/${encodeURIComponent(user.id)}?expand=mail,auth`);
           if (!cancelled) setDetailUser((prev) => ({ ...prev, ...d }));
-        } catch (_) {
+        } catch (e) {
+          if (!cancelled) setLoadErr(String(e.message || e));
         }
       })();
       return () => {
         cancelled = true;
       };
-    }, [user]);
+    }, [user && user.id]);
     if (!user) return null;
     const u = detailUser || user;
-    return /* @__PURE__ */ React.createElement("div", { className: "modal-overlay", onClick: onClose }, /* @__PURE__ */ React.createElement("div", { className: "modal", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "modal-head" }, /* @__PURE__ */ React.createElement("h3", null, "User Details"), /* @__PURE__ */ React.createElement("button", { className: "btn-close", onClick: onClose }, "\xD7")), /* @__PURE__ */ React.createElement("div", { className: "modal-body mail-detail-grid" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "ID"), /* @__PURE__ */ React.createElement("span", null, u.id)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Email"), /* @__PURE__ */ React.createElement("span", null, u.email)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Name"), /* @__PURE__ */ React.createElement("span", null, u.name || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Admin"), /* @__PURE__ */ React.createElement("span", null, u.is_admin ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Created"), /* @__PURE__ */ React.createElement("span", null, fmtDT(u.created_at))), u.identity_count != null && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Active identities"), /* @__PURE__ */ React.createElement("span", null, u.identity_count)), u.owned_domain_count != null && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Owned mail domains"), /* @__PURE__ */ React.createElement("span", null, u.owned_domain_count)), u.shared_domain_allowlist_count != null && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Shared-domain allowlists"), /* @__PURE__ */ React.createElement("span", null, u.shared_domain_allowlist_count))), /* @__PURE__ */ React.createElement("div", { className: "modal-foot" }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm warn", onClick: onDisable, disabled: busy }, "Disable"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm danger", onClick: onDelete, disabled: busy }, "Delete"))));
+    const isSelf = currentUserId && u.id === currentUserId;
+    const statusLabel = userAccountStatusLabel(u);
+    return /* @__PURE__ */ React.createElement("div", { className: "modal-overlay", onClick: onClose }, /* @__PURE__ */ React.createElement("div", { className: "modal", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "modal-head" }, /* @__PURE__ */ React.createElement("h3", null, "User Details"), /* @__PURE__ */ React.createElement("button", { className: "btn-close", onClick: onClose }, "\xD7")), /* @__PURE__ */ React.createElement("div", { className: "modal-body mail-detail-grid" }, loadErr && /* @__PURE__ */ React.createElement("div", { className: "f-err", style: { gridColumn: "1 / -1" } }, loadErr), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "ID"), /* @__PURE__ */ React.createElement("span", null, u.id)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Email"), /* @__PURE__ */ React.createElement("span", null, u.email)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Name"), /* @__PURE__ */ React.createElement("span", null, u.name || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Status"), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("span", { className: "user-status-badge user-status-" + statusLabel.toLowerCase().replace(/\s+/g, "-") }, statusLabel))), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Auth"), /* @__PURE__ */ React.createElement("span", null, u.auth_method || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Admin"), /* @__PURE__ */ React.createElement("span", null, u.is_admin ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "MFA"), /* @__PURE__ */ React.createElement("span", null, u.mfa_enabled === true ? "Enabled" : u.mfa_enabled === false ? "Off" : "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Created"), /* @__PURE__ */ React.createElement("span", null, fmtDT(u.created_at))), u.last_activity_at && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Last activity"), /* @__PURE__ */ React.createElement("span", null, fmtDT(u.last_activity_at))), u.scheduled_delete_at && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Scheduled delete"), /* @__PURE__ */ React.createElement("span", null, fmtDT(u.scheduled_delete_at))), u.scheduled_delete_reason && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Delete reason"), /* @__PURE__ */ React.createElement("span", null, u.scheduled_delete_reason)), u.identity_count != null && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Active identities"), /* @__PURE__ */ React.createElement("span", null, u.identity_count)), u.owned_domain_count != null && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Owned mail domains"), /* @__PURE__ */ React.createElement("span", null, u.owned_domain_count)), u.shared_domain_allowlist_count != null && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Shared-domain allowlists"), /* @__PURE__ */ React.createElement("span", null, u.shared_domain_allowlist_count))), /* @__PURE__ */ React.createElement("div", { className: "modal-foot", style: { flexWrap: "wrap", gap: 8 } }, u.disabled && !isSelf && /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", onClick: onEnable, disabled: busy }, "Enable"), !u.disabled && !isSelf && /* @__PURE__ */ React.createElement("button", { className: "btn-sm warn", onClick: onDisable, disabled: busy }, "Disable"), !isSelf && /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: onToggleAdmin, disabled: busy }, u.is_admin ? "Revoke admin" : "Grant admin"), !isSelf && /* @__PURE__ */ React.createElement("button", { className: "btn-sm danger", onClick: onDelete, disabled: busy }, "Delete"), isSelf && /* @__PURE__ */ React.createElement("span", { className: "dim", style: { fontSize: 11 } }, "You cannot modify your own account here."))));
   }
   function DomainDetailModal({ domain, onClose, onVerify, onDelete, busy, onSharingSaved }) {
     const [detail, setDetail] = useSt(null);
@@ -3237,24 +3366,57 @@ ${(post.openpgp_sig || "").trim() ? `
     const [users, setUsers] = useSt([]);
     const [total, setTotal] = useSt(0);
     const [page, setPage] = useSt(1);
+    const [searchDraft, setSearchDraft] = useSt("");
     const [query, setQuery] = useSt("");
+    const [statusFilter, setStatusFilter] = useSt("all");
+    const [adminFilter, setAdminFilter] = useSt("all");
     const [loading, setLoading] = useSt(false);
+    const [loadError, setLoadError] = useSt("");
+    const [currentUserId, setCurrentUserId] = useSt(null);
     const [selected, setSelected] = useSt(null);
     const [busy, setBusy] = useSt(false);
     const [confirmAction, setConfirmAction] = useSt(null);
     const [actionError, setActionError] = useSt("");
+    const [actionOk, setActionOk] = useSt("");
+    useEf(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const j = await apiJSON("/api/auth/me");
+          const me = j && j.user;
+          if (!cancelled && me && me.id) setCurrentUserId(me.id);
+        } catch (_) {
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+    useEf(() => {
+      const t = setTimeout(() => {
+        setQuery(searchDraft.trim());
+        setPage(1);
+      }, 200);
+      return () => clearTimeout(t);
+    }, [searchDraft]);
     const load = useCb(async () => {
       setLoading(true);
+      setLoadError("");
       try {
-        const url = `/api/admin/users?page=${page}&limit=${ADMIN_USER_PAGE}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+        let url = `/api/admin/users?page=${page}&limit=${ADMIN_USER_PAGE}`;
+        if (query) url += `&q=${encodeURIComponent(query)}`;
+        if (statusFilter && statusFilter !== "all") url += `&status=${encodeURIComponent(statusFilter)}`;
+        if (adminFilter === "admin") url += "&admin=true";
+        if (adminFilter === "nonadmin") url += "&admin=false";
         const data = await apiJSON(url);
         setUsers(data.users || []);
         setTotal(data.total || 0);
       } catch (e) {
-        console.error(e);
+        setLoadError(String(e.message || e));
+        setUsers([]);
       }
       setLoading(false);
-    }, [page, query]);
+    }, [page, query, statusFilter, adminFilter]);
     const userPageStart = (page - 1) * ADMIN_USER_PAGE;
     const userHasNext = userPageStart + users.length < total;
     useEf(() => {
@@ -3265,27 +3427,53 @@ ${(post.openpgp_sig || "").trim() ? `
       setBusy(false);
       load();
     };
-    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-users-panel" }, /* @__PURE__ */ React.createElement(A4.H, { num: "02", title: "USERS", sub: `${total} total \xB7 search \xB7 targeted notices` }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Use this directory to inspect accounts before targeted system sends. System mail in this admin panel is limited to existing platform users."), /* @__PURE__ */ React.createElement(A4.Card, { title: "USER DIRECTORY", right: loading ? "loading\u2026" : `${users.length} on page \xB7 ${total} total` }, /* @__PURE__ */ React.createElement("form", { className: "search-bar", onSubmit: (e) => {
-      e.preventDefault();
-      setPage(1);
-      load();
-    } }, /* @__PURE__ */ React.createElement(
+    const confirmTitles = {
+      disable: "Disable User",
+      enable: "Enable User",
+      delete: "Delete User",
+      admin_grant: "Grant Admin",
+      admin_revoke: "Revoke Admin"
+    };
+    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-users-panel" }, /* @__PURE__ */ React.createElement(A5.H, { num: "02", title: "USERS", sub: `${total} accounts \xB7 moderation \xB7 directory` }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Inspect and moderate platform accounts. Disable blocks sign-in; delete purges mail data and storage for the user. System mail can target users from this directory."), actionOk && /* @__PURE__ */ React.createElement("div", { className: "f-ok", style: { marginBottom: 12 } }, actionOk), /* @__PURE__ */ React.createElement(A5.Card, { title: "USER DIRECTORY", right: loading ? "loading\u2026" : `${users.length} on page \xB7 ${total} total` }, /* @__PURE__ */ React.createElement("div", { className: "search-bar", style: { marginBottom: 10 } }, /* @__PURE__ */ React.createElement(
       "input",
       {
         type: "text",
         className: "inp",
-        placeholder: "Search by email\u2026",
-        value: query,
-        onChange: (e) => setQuery(e.target.value)
+        placeholder: "Search email or name\u2026",
+        value: searchDraft,
+        onChange: (e) => setSearchDraft(e.target.value)
       }
-    ), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn-sm" }, "Search")), /* @__PURE__ */ React.createElement("table", { className: "admin-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Email"), /* @__PURE__ */ React.createElement("th", null, "Name"), /* @__PURE__ */ React.createElement("th", null, "Admin"), /* @__PURE__ */ React.createElement("th", null, "Created"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", null, loading && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "5", className: "dim" }, "Loading\u2026")), !loading && users.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "5", className: "dim" }, "No users found")), users.map((u) => /* @__PURE__ */ React.createElement("tr", { key: u.id }, /* @__PURE__ */ React.createElement("td", null, u.email), /* @__PURE__ */ React.createElement("td", null, u.name || "\u2014"), /* @__PURE__ */ React.createElement("td", null, u.is_admin ? "\u2713" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: "dim" }, fmtDT(u.created_at)), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setSelected(u) }, "View")))))), /* @__PURE__ */ React.createElement("div", { className: "pagination" }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: page <= 1, onClick: () => setPage((p) => p - 1) }, "Prev"), /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Page ", page, total > 0 ? ` \xB7 ${userPageStart + 1}\u2013${userPageStart + users.length} of ${total}` : ""), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: !userHasNext, onClick: () => setPage((p) => p + 1) }, "Next"))), /* @__PURE__ */ React.createElement(
+    )), /* @__PURE__ */ React.createElement("div", { className: "filters", style: { marginBottom: 12, flexWrap: "wrap" } }, [
+      { id: "all", label: "All status" },
+      { id: "active", label: "Active" },
+      { id: "disabled", label: "Disabled" }
+    ].map((f) => /* @__PURE__ */ React.createElement("button", { key: f.id, type: "button", className: "btn-sm" + (statusFilter === f.id ? " active" : ""), onClick: () => {
+      setStatusFilter(f.id);
+      setPage(1);
+    } }, f.label)), /* @__PURE__ */ React.createElement("span", { className: "dim", style: { margin: "0 6px" } }, "|"), [
+      { id: "all", label: "All roles" },
+      { id: "admin", label: "Admins" },
+      { id: "nonadmin", label: "Non-admin" }
+    ].map((f) => /* @__PURE__ */ React.createElement("button", { key: f.id, type: "button", className: "btn-sm" + (adminFilter === f.id ? " active" : ""), onClick: () => {
+      setAdminFilter(f.id);
+      setPage(1);
+    } }, f.label))), loadError && /* @__PURE__ */ React.createElement("div", { className: "f-err", style: { marginBottom: 10 } }, loadError), /* @__PURE__ */ React.createElement("table", { className: "admin-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Email"), /* @__PURE__ */ React.createElement("th", null, "Name"), /* @__PURE__ */ React.createElement("th", null, "Status"), /* @__PURE__ */ React.createElement("th", null, "Auth"), /* @__PURE__ */ React.createElement("th", null, "Admin"), /* @__PURE__ */ React.createElement("th", null, "Created"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", null, loading && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "7", className: "dim" }, "Loading\u2026")), !loading && users.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "7", className: "dim" }, "No users found")), users.map((u) => /* @__PURE__ */ React.createElement("tr", { key: u.id }, /* @__PURE__ */ React.createElement("td", null, u.email), /* @__PURE__ */ React.createElement("td", null, u.name || "\u2014"), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("span", { className: "user-status-badge user-status-" + userAccountStatusLabel(u).toLowerCase().replace(/\s+/g, "-") }, userAccountStatusLabel(u))), /* @__PURE__ */ React.createElement("td", { className: "dim" }, u.auth_method || "\u2014"), /* @__PURE__ */ React.createElement("td", null, u.is_admin ? "Yes" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: "dim" }, fmtDT(u.created_at)), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setSelected(u) }, "View")))))), /* @__PURE__ */ React.createElement("div", { className: "pagination" }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: page <= 1, onClick: () => setPage((p) => p - 1) }, "Prev"), /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Page ", page, total > 0 ? ` \xB7 ${userPageStart + 1}\u2013${userPageStart + users.length} of ${total}` : ""), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: !userHasNext, onClick: () => setPage((p) => p + 1) }, "Next"))), /* @__PURE__ */ React.createElement(
       UserDetailModal,
       {
         user: selected,
+        currentUserId,
         busy,
         onClose: closeModal,
         onDisable: () => {
           if (selected) setConfirmAction({ type: "disable", user: selected });
+        },
+        onEnable: () => {
+          if (selected) setConfirmAction({ type: "enable", user: selected });
+        },
+        onToggleAdmin: () => {
+          if (selected) {
+            setConfirmAction({ type: selected.is_admin ? "admin_revoke" : "admin_grant", user: selected });
+          }
         },
         onDelete: () => {
           if (selected) setConfirmAction({ type: "delete", user: selected });
@@ -3296,26 +3484,39 @@ ${(post.openpgp_sig || "").trim() ? `
         setConfirmAction(null);
         setActionError("");
       }
-    } }, /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg)", border: "1px solid var(--fg)", maxWidth: 440, width: "90%", position: "relative" } }, /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", top: -1, left: -1, width: 6, height: 6, background: "var(--accent)" } }), /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", top: -1, right: -1, width: 6, height: 6, background: "var(--accent)" } }), /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid var(--fg)", display: "flex", alignItems: "center", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" } }, confirmAction.type === "disable" ? "Disable User" : "Delete User"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-close", onClick: () => {
+    } }, /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg)", border: "1px solid var(--fg)", maxWidth: 440, width: "90%", position: "relative" } }, /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", top: -1, left: -1, width: 6, height: 6, background: "var(--accent)" } }), /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", top: -1, right: -1, width: 6, height: 6, background: "var(--accent)" } }), /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderBottom: "1px solid var(--fg)", display: "flex", alignItems: "center", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" } }, confirmTitles[confirmAction.type] || "Confirm"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-close", onClick: () => {
       setConfirmAction(null);
       setActionError("");
-    }, disabled: busy }, "\xD7")), /* @__PURE__ */ React.createElement("div", { style: { padding: 18 } }, actionError && /* @__PURE__ */ React.createElement("div", { style: { padding: "10px 12px", marginBottom: 14, border: "1px solid rgba(255,80,80,0.5)", color: "#ff6b6b", fontSize: 12 } }, actionError), /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 16px", fontSize: 13, lineHeight: 1.5 } }, confirmAction.type === "disable" ? `Disable user "${confirmAction.user.email}"? They will not be able to log in.` : `DELETE user "${confirmAction.user.email}" permanently? This action cannot be undone.`), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 10 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm", onClick: () => {
+    }, disabled: busy }, "\xD7")), /* @__PURE__ */ React.createElement("div", { style: { padding: 18 } }, actionError && /* @__PURE__ */ React.createElement("div", { style: { padding: "10px 12px", marginBottom: 14, border: "1px solid rgba(255,80,80,0.5)", color: "#ff6b6b", fontSize: 12 } }, actionError), /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 16px", fontSize: 13, lineHeight: 1.5 } }, confirmAction.type === "disable" && `Disable "${confirmAction.user.email}"? They cannot sign in until re-enabled.`, confirmAction.type === "enable" && `Re-enable "${confirmAction.user.email}"? SRP accounts restore immediately; legacy accounts may need a password reset.`, confirmAction.type === "delete" && `Permanently delete "${confirmAction.user.email}" and purge associated mail data? This cannot be undone.`, confirmAction.type === "admin_grant" && `Grant operator (admin) access to "${confirmAction.user.email}"?`, confirmAction.type === "admin_revoke" && `Revoke operator access from "${confirmAction.user.email}"?`), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 10 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm", onClick: () => {
       setConfirmAction(null);
       setActionError("");
     }, disabled: busy }, "Cancel"), /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
-        className: "btn-sm danger",
+        className: "btn-sm" + (confirmAction.type === "delete" || confirmAction.type === "admin_revoke" ? " danger" : confirmAction.type === "enable" ? " primary" : " warn"),
         disabled: busy,
         onClick: async () => {
           setBusy(true);
           setActionError("");
+          setActionOk("");
           try {
+            const id = confirmAction.user.id;
             if (confirmAction.type === "disable") {
-              await apiJSON(`/api/admin/users/${confirmAction.user.id}/disable`, { method: "POST" });
-            } else {
-              await apiJSON(`/api/admin/users/${confirmAction.user.id}`, { method: "DELETE" });
+              await apiJSON(`/api/admin/users/${id}/disable`, { method: "POST" });
+              setActionOk(`Disabled ${confirmAction.user.email}.`);
+            } else if (confirmAction.type === "enable") {
+              await apiJSON(`/api/admin/users/${id}/enable`, { method: "POST" });
+              setActionOk(`Enabled ${confirmAction.user.email}.`);
+            } else if (confirmAction.type === "delete") {
+              await apiJSON(`/api/admin/users/${id}`, { method: "DELETE" });
+              setActionOk(`Deleted ${confirmAction.user.email}.`);
+            } else if (confirmAction.type === "admin_grant" || confirmAction.type === "admin_revoke") {
+              await apiJSON(`/api/admin/users/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ is_admin: confirmAction.type === "admin_grant" })
+              });
+              setActionOk(confirmAction.type === "admin_grant" ? `Granted admin to ${confirmAction.user.email}.` : `Revoked admin from ${confirmAction.user.email}.`);
             }
             setConfirmAction(null);
             closeModal();
@@ -3325,7 +3526,7 @@ ${(post.openpgp_sig || "").trim() ? `
           }
         }
       },
-      busy ? "Working\u2026" : confirmAction.type === "disable" ? "Disable" : "Delete Forever"
+      busy ? "Working\u2026" : "Confirm"
     ))))));
   }
   function SecOutbox() {
@@ -3351,7 +3552,7 @@ ${(post.openpgp_sig || "").trim() ? `
     useEf(() => {
       load();
     }, [load]);
-    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-outbox-panel" }, /* @__PURE__ */ React.createElement(A4.H, { num: "03", title: "OUTBOX", sub: "queue status \xB7 retries \xB7 admin/system tagging" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Admin and system mail now reuse the same secure outbox and worker path as the rest of the platform. The table below stays metadata-only and never exposes stored message bodies."), /* @__PURE__ */ React.createElement("div", { className: "stats-row" }, /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Pending"), /* @__PURE__ */ React.createElement("span", null, stats.pending || 0)), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Sending"), /* @__PURE__ */ React.createElement("span", null, stats.sending || 0)), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Sent"), /* @__PURE__ */ React.createElement("span", { className: "ok" }, stats.sent || 0)), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Failed"), /* @__PURE__ */ React.createElement("span", { className: "warn" }, stats.failed || 0))), /* @__PURE__ */ React.createElement(A4.Card, { title: "FILTERS", right: /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: load }, "Refresh") }, /* @__PURE__ */ React.createElement("div", { className: "filters" }, ["", "pending", "sending", "sent", "failed"].map((v) => /* @__PURE__ */ React.createElement("button", { key: v || "all", className: "btn-sm" + (status === v ? " active" : ""), onClick: () => {
+    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-outbox-panel" }, /* @__PURE__ */ React.createElement(A5.H, { num: "03", title: "OUTBOX", sub: "queue status \xB7 retries \xB7 admin/system tagging" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Admin and system mail now reuse the same secure outbox and worker path as the rest of the platform. The table below stays metadata-only and never exposes stored message bodies."), /* @__PURE__ */ React.createElement("div", { className: "stats-row" }, /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Pending"), /* @__PURE__ */ React.createElement("span", null, stats.pending || 0)), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Sending"), /* @__PURE__ */ React.createElement("span", null, stats.sending || 0)), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Sent"), /* @__PURE__ */ React.createElement("span", { className: "ok" }, stats.sent || 0)), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Failed"), /* @__PURE__ */ React.createElement("span", { className: "warn" }, stats.failed || 0))), /* @__PURE__ */ React.createElement(A5.Card, { title: "FILTERS", right: /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: load }, "Refresh") }, /* @__PURE__ */ React.createElement("div", { className: "filters" }, ["", "pending", "sending", "sent", "failed"].map((v) => /* @__PURE__ */ React.createElement("button", { key: v || "all", className: "btn-sm" + (status === v ? " active" : ""), onClick: () => {
       setStatus(v);
       setPage(1);
     } }, v || "ALL"))), /* @__PURE__ */ React.createElement("div", { className: "filters", style: { marginTop: 8 } }, [
@@ -3371,7 +3572,7 @@ ${(post.openpgp_sig || "").trim() ? `
         }
       },
       label
-    )))), /* @__PURE__ */ React.createElement(A4.Card, { title: "OUTBOX ROWS", right: loading ? "loading\u2026" : `${items.length} visible` }, /* @__PURE__ */ React.createElement("table", { className: "admin-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Status"), /* @__PURE__ */ React.createElement("th", null, "Source"), /* @__PURE__ */ React.createElement("th", null, "Kind"), /* @__PURE__ */ React.createElement("th", null, "Recipient"), /* @__PURE__ */ React.createElement("th", null, "Run"), /* @__PURE__ */ React.createElement("th", null, "Created"), /* @__PURE__ */ React.createElement("th", null, "Error"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", null, loading && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "8", className: "dim" }, "Loading\u2026")), !loading && items.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "8", className: "dim" }, "No outbox items")), items.map((it) => /* @__PURE__ */ React.createElement("tr", { key: it.ID }, /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(StatusPill, { tone: it.Status === "failed" ? "warn" : it.Status === "sent" ? "ok" : "" }, it.Status)), /* @__PURE__ */ React.createElement("td", null, it.Source || "user_mail"), /* @__PURE__ */ React.createElement("td", null, it.Kind || "pgp"), /* @__PURE__ */ React.createElement("td", null, it.RecipientSummary || "\u2014"), /* @__PURE__ */ React.createElement("td", { className: "mono tiny" }, it.AdminRunID && it.AdminRunID !== "00000000-0000-0000-0000-000000000000" ? it.AdminRunID.slice(0, 8) : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: "dim" }, fmtDT(it.CreatedAt)), /* @__PURE__ */ React.createElement("td", { className: "dim" }, it.LastError ? String(it.LastError).slice(0, 64) : "\u2014"), /* @__PURE__ */ React.createElement("td", null, it.Status === "failed" && /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: async () => {
+    )))), /* @__PURE__ */ React.createElement(A5.Card, { title: "OUTBOX ROWS", right: loading ? "loading\u2026" : `${items.length} visible` }, /* @__PURE__ */ React.createElement("table", { className: "admin-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Status"), /* @__PURE__ */ React.createElement("th", null, "Source"), /* @__PURE__ */ React.createElement("th", null, "Kind"), /* @__PURE__ */ React.createElement("th", null, "Recipient"), /* @__PURE__ */ React.createElement("th", null, "Run"), /* @__PURE__ */ React.createElement("th", null, "Created"), /* @__PURE__ */ React.createElement("th", null, "Error"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", null, loading && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "8", className: "dim" }, "Loading\u2026")), !loading && items.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "8", className: "dim" }, "No outbox items")), items.map((it) => /* @__PURE__ */ React.createElement("tr", { key: it.ID }, /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(StatusPill, { tone: it.Status === "failed" ? "warn" : it.Status === "sent" ? "ok" : "" }, it.Status)), /* @__PURE__ */ React.createElement("td", null, it.Source || "user_mail"), /* @__PURE__ */ React.createElement("td", null, it.Kind || "pgp"), /* @__PURE__ */ React.createElement("td", null, it.RecipientSummary || "\u2014"), /* @__PURE__ */ React.createElement("td", { className: "mono tiny" }, it.AdminRunID && it.AdminRunID !== "00000000-0000-0000-0000-000000000000" ? it.AdminRunID.slice(0, 8) : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: "dim" }, fmtDT(it.CreatedAt)), /* @__PURE__ */ React.createElement("td", { className: "dim" }, it.LastError ? String(it.LastError).slice(0, 64) : "\u2014"), /* @__PURE__ */ React.createElement("td", null, it.Status === "failed" && /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: async () => {
       await apiJSON(`/api/admin/outbox/${it.ID}/retry`, { method: "POST" });
       load();
     } }, "Retry")))))), /* @__PURE__ */ React.createElement("div", { className: "pagination" }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: page <= 1, onClick: () => setPage((p) => p - 1) }, "Prev"), /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Page ", page), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: items.length < 20, onClick: () => setPage((p) => p + 1) }, "Next"))));
@@ -3470,7 +3671,7 @@ ${(post.openpgp_sig || "").trim() ? `
       }
       setBusy("");
     };
-    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-domains-panel" }, /* @__PURE__ */ React.createElement(A4.H, { num: "04", title: "DOMAINS", sub: `${total} custom domains \xB7 verification state` }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Admin system mail is restricted to verified sender domains. SPF, DKIM, and DMARC verification state shown here directly affects which domains are eligible."), err && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "f-ok" }, msg), /* @__PURE__ */ React.createElement(A4.Card, { title: "REGISTER DOMAIN", right: "admin-managed" }, /* @__PURE__ */ React.createElement("form", { className: "search-bar", onSubmit: registerDomain }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-domains-panel" }, /* @__PURE__ */ React.createElement(A5.H, { num: "04", title: "DOMAINS", sub: `${total} custom domains \xB7 verification state` }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Admin system mail is restricted to verified sender domains. SPF, DKIM, and DMARC verification state shown here directly affects which domains are eligible."), err && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "f-ok" }, msg), /* @__PURE__ */ React.createElement(A5.Card, { title: "REGISTER DOMAIN", right: "admin-managed" }, /* @__PURE__ */ React.createElement("form", { className: "search-bar", onSubmit: registerDomain }, /* @__PURE__ */ React.createElement(
       "input",
       {
         className: "inp",
@@ -3486,7 +3687,7 @@ ${(post.openpgp_sig || "").trim() ? `
         value: form.domain,
         onChange: (e) => setForm((f) => ({ ...f, domain: e.target.value }))
       }
-    ), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", type: "submit", disabled: busy === "add" }, busy === "add" ? "Adding\u2026" : "Add Domain")), /* @__PURE__ */ React.createElement("div", { className: "f-help" }, "Register a custom domain against an existing user, then publish the TXT record and run verification from this panel."), /* @__PURE__ */ React.createElement(JsonBlock, { value: addResult && addResult.dns_config ? addResult.dns_config : null })), /* @__PURE__ */ React.createElement(A4.Card, { title: "OWNED DOMAINS", right: loading ? "loading\u2026" : `${domains.length} on page \xB7 ${total} total` }, /* @__PURE__ */ React.createElement("table", { className: "admin-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Domain"), /* @__PURE__ */ React.createElement("th", null, "Owner"), /* @__PURE__ */ React.createElement("th", null, "Status"), /* @__PURE__ */ React.createElement("th", null, "Sharing"), /* @__PURE__ */ React.createElement("th", null, "Allowlist"), /* @__PURE__ */ React.createElement("th", null, "MX"), /* @__PURE__ */ React.createElement("th", null, "SPF"), /* @__PURE__ */ React.createElement("th", null, "DKIM"), /* @__PURE__ */ React.createElement("th", null, "DMARC"), /* @__PURE__ */ React.createElement("th", null, "Created"), /* @__PURE__ */ React.createElement("th", null, "Actions"))), /* @__PURE__ */ React.createElement("tbody", null, loading && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "11", className: "dim" }, "Loading\u2026")), !loading && domains.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "11", className: "dim" }, "No custom domains")), domains.map((d) => /* @__PURE__ */ React.createElement("tr", { key: d.domain }, /* @__PURE__ */ React.createElement("td", null, d.domain), /* @__PURE__ */ React.createElement("td", { className: "dim" }, d.owner_email || "\u2014"), /* @__PURE__ */ React.createElement("td", null, d.status), /* @__PURE__ */ React.createElement("td", { className: "dim tiny" }, d.share_mode || "owner_only"), /* @__PURE__ */ React.createElement("td", { className: "dim" }, d.allowlist_count != null ? d.allowlist_count : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: d.mx_verified ? "ok" : "dim" }, d.mx_verified ? "\u2713" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: d.spf_verified ? "ok" : "dim" }, d.spf_verified ? "\u2713" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: d.dkim_verified ? "ok" : "dim" }, d.dkim_verified ? "\u2713" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: d.dmarc_verified ? "ok" : "dim" }, d.dmarc_verified ? "\u2713" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: "dim" }, fmtDT(d.created_at)), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row", style: { gap: 8 } }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setSelected(d) }, "View"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => verifyDomain(d.domain), disabled: busy === `verify:${d.domain}` }, "Verify"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm danger", onClick: () => deleteDomain(d.domain), disabled: busy === `delete:${d.domain}` }, "Delete"))))))), /* @__PURE__ */ React.createElement("div", { className: "pagination" }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: page <= 1, onClick: () => setPage((p) => p - 1) }, "Prev"), /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Page ", page, total > 0 ? ` \xB7 ${domainPageStart + 1}\u2013${domainPageStart + domains.length} of ${total}` : ""), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: !domainHasNext, onClick: () => setPage((p) => p + 1) }, "Next"))), /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", type: "submit", disabled: busy === "add" }, busy === "add" ? "Adding\u2026" : "Add Domain")), /* @__PURE__ */ React.createElement("div", { className: "f-help" }, "Register a custom domain against an existing user, then publish the TXT record and run verification from this panel."), /* @__PURE__ */ React.createElement(JsonBlock, { value: addResult && addResult.dns_config ? addResult.dns_config : null })), /* @__PURE__ */ React.createElement(A5.Card, { title: "OWNED DOMAINS", right: loading ? "loading\u2026" : `${domains.length} on page \xB7 ${total} total` }, /* @__PURE__ */ React.createElement("table", { className: "admin-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Domain"), /* @__PURE__ */ React.createElement("th", null, "Owner"), /* @__PURE__ */ React.createElement("th", null, "Status"), /* @__PURE__ */ React.createElement("th", null, "Sharing"), /* @__PURE__ */ React.createElement("th", null, "Allowlist"), /* @__PURE__ */ React.createElement("th", null, "MX"), /* @__PURE__ */ React.createElement("th", null, "SPF"), /* @__PURE__ */ React.createElement("th", null, "DKIM"), /* @__PURE__ */ React.createElement("th", null, "DMARC"), /* @__PURE__ */ React.createElement("th", null, "Created"), /* @__PURE__ */ React.createElement("th", null, "Actions"))), /* @__PURE__ */ React.createElement("tbody", null, loading && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "11", className: "dim" }, "Loading\u2026")), !loading && domains.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "11", className: "dim" }, "No custom domains")), domains.map((d) => /* @__PURE__ */ React.createElement("tr", { key: d.domain }, /* @__PURE__ */ React.createElement("td", null, d.domain), /* @__PURE__ */ React.createElement("td", { className: "dim" }, d.owner_email || "\u2014"), /* @__PURE__ */ React.createElement("td", null, d.status), /* @__PURE__ */ React.createElement("td", { className: "dim tiny" }, d.share_mode || "owner_only"), /* @__PURE__ */ React.createElement("td", { className: "dim" }, d.allowlist_count != null ? d.allowlist_count : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: d.mx_verified ? "ok" : "dim" }, d.mx_verified ? "\u2713" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: d.spf_verified ? "ok" : "dim" }, d.spf_verified ? "\u2713" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: d.dkim_verified ? "ok" : "dim" }, d.dkim_verified ? "\u2713" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: d.dmarc_verified ? "ok" : "dim" }, d.dmarc_verified ? "\u2713" : "\u2014"), /* @__PURE__ */ React.createElement("td", { className: "dim" }, fmtDT(d.created_at)), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row", style: { gap: 8 } }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setSelected(d) }, "View"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => verifyDomain(d.domain), disabled: busy === `verify:${d.domain}` }, "Verify"), /* @__PURE__ */ React.createElement("button", { className: "btn-sm danger", onClick: () => deleteDomain(d.domain), disabled: busy === `delete:${d.domain}` }, "Delete"))))))), /* @__PURE__ */ React.createElement("div", { className: "pagination" }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: page <= 1, onClick: () => setPage((p) => p - 1) }, "Prev"), /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Page ", page, total > 0 ? ` \xB7 ${domainPageStart + 1}\u2013${domainPageStart + domains.length} of ${total}` : ""), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", disabled: !domainHasNext, onClick: () => setPage((p) => p + 1) }, "Next"))), /* @__PURE__ */ React.createElement(
       DomainDetailModal,
       {
         domain: selected,
@@ -3798,7 +3999,7 @@ ${(post.openpgp_sig || "").trim() ? `
         setTestSending(false);
       }
     }, [validateTestComposer, buildTestPayload, form, ensurePlaintextUploads, computedTestFromAddr, testRecipientEmails, testAttachments]);
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-mail-test-panel" }, /* @__PURE__ */ React.createElement(A4.H, { num: "05", title: "TESTING", sub: "deliverability \xB7 crypto \xB7 bounded probes" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "These tools are authenticated admin diagnostics. The send-path probe stays inside the normal relay-wrapped outbox flow, key lookups are explicit and rate-limited, and no tool exposes stored message bodies."), keyMsg && /* @__PURE__ */ React.createElement("div", { className: "f-ok" }, keyMsg), /* @__PURE__ */ React.createElement("div", { className: "mail-grid" }, /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "Infrastructure Health"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Check the core stores used by the mail subsystem."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: runHealth }, health && health.loading ? "Checking\u2026" : "Run Health Check"), health && health.checks && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, Object.entries(health.checks).map(([k, v]) => /* @__PURE__ */ React.createElement("div", { key: k, className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, k), /* @__PURE__ */ React.createElement("span", { className: v.ok ? "ok" : "warn" }, v.ok ? "OK" : v.error || "FAIL")))), health && health.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, health.error)), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "Deliverability Readiness"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Verify relay key, sender domains, and the DNS records the outbound path depends on."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: runReadiness }, readiness && readiness.loading ? "Checking\u2026" : "Run Readiness"), readiness && (readiness.sender_domains || readiness.delivery) && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Relay key"), /* @__PURE__ */ React.createElement("span", { className: readiness.relay_enabled ? "ok" : "warn" }, readiness.relay_enabled ? "Ready" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DKIM signer"), /* @__PURE__ */ React.createElement("span", { className: readiness.dkim_configured ? "ok" : "warn" }, readiness.dkim_configured ? "Configured" : "Missing")), readiness.delivery && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DKIM domain"), /* @__PURE__ */ React.createElement("span", null, readiness.delivery.domain || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DKIM DNS"), /* @__PURE__ */ React.createElement("span", { className: readiness.delivery.dkim && readiness.delivery.dkim.ok ? "ok" : "warn" }, readiness.delivery.dkim && readiness.delivery.dkim.ok ? "Published" : "Missing / mismatch")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "MX"), /* @__PURE__ */ React.createElement("span", { className: readiness.delivery.mx && readiness.delivery.mx.ok ? "ok" : "warn" }, readiness.delivery.mx && readiness.delivery.mx.ok ? "Present" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SPF"), /* @__PURE__ */ React.createElement("span", { className: readiness.delivery.spf && readiness.delivery.spf.ok ? "ok" : "warn" }, readiness.delivery.spf && readiness.delivery.spf.ok ? "Present" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DMARC"), /* @__PURE__ */ React.createElement("span", { className: readiness.delivery.dmarc && readiness.delivery.dmarc.ok ? "ok" : "warn" }, readiness.delivery.dmarc && readiness.delivery.dmarc.ok ? "Present" : "Missing"))), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Keyserver"), /* @__PURE__ */ React.createElement("span", { className: readiness.keyserver_enabled ? "ok" : "warn" }, readiness.keyserver_enabled ? "Enabled" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Sender domains"), /* @__PURE__ */ React.createElement("span", null, (readiness.sender_domains || []).length)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Ready"), /* @__PURE__ */ React.createElement("span", { className: readiness.ready_for_system_mail ? "ok" : "warn" }, readiness.ready_for_system_mail ? "Yes" : "No"))), readiness && Array.isArray(readiness.issues) && readiness.issues.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "test-results", style: { marginTop: 8 } }, readiness.issues.map((issue, idx) => /* @__PURE__ */ React.createElement("div", { key: issue + idx, className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Issue"), /* @__PURE__ */ React.createElement("span", { className: "warn" }, issue)))), readinessDNSGuide.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "test-results", style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Guide"), /* @__PURE__ */ React.createElement("span", null, "Publish these DNS records, wait for DNS to propagate, then rerun readiness.")), readinessDNSGuide.map((record) => /* @__PURE__ */ React.createElement("details", { key: record.id, style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { className: "dim" }, record.label, " setup"), /* @__PURE__ */ React.createElement("div", { className: "test-results", style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Type"), /* @__PURE__ */ React.createElement("span", null, record.type)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Host"), /* @__PURE__ */ React.createElement("span", { className: "mono" }, record.host || "@")), record.fqdn && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "FQDN"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, record.fqdn)), record.extra && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Extra"), /* @__PURE__ */ React.createElement("span", null, record.extra)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "TTL"), /* @__PURE__ */ React.createElement("span", null, record.ttl || "Auto")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Value"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, record.value)), record.note && /* @__PURE__ */ React.createElement("div", { className: "f-help", style: { marginTop: 6 } }, record.note))))), readiness && readiness.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, readiness.error)), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "SRP / Browser Auth"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Audit the live browser-auth posture: SRP routes, user migration counts, and whether secure shells load the expected auth runtime."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: runAuthPosture }, authPosture && authPosture.loading ? "Checking\u2026" : "Run Auth Audit"), authPosture && !authPosture.loading && !authPosture.error && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SRP enabled"), /* @__PURE__ */ React.createElement("span", { className: authPosture.srp_enabled ? "ok" : "warn" }, authPosture.srp_enabled ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Sessions"), /* @__PURE__ */ React.createElement("span", { className: authPosture.sessions_configured ? "ok" : "warn" }, authPosture.sessions_configured ? "Configured" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SRP group"), /* @__PURE__ */ React.createElement("span", null, authPosture.srp_group || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SRP hash"), /* @__PURE__ */ React.createElement("span", null, authPosture.srp_hash || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Users (total)"), /* @__PURE__ */ React.createElement("span", null, authPosture.store && authPosture.store.total_users != null ? authPosture.store.total_users : "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Users (SRP)"), /* @__PURE__ */ React.createElement("span", null, authPosture.store && authPosture.store.srp_users != null ? authPosture.store.srp_users : "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Legacy auth users"), /* @__PURE__ */ React.createElement("span", { className: authPosture.store && Number(authPosture.store.legacy_users || 0) === 0 ? "ok" : "warn" }, authPosture.store && authPosture.store.legacy_users != null ? authPosture.store.legacy_users : "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Disabled users"), /* @__PURE__ */ React.createElement("span", null, authPosture.store && authPosture.store.disabled_users != null ? authPosture.store.disabled_users : "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Live SRP challenges"), /* @__PURE__ */ React.createElement("span", null, authPosture.active_srp_challenges != null ? authPosture.active_srp_challenges : "\u2014")), authPosture.pages && Object.entries(authPosture.pages).map(([name, page]) => /* @__PURE__ */ React.createElement("div", { key: name, className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, name, " shell"), /* @__PURE__ */ React.createElement("span", { className: page && page.ok ? "ok" : "warn" }, page && page.ok ? "Ready" : "Needs review"))), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Unlock persistence"), /* @__PURE__ */ React.createElement("span", { className: authPosture.unlock_memory_only ? "ok" : "warn" }, authPosture.unlock_memory_only ? "Memory-only" : "Persistent"))), authPosture && authPosture.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, authPosture.error), /* @__PURE__ */ React.createElement(JsonBlock, { value: authPosture && !authPosture.loading && !authPosture.error ? authPosture : null })), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "Ultra-Private Posture"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Check encrypted-by-default metadata, secure-shell headers, inbound SMTP gateway encryption, and whether user-authored plaintext relay is shut off."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: runPrivacyPosture }, privacyPosture && privacyPosture.loading ? "Checking\u2026" : "Run Privacy Audit"), privacyPosture && !privacyPosture.loading && !privacyPosture.error && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Metadata default"), /* @__PURE__ */ React.createElement("span", { className: privacyPosture.default_metadata_encrypted ? "ok" : "warn" }, privacyPosture.default_metadata_encrypted ? "Encrypted / opt-in" : "Readable by default")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Plaintext relay (user)"), /* @__PURE__ */ React.createElement("span", { className: privacyPosture.user_plaintext_relay_disabled ? "ok" : "warn" }, privacyPosture.user_plaintext_relay_disabled ? "Disabled" : "Enabled")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Unlock persistence"), /* @__PURE__ */ React.createElement("span", { className: privacyPosture.unlock_memory_only ? "ok" : "warn" }, privacyPosture.unlock_memory_only ? "Memory-only" : "Persistent")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SMTP plaintext ingress"), /* @__PURE__ */ React.createElement("span", { className: privacyPosture.smtp_plaintext_gateway_encryption ? "ok" : "warn" }, privacyPosture.smtp_plaintext_gateway_encryption ? "Gateway-encrypted" : "Needs review")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Referrer policy"), /* @__PURE__ */ React.createElement("span", null, privacyPosture.secure_headers && privacyPosture.secure_headers.referrer_policy || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Frame protection"), /* @__PURE__ */ React.createElement("span", null, privacyPosture.secure_headers && privacyPosture.secure_headers.x_frame_options || "\u2014")), privacyPosture.pages && Object.entries(privacyPosture.pages).map(([name, page]) => /* @__PURE__ */ React.createElement("div", { key: name, className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, name, " shell"), /* @__PURE__ */ React.createElement("span", { className: page && page.ok ? "ok" : "warn" }, page && page.ok ? "Clean" : "Needs review")))), privacyPosture && privacyPosture.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, privacyPosture.error), /* @__PURE__ */ React.createElement(JsonBlock, { value: privacyPosture && !privacyPosture.loading && !privacyPosture.error ? privacyPosture : null })), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "Relay Key"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Manage the server-side relay key used to wrap plaintext-relay mail at rest."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: loadKeyMaterial }, keyMaterial && keyMaterial.loading ? "Loading\u2026" : "Refresh Key Status"), keyMaterial && keyMaterial.relay && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Present"), /* @__PURE__ */ React.createElement("span", { className: keyMaterial.relay.present ? "ok" : "warn" }, keyMaterial.relay.present ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Path"), /* @__PURE__ */ React.createElement("span", { className: "mono" }, keyMaterial.relay.path || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Fingerprint"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, keyMaterial.relay.fingerprint || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Public hash"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, keyMaterial.relay.public_hash || "\u2014")), keyMaterial.relay.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, keyMaterial.relay.error)), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", style: { marginTop: 10 }, onClick: () => setConfirmKeyAction("relay") }, "Generate / Rotate Relay Key")), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "DKIM Key"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Manage the active DKIM signer domain/selector, then generate a key or upload an existing PEM. Changes hot-reload into the outbound worker."), keyMaterial && keyMaterial.dkim && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Present"), /* @__PURE__ */ React.createElement("span", { className: keyMaterial.dkim.present ? "ok" : "warn" }, keyMaterial.dkim.present ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Configured"), /* @__PURE__ */ React.createElement("span", { className: keyMaterial.dkim.configured ? "ok" : "warn" }, keyMaterial.dkim.configured ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Path"), /* @__PURE__ */ React.createElement("span", { className: "mono" }, keyMaterial.dkim.path || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Selector"), /* @__PURE__ */ React.createElement("span", null, keyMaterial.dkim.selector || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Domain"), /* @__PURE__ */ React.createElement("span", null, keyMaterial.dkim.domain || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DNS name"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, keyMaterial.dkim.dns_name || "\u2014")), keyMaterial.dkim.public_txt && /* @__PURE__ */ React.createElement("details", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { className: "dim" }, "DKIM DNS TXT"), /* @__PURE__ */ React.createElement("pre", { className: "test-output" }, keyMaterial.dkim.public_txt)), keyMaterial.dkim.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, keyMaterial.dkim.error)), /* @__PURE__ */ React.createElement("div", { className: "system-mail-grid", style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-mail-test-panel" }, /* @__PURE__ */ React.createElement(A5.H, { num: "05", title: "TESTING", sub: "deliverability \xB7 crypto \xB7 bounded probes" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "These tools are authenticated admin diagnostics. The send-path probe stays inside the normal relay-wrapped outbox flow, key lookups are explicit and rate-limited, and no tool exposes stored message bodies."), keyMsg && /* @__PURE__ */ React.createElement("div", { className: "f-ok" }, keyMsg), /* @__PURE__ */ React.createElement("div", { className: "mail-grid" }, /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "Infrastructure Health"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Check the core stores used by the mail subsystem."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: runHealth }, health && health.loading ? "Checking\u2026" : "Run Health Check"), health && health.checks && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, Object.entries(health.checks).map(([k, v]) => /* @__PURE__ */ React.createElement("div", { key: k, className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, k), /* @__PURE__ */ React.createElement("span", { className: v.ok ? "ok" : "warn" }, v.ok ? "OK" : v.error || "FAIL")))), health && health.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, health.error)), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "Deliverability Readiness"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Verify relay key, sender domains, and the DNS records the outbound path depends on."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: runReadiness }, readiness && readiness.loading ? "Checking\u2026" : "Run Readiness"), readiness && (readiness.sender_domains || readiness.delivery) && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Relay key"), /* @__PURE__ */ React.createElement("span", { className: readiness.relay_enabled ? "ok" : "warn" }, readiness.relay_enabled ? "Ready" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DKIM signer"), /* @__PURE__ */ React.createElement("span", { className: readiness.dkim_configured ? "ok" : "warn" }, readiness.dkim_configured ? "Configured" : "Missing")), readiness.delivery && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DKIM domain"), /* @__PURE__ */ React.createElement("span", null, readiness.delivery.domain || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DKIM DNS"), /* @__PURE__ */ React.createElement("span", { className: readiness.delivery.dkim && readiness.delivery.dkim.ok ? "ok" : "warn" }, readiness.delivery.dkim && readiness.delivery.dkim.ok ? "Published" : "Missing / mismatch")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "MX"), /* @__PURE__ */ React.createElement("span", { className: readiness.delivery.mx && readiness.delivery.mx.ok ? "ok" : "warn" }, readiness.delivery.mx && readiness.delivery.mx.ok ? "Present" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SPF"), /* @__PURE__ */ React.createElement("span", { className: readiness.delivery.spf && readiness.delivery.spf.ok ? "ok" : "warn" }, readiness.delivery.spf && readiness.delivery.spf.ok ? "Present" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DMARC"), /* @__PURE__ */ React.createElement("span", { className: readiness.delivery.dmarc && readiness.delivery.dmarc.ok ? "ok" : "warn" }, readiness.delivery.dmarc && readiness.delivery.dmarc.ok ? "Present" : "Missing"))), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Keyserver"), /* @__PURE__ */ React.createElement("span", { className: readiness.keyserver_enabled ? "ok" : "warn" }, readiness.keyserver_enabled ? "Enabled" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Sender domains"), /* @__PURE__ */ React.createElement("span", null, (readiness.sender_domains || []).length)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Ready"), /* @__PURE__ */ React.createElement("span", { className: readiness.ready_for_system_mail ? "ok" : "warn" }, readiness.ready_for_system_mail ? "Yes" : "No"))), readiness && Array.isArray(readiness.issues) && readiness.issues.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "test-results", style: { marginTop: 8 } }, readiness.issues.map((issue, idx) => /* @__PURE__ */ React.createElement("div", { key: issue + idx, className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Issue"), /* @__PURE__ */ React.createElement("span", { className: "warn" }, issue)))), readinessDNSGuide.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "test-results", style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Guide"), /* @__PURE__ */ React.createElement("span", null, "Publish these DNS records, wait for DNS to propagate, then rerun readiness.")), readinessDNSGuide.map((record) => /* @__PURE__ */ React.createElement("details", { key: record.id, style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { className: "dim" }, record.label, " setup"), /* @__PURE__ */ React.createElement("div", { className: "test-results", style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Type"), /* @__PURE__ */ React.createElement("span", null, record.type)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Host"), /* @__PURE__ */ React.createElement("span", { className: "mono" }, record.host || "@")), record.fqdn && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "FQDN"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, record.fqdn)), record.extra && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Extra"), /* @__PURE__ */ React.createElement("span", null, record.extra)), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "TTL"), /* @__PURE__ */ React.createElement("span", null, record.ttl || "Auto")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Value"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, record.value)), record.note && /* @__PURE__ */ React.createElement("div", { className: "f-help", style: { marginTop: 6 } }, record.note))))), readiness && readiness.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, readiness.error)), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "SRP / Browser Auth"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Audit the live browser-auth posture: SRP routes, user migration counts, and whether secure shells load the expected auth runtime."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: runAuthPosture }, authPosture && authPosture.loading ? "Checking\u2026" : "Run Auth Audit"), authPosture && !authPosture.loading && !authPosture.error && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SRP enabled"), /* @__PURE__ */ React.createElement("span", { className: authPosture.srp_enabled ? "ok" : "warn" }, authPosture.srp_enabled ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Sessions"), /* @__PURE__ */ React.createElement("span", { className: authPosture.sessions_configured ? "ok" : "warn" }, authPosture.sessions_configured ? "Configured" : "Missing")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SRP group"), /* @__PURE__ */ React.createElement("span", null, authPosture.srp_group || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SRP hash"), /* @__PURE__ */ React.createElement("span", null, authPosture.srp_hash || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Users (total)"), /* @__PURE__ */ React.createElement("span", null, authPosture.store && authPosture.store.total_users != null ? authPosture.store.total_users : "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Users (SRP)"), /* @__PURE__ */ React.createElement("span", null, authPosture.store && authPosture.store.srp_users != null ? authPosture.store.srp_users : "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Legacy auth users"), /* @__PURE__ */ React.createElement("span", { className: authPosture.store && Number(authPosture.store.legacy_users || 0) === 0 ? "ok" : "warn" }, authPosture.store && authPosture.store.legacy_users != null ? authPosture.store.legacy_users : "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Disabled users"), /* @__PURE__ */ React.createElement("span", null, authPosture.store && authPosture.store.disabled_users != null ? authPosture.store.disabled_users : "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Live SRP challenges"), /* @__PURE__ */ React.createElement("span", null, authPosture.active_srp_challenges != null ? authPosture.active_srp_challenges : "\u2014")), authPosture.pages && Object.entries(authPosture.pages).map(([name, page]) => /* @__PURE__ */ React.createElement("div", { key: name, className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, name, " shell"), /* @__PURE__ */ React.createElement("span", { className: page && page.ok ? "ok" : "warn" }, page && page.ok ? "Ready" : "Needs review"))), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Unlock persistence"), /* @__PURE__ */ React.createElement("span", { className: authPosture.unlock_memory_only ? "ok" : "warn" }, authPosture.unlock_memory_only ? "Memory-only" : "Persistent"))), authPosture && authPosture.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, authPosture.error), /* @__PURE__ */ React.createElement(JsonBlock, { value: authPosture && !authPosture.loading && !authPosture.error ? authPosture : null })), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "Ultra-Private Posture"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Check encrypted-by-default metadata, secure-shell headers, inbound SMTP gateway encryption, and whether user-authored plaintext relay is shut off."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: runPrivacyPosture }, privacyPosture && privacyPosture.loading ? "Checking\u2026" : "Run Privacy Audit"), privacyPosture && !privacyPosture.loading && !privacyPosture.error && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Metadata default"), /* @__PURE__ */ React.createElement("span", { className: privacyPosture.default_metadata_encrypted ? "ok" : "warn" }, privacyPosture.default_metadata_encrypted ? "Encrypted / opt-in" : "Readable by default")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Plaintext relay (user)"), /* @__PURE__ */ React.createElement("span", { className: privacyPosture.user_plaintext_relay_disabled ? "ok" : "warn" }, privacyPosture.user_plaintext_relay_disabled ? "Disabled" : "Enabled")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Unlock persistence"), /* @__PURE__ */ React.createElement("span", { className: privacyPosture.unlock_memory_only ? "ok" : "warn" }, privacyPosture.unlock_memory_only ? "Memory-only" : "Persistent")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "SMTP plaintext ingress"), /* @__PURE__ */ React.createElement("span", { className: privacyPosture.smtp_plaintext_gateway_encryption ? "ok" : "warn" }, privacyPosture.smtp_plaintext_gateway_encryption ? "Gateway-encrypted" : "Needs review")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Referrer policy"), /* @__PURE__ */ React.createElement("span", null, privacyPosture.secure_headers && privacyPosture.secure_headers.referrer_policy || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Frame protection"), /* @__PURE__ */ React.createElement("span", null, privacyPosture.secure_headers && privacyPosture.secure_headers.x_frame_options || "\u2014")), privacyPosture.pages && Object.entries(privacyPosture.pages).map(([name, page]) => /* @__PURE__ */ React.createElement("div", { key: name, className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, name, " shell"), /* @__PURE__ */ React.createElement("span", { className: page && page.ok ? "ok" : "warn" }, page && page.ok ? "Clean" : "Needs review")))), privacyPosture && privacyPosture.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, privacyPosture.error), /* @__PURE__ */ React.createElement(JsonBlock, { value: privacyPosture && !privacyPosture.loading && !privacyPosture.error ? privacyPosture : null })), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "Relay Key"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Manage the server-side relay key used to wrap plaintext-relay mail at rest."), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: loadKeyMaterial }, keyMaterial && keyMaterial.loading ? "Loading\u2026" : "Refresh Key Status"), keyMaterial && keyMaterial.relay && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Present"), /* @__PURE__ */ React.createElement("span", { className: keyMaterial.relay.present ? "ok" : "warn" }, keyMaterial.relay.present ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Path"), /* @__PURE__ */ React.createElement("span", { className: "mono" }, keyMaterial.relay.path || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Fingerprint"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, keyMaterial.relay.fingerprint || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Public hash"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, keyMaterial.relay.public_hash || "\u2014")), keyMaterial.relay.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, keyMaterial.relay.error)), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", style: { marginTop: 10 }, onClick: () => setConfirmKeyAction("relay") }, "Generate / Rotate Relay Key")), /* @__PURE__ */ React.createElement("div", { className: "test-card" }, /* @__PURE__ */ React.createElement("h3", null, "DKIM Key"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "Manage the active DKIM signer domain/selector, then generate a key or upload an existing PEM. Changes hot-reload into the outbound worker."), keyMaterial && keyMaterial.dkim && /* @__PURE__ */ React.createElement("div", { className: "test-results" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Present"), /* @__PURE__ */ React.createElement("span", { className: keyMaterial.dkim.present ? "ok" : "warn" }, keyMaterial.dkim.present ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Configured"), /* @__PURE__ */ React.createElement("span", { className: keyMaterial.dkim.configured ? "ok" : "warn" }, keyMaterial.dkim.configured ? "Yes" : "No")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Path"), /* @__PURE__ */ React.createElement("span", { className: "mono" }, keyMaterial.dkim.path || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Selector"), /* @__PURE__ */ React.createElement("span", null, keyMaterial.dkim.selector || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Domain"), /* @__PURE__ */ React.createElement("span", null, keyMaterial.dkim.domain || "\u2014")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "DNS name"), /* @__PURE__ */ React.createElement("span", { className: "mono tiny" }, keyMaterial.dkim.dns_name || "\u2014")), keyMaterial.dkim.public_txt && /* @__PURE__ */ React.createElement("details", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { className: "dim" }, "DKIM DNS TXT"), /* @__PURE__ */ React.createElement("pre", { className: "test-output" }, keyMaterial.dkim.public_txt)), keyMaterial.dkim.error && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, keyMaterial.dkim.error)), /* @__PURE__ */ React.createElement("div", { className: "system-mail-grid", style: { marginTop: 10 } }, /* @__PURE__ */ React.createElement(
       "input",
       {
         className: "inp",
@@ -3890,7 +4091,7 @@ ${(post.openpgp_sig || "").trim() ? `
         onChange: (e) => setForm((f) => ({ ...f, test_external_emails: e.target.value }))
       }
     ), /* @__PURE__ */ React.createElement("div", { className: "f-help" }, "Resolved recipient set: ", /* @__PURE__ */ React.createElement("code", null, testRecipientEmails.length))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 11, marginBottom: 6 } }, "Mode"), /* @__PURE__ */ React.createElement(
-      A4.Seg,
+      A5.Seg,
       {
         value: form.test_send_mode,
         onChange: (v) => {
@@ -4090,8 +4291,8 @@ ${(post.openpgp_sig || "").trim() ? `
       body_text: String(form.body_text || "").trim()
     }), [form, selectedUsers, computedFromAddr]);
     const needsConfirm = form.audience_kind !== "selected" || (preview && preview.recipient_count || selectedUsers.length) > 1;
-    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-system-mail-panel" }, /* @__PURE__ */ React.createElement(A4.H, { num: "06", title: "SYSTEM MAIL", sub: "preview \xB7 queue securely \xB7 audit recent runs" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "System email is queued through the same relay-wrapped outbox and worker path as other server-authored mail. The server stores only wrapped payloads at rest, sender domains are restricted, and bulk sends require an explicit confirmation step."), err && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "f-ok" }, msg), /* @__PURE__ */ React.createElement(A4.Card, { title: "COMPOSE SYSTEM MAIL", right: config ? `${config.active_user_count || 0} active users` : "loading\u2026" }, /* @__PURE__ */ React.createElement(A4.FRow, { label: "Audience", hint: "Target selected users or queue a platform-wide announcement to all active users." }, /* @__PURE__ */ React.createElement(
-      A4.Seg,
+    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-system-mail-panel" }, /* @__PURE__ */ React.createElement(A5.H, { num: "06", title: "SYSTEM MAIL", sub: "preview \xB7 queue securely \xB7 audit recent runs" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "System email is queued through the same relay-wrapped outbox and worker path as other server-authored mail. The server stores only wrapped payloads at rest, sender domains are restricted, and bulk sends require an explicit confirmation step."), err && /* @__PURE__ */ React.createElement("div", { className: "f-err" }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "f-ok" }, msg), /* @__PURE__ */ React.createElement(A5.Card, { title: "COMPOSE SYSTEM MAIL", right: config ? `${config.active_user_count || 0} active users` : "loading\u2026" }, /* @__PURE__ */ React.createElement(A5.FRow, { label: "Audience", hint: "Target selected users or queue a platform-wide announcement to all active users." }, /* @__PURE__ */ React.createElement(
+      A5.Seg,
       {
         value: form.audience_kind,
         onChange: (v) => {
@@ -4104,7 +4305,7 @@ ${(post.openpgp_sig || "").trim() ? `
           { value: "all_active", label: "All active users" }
         ]
       }
-    )), form.audience_kind === "selected" && /* @__PURE__ */ React.createElement(A4.FRow, { label: "Recipients", hint: "Search by email, add one or more platform users, then preview before queueing." }, /* @__PURE__ */ React.createElement("div", { className: "col", style: { gap: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "search-bar" }, /* @__PURE__ */ React.createElement("input", { className: "inp", placeholder: "Search users by email\u2026", value: searchQuery, onChange: (e) => setSearchQuery(e.target.value) }), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: searchUsers }, searching ? "Searching\u2026" : "Search")), /* @__PURE__ */ React.createElement("div", { className: "selected-users" }, selectedUsers.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No users selected."), selectedUsers.map((u) => /* @__PURE__ */ React.createElement("div", { key: u.id, className: "selected-user" }, /* @__PURE__ */ React.createElement("div", { className: "col" }, /* @__PURE__ */ React.createElement("strong", null, u.email), /* @__PURE__ */ React.createElement("span", { className: "dim" }, u.name || "No name", " \xB7 ", u.id.slice(0, 8))), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setSelectedUsers((list) => list.filter((x) => x.id !== u.id)) }, "Remove")))), searchResults.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "search-results" }, searchResults.map((u) => /* @__PURE__ */ React.createElement("div", { key: u.id, className: "search-result-row" }, /* @__PURE__ */ React.createElement("div", { className: "col" }, /* @__PURE__ */ React.createElement("strong", null, u.email), /* @__PURE__ */ React.createElement("span", { className: "dim" }, u.name || "No name", " \xB7 created ", fmtDT(u.created_at))), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", onClick: () => setSelectedUsers((list) => [...list, u]) }, "Add")))))), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Sender", hint: "The domain must come from the verified sender-domain list." }, /* @__PURE__ */ React.createElement("div", { className: "system-mail-grid" }, /* @__PURE__ */ React.createElement("input", { className: "inp", placeholder: "Local part", value: form.local_part, onChange: (e) => setForm((f) => ({ ...f, local_part: e.target.value })) }), /* @__PURE__ */ React.createElement("select", { className: "sel", value: form.domain, onChange: (e) => setForm((f) => ({ ...f, domain: e.target.value })) }, /* @__PURE__ */ React.createElement("option", { value: "" }, "Select a verified domain\u2026"), senderDomains.map((d) => /* @__PURE__ */ React.createElement("option", { key: d.domain, value: d.domain }, d.domain, d.is_default ? " (default)" : "", " (", d.source, ")")))), /* @__PURE__ */ React.createElement("div", { className: "f-help" }, "From address preview: ", /* @__PURE__ */ React.createElement("code", null, computedFromAddr || "\u2014"))), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Subject", req: true }, /* @__PURE__ */ React.createElement(A4.Input, { value: form.subject, onChange: (v) => setForm((f) => ({ ...f, subject: v })), placeholder: "Announcement subject" })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Body", req: true, hint: "Text-only in the first version to keep the send path constrained and auditable." }, /* @__PURE__ */ React.createElement(A4.Textarea, { tall: true, value: form.body_text, onChange: (v) => setForm((f) => ({ ...f, body_text: v })), placeholder: "System announcement body\u2026" })), /* @__PURE__ */ React.createElement("div", { className: "mail-actions" }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: async () => {
+    )), form.audience_kind === "selected" && /* @__PURE__ */ React.createElement(A5.FRow, { label: "Recipients", hint: "Search by email, add one or more platform users, then preview before queueing." }, /* @__PURE__ */ React.createElement("div", { className: "col", style: { gap: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "search-bar" }, /* @__PURE__ */ React.createElement("input", { className: "inp", placeholder: "Search users by email\u2026", value: searchQuery, onChange: (e) => setSearchQuery(e.target.value) }), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: searchUsers }, searching ? "Searching\u2026" : "Search")), /* @__PURE__ */ React.createElement("div", { className: "selected-users" }, selectedUsers.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No users selected."), selectedUsers.map((u) => /* @__PURE__ */ React.createElement("div", { key: u.id, className: "selected-user" }, /* @__PURE__ */ React.createElement("div", { className: "col" }, /* @__PURE__ */ React.createElement("strong", null, u.email), /* @__PURE__ */ React.createElement("span", { className: "dim" }, u.name || "No name", " \xB7 ", u.id.slice(0, 8))), /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: () => setSelectedUsers((list) => list.filter((x) => x.id !== u.id)) }, "Remove")))), searchResults.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "search-results" }, searchResults.map((u) => /* @__PURE__ */ React.createElement("div", { key: u.id, className: "search-result-row" }, /* @__PURE__ */ React.createElement("div", { className: "col" }, /* @__PURE__ */ React.createElement("strong", null, u.email), /* @__PURE__ */ React.createElement("span", { className: "dim" }, u.name || "No name", " \xB7 created ", fmtDT(u.created_at))), /* @__PURE__ */ React.createElement("button", { className: "btn-sm primary", onClick: () => setSelectedUsers((list) => [...list, u]) }, "Add")))))), /* @__PURE__ */ React.createElement(A5.FRow, { label: "Sender", hint: "The domain must come from the verified sender-domain list." }, /* @__PURE__ */ React.createElement("div", { className: "system-mail-grid" }, /* @__PURE__ */ React.createElement("input", { className: "inp", placeholder: "Local part", value: form.local_part, onChange: (e) => setForm((f) => ({ ...f, local_part: e.target.value })) }), /* @__PURE__ */ React.createElement("select", { className: "sel", value: form.domain, onChange: (e) => setForm((f) => ({ ...f, domain: e.target.value })) }, /* @__PURE__ */ React.createElement("option", { value: "" }, "Select a verified domain\u2026"), senderDomains.map((d) => /* @__PURE__ */ React.createElement("option", { key: d.domain, value: d.domain }, d.domain, d.is_default ? " (default)" : "", " (", d.source, ")")))), /* @__PURE__ */ React.createElement("div", { className: "f-help" }, "From address preview: ", /* @__PURE__ */ React.createElement("code", null, computedFromAddr || "\u2014"))), /* @__PURE__ */ React.createElement(A5.FRow, { label: "Subject", req: true }, /* @__PURE__ */ React.createElement(A5.Input, { value: form.subject, onChange: (v) => setForm((f) => ({ ...f, subject: v })), placeholder: "Announcement subject" })), /* @__PURE__ */ React.createElement(A5.FRow, { label: "Body", req: true, hint: "Text-only in the first version to keep the send path constrained and auditable." }, /* @__PURE__ */ React.createElement(A5.Textarea, { tall: true, value: form.body_text, onChange: (v) => setForm((f) => ({ ...f, body_text: v })), placeholder: "System announcement body\u2026" })), /* @__PURE__ */ React.createElement("div", { className: "mail-actions" }, /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: async () => {
       setErr("");
       setMsg("");
       setConfirmBulk(false);
@@ -4149,12 +4350,12 @@ ${(post.openpgp_sig || "").trim() ? `
         setErr(String(e.message || e));
       }
       setSending(false);
-    } }, sending ? "Queueing\u2026" : "Queue System Mail")), needsConfirm && /* @__PURE__ */ React.createElement("label", { className: "tgl", style: { marginTop: 12 } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: confirmBulk, onChange: (e) => setConfirmBulk(e.target.checked) }), /* @__PURE__ */ React.createElement("span", { className: "tgl-track" }), "Confirm this ", form.audience_kind === "all_active" ? "bulk" : "multi-recipient", " send."), preview && /* @__PURE__ */ React.createElement("div", { className: "preview-box" }, /* @__PURE__ */ React.createElement("div", { className: "preview-row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "From"), /* @__PURE__ */ React.createElement("span", null, preview.from_addr || computedFromAddr)), /* @__PURE__ */ React.createElement("div", { className: "preview-row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Recipients"), /* @__PURE__ */ React.createElement("span", null, preview.recipient_count || preview.queued_count || 0)), /* @__PURE__ */ React.createElement("div", { className: "preview-row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Body chars"), /* @__PURE__ */ React.createElement("span", null, preview.body_chars || form.body_text.length)), Array.isArray(preview.sample) && preview.sample.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "preview-list" }, preview.sample.map((u) => /* @__PURE__ */ React.createElement("span", { key: u.id || u.email, className: "chip" }, u.email))), Array.isArray(preview.errors) && preview.errors.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "f-err", style: { marginTop: 10 } }, preview.errors.join(" | ")))), /* @__PURE__ */ React.createElement(A4.Card, { title: "RECENT SYSTEM MAIL RUNS", right: /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: load }, "Refresh") }, /* @__PURE__ */ React.createElement("table", { className: "admin-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Subject"), /* @__PURE__ */ React.createElement("th", null, "Audience"), /* @__PURE__ */ React.createElement("th", null, "Sender"), /* @__PURE__ */ React.createElement("th", null, "Queued"), /* @__PURE__ */ React.createElement("th", null, "Pending"), /* @__PURE__ */ React.createElement("th", null, "Sent"), /* @__PURE__ */ React.createElement("th", null, "Failed"), /* @__PURE__ */ React.createElement("th", null, "Created"))), /* @__PURE__ */ React.createElement("tbody", null, runs.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "8", className: "dim" }, "No system mail runs yet.")), runs.map((run) => /* @__PURE__ */ React.createElement("tr", { key: run.id }, /* @__PURE__ */ React.createElement("td", null, run.subject), /* @__PURE__ */ React.createElement("td", null, run.audience_kind), /* @__PURE__ */ React.createElement("td", null, run.sender_addr), /* @__PURE__ */ React.createElement("td", null, run.queued_count, "/", run.recipient_count), /* @__PURE__ */ React.createElement("td", null, run.pending_count), /* @__PURE__ */ React.createElement("td", { className: "ok" }, run.sent_count), /* @__PURE__ */ React.createElement("td", { className: run.failed_count ? "warn" : "" }, run.failed_count), /* @__PURE__ */ React.createElement("td", { className: "dim" }, fmtDT(run.created_at))))))));
+    } }, sending ? "Queueing\u2026" : "Queue System Mail")), needsConfirm && /* @__PURE__ */ React.createElement("label", { className: "tgl", style: { marginTop: 12 } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: confirmBulk, onChange: (e) => setConfirmBulk(e.target.checked) }), /* @__PURE__ */ React.createElement("span", { className: "tgl-track" }), "Confirm this ", form.audience_kind === "all_active" ? "bulk" : "multi-recipient", " send."), preview && /* @__PURE__ */ React.createElement("div", { className: "preview-box" }, /* @__PURE__ */ React.createElement("div", { className: "preview-row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "From"), /* @__PURE__ */ React.createElement("span", null, preview.from_addr || computedFromAddr)), /* @__PURE__ */ React.createElement("div", { className: "preview-row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Recipients"), /* @__PURE__ */ React.createElement("span", null, preview.recipient_count || preview.queued_count || 0)), /* @__PURE__ */ React.createElement("div", { className: "preview-row" }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "Body chars"), /* @__PURE__ */ React.createElement("span", null, preview.body_chars || form.body_text.length)), Array.isArray(preview.sample) && preview.sample.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "preview-list" }, preview.sample.map((u) => /* @__PURE__ */ React.createElement("span", { key: u.id || u.email, className: "chip" }, u.email))), Array.isArray(preview.errors) && preview.errors.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "f-err", style: { marginTop: 10 } }, preview.errors.join(" | ")))), /* @__PURE__ */ React.createElement(A5.Card, { title: "RECENT SYSTEM MAIL RUNS", right: /* @__PURE__ */ React.createElement("button", { className: "btn-sm", onClick: load }, "Refresh") }, /* @__PURE__ */ React.createElement("table", { className: "admin-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Subject"), /* @__PURE__ */ React.createElement("th", null, "Audience"), /* @__PURE__ */ React.createElement("th", null, "Sender"), /* @__PURE__ */ React.createElement("th", null, "Queued"), /* @__PURE__ */ React.createElement("th", null, "Pending"), /* @__PURE__ */ React.createElement("th", null, "Sent"), /* @__PURE__ */ React.createElement("th", null, "Failed"), /* @__PURE__ */ React.createElement("th", null, "Created"))), /* @__PURE__ */ React.createElement("tbody", null, runs.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "8", className: "dim" }, "No system mail runs yet.")), runs.map((run) => /* @__PURE__ */ React.createElement("tr", { key: run.id }, /* @__PURE__ */ React.createElement("td", null, run.subject), /* @__PURE__ */ React.createElement("td", null, run.audience_kind), /* @__PURE__ */ React.createElement("td", null, run.sender_addr), /* @__PURE__ */ React.createElement("td", null, run.queued_count, "/", run.recipient_count), /* @__PURE__ */ React.createElement("td", null, run.pending_count), /* @__PURE__ */ React.createElement("td", { className: "ok" }, run.sent_count), /* @__PURE__ */ React.createElement("td", { className: run.failed_count ? "warn" : "" }, run.failed_count), /* @__PURE__ */ React.createElement("td", { className: "dim" }, fmtDT(run.created_at))))))));
   }
-  var A4, useSt, useEf, useCb, useMm, ADMIN_USER_PAGE, ADMIN_DOMAIN_PAGE;
+  var A5, useSt, useEf, useCb, useMm, ADMIN_USER_PAGE, ADMIN_DOMAIN_PAGE;
   var init_admin_email_sections = __esm({
     "../static/admin/admin-email-sections.jsx"() {
-      A4 = window.adm;
+      A5 = window.adm;
       ({ useState: useSt, useEffect: useEf, useCallback: useCb, useMemo: useMm } = React);
       ADMIN_USER_PAGE = 20;
       ADMIN_DOMAIN_PAGE = 20;
@@ -4202,7 +4403,7 @@ ${(post.openpgp_sig || "").trim() ? `
     return healAdminStateShape(next);
   }
   function buildHomeAdminPayload(state) {
-    const keys = ["site", "tweak_defaults", "terminal", "tools", "log_page", "ticker_home", "support"];
+    const keys = ["site", "tweak_defaults", "nav", "footer", "hero", "terminal", "tools", "log_page", "ticker_home", "support"];
     const o = {};
     for (const k of keys) {
       if (state[k] !== void 0) o[k] = state[k];
@@ -4240,7 +4441,7 @@ ${(post.openpgp_sig || "").trim() ? `
       return ADMIN_SECTION_DEFS.map((s) => {
         const Comp2 = window[s.key];
         const Resolved = typeof Comp2 === "function" ? Comp2 : function AdminSectionMissing() {
-          return /* @__PURE__ */ React.createElement("div", { className: "adm-page", style: { padding: 24 } }, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// LOAD ERROR"), /* @__PURE__ */ React.createElement("p", { style: { marginTop: 8 } }, "Missing component ", /* @__PURE__ */ React.createElement("code", null, s.key), " for section ", /* @__PURE__ */ React.createElement("code", null, s.id), ". Check the console and script order in ", /* @__PURE__ */ React.createElement("code", null, "admin/index.html"), "."));
+          return /* @__PURE__ */ React.createElement("div", { className: "adm-page", style: { padding: 24 } }, /* @__PURE__ */ React.createElement("div", { className: "ftk" }, "// LOAD ERROR"), /* @__PURE__ */ React.createElement("p", { style: { marginTop: 8 } }, "Missing component ", /* @__PURE__ */ React.createElement("code", null, s.key), " for section ", /* @__PURE__ */ React.createElement("code", null, s.id), ". Check the console and mail-admin-embed bundle load order."));
         };
         return {
           id: s.id,
@@ -4287,11 +4488,7 @@ ${(post.openpgp_sig || "").trim() ? `
       (async () => {
         try {
           devLog("admin bootstrap: GET /api/bootstrap.json");
-          let r = await fetch("/api/bootstrap.json", { cache: "no-store" });
-          if (!r.ok) {
-            devLog("admin bootstrap: falling back to /admin/bootstrap.json", r.status);
-            r = await fetch("/admin/bootstrap.json", { cache: "no-store" });
-          }
+          const r = await fetch(elvishApiUrl("/api/bootstrap.json"), { cache: "no-store" });
           if (!r.ok || cancelled) {
             devLog("admin bootstrap: no JSON (offline or 404)", r.status, "cancelled=", cancelled);
             return;
@@ -4367,10 +4564,6 @@ ${(post.openpgp_sig || "").trim() ? `
       if (id === "commit") {
         if (dirty) setDialog("publish");
         else setNotify({ kind: "ok", title: "In sync", body: "No unsaved changes." });
-        return;
-      }
-      if (id === "palette.modals") {
-        window.location.href = "/admin/modals.html";
         return;
       }
       if (id === "about") {
@@ -4493,7 +4686,7 @@ ${(post.openpgp_sig || "").trim() ? `
           markAdminSynced(p && p.msg);
         },
         onSaveMongo: persistHome ? async () => {
-          const r = await fetch("/api/admin/site/home", {
+          const r = await fetch(elvishApiUrl("/api/admin/site/home"), {
             method: "PUT",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -4651,10 +4844,37 @@ ${(post.openpgp_sig || "").trim() ? `
           key: "SecAuthCaptcha",
           icon: "captcha",
           searchKeywords: ["cap", "captcha", "trycap", "login", "register", "siteverify", "widget", "srp"]
+        },
+        {
+          id: "content",
+          num: "10",
+          label: "Content",
+          description: "Nav, hero, tools, blog, and OpenPGP signing for the public site.",
+          key: "SecContentHub",
+          icon: "site",
+          searchKeywords: ["nav", "footer", "hero", "blog", "tools", "ticker", "terminal", "pgp", "signing"]
+        },
+        {
+          id: "uptime",
+          num: "11",
+          label: "Uptime",
+          description: "Configure probe intervals, endpoints, and run history for site monitoring.",
+          key: "SecUptime",
+          icon: "performance",
+          searchKeywords: ["uptime", "probe", "monitor", "health"]
         }
       ];
       ADMIN_DIFF_KEYS = [
-        "site"
+        "site",
+        "nav",
+        "footer",
+        "hero",
+        "terminal",
+        "tools",
+        "log_page",
+        "ticker_home",
+        "support",
+        "tweak_defaults"
       ];
       ADMIN_COMMANDS = [
         { id: "goto.site", name: "Goto \xB7 Site / SEO", scope: "ADMIN", glyph: "\u25B8", shortcut: "g s" },
@@ -4666,6 +4886,8 @@ ${(post.openpgp_sig || "").trim() ? `
         { id: "goto.telemetry", name: "Goto \xB7 Telemetry", scope: "ADMIN", glyph: "\u25B8" },
         { id: "goto.performance", name: "Goto \xB7 Performance", scope: "ADMIN", glyph: "\u25B8" },
         { id: "goto.auth-captcha", name: "Goto \xB7 Cap / Login CAPTCHA", scope: "ADMIN", glyph: "\u25B8", shortcut: "g c" },
+        { id: "goto.content", name: "Goto \xB7 Content", scope: "ADMIN", glyph: "\u25B8" },
+        { id: "goto.uptime", name: "Goto \xB7 Uptime", scope: "ADMIN", glyph: "\u25B8" },
         { id: "commit", name: "Save site bundle (MongoDB)", scope: "STATE", glyph: "\u25B8", shortcut: "\u2318S" },
         { id: "about", name: "About ELVISH", scope: "META", glyph: "\u25B8" },
         { id: "auth.login", name: "Login (modal)", scope: "AUTH", glyph: "\u25B8" },
@@ -4691,30 +4913,6 @@ ${(post.openpgp_sig || "").trim() ? `
         }
       };
       window.ElvishMailAdminPanel = ElvishMailAdminPanel;
-      (function mountAdminStandalone() {
-        if (document.documentElement.getAttribute("data-admin-standalone") !== "1") {
-          return;
-        }
-        const el = document.getElementById("root");
-        if (!el) {
-          console.error("[elvish admin] #root missing \u2014 cannot mount");
-          return;
-        }
-        try {
-          const root = ReactDOM.createRoot(el);
-          root.render(
-            /* @__PURE__ */ React.createElement(AdminErrorBoundary, null, /* @__PURE__ */ React.createElement(AdminApp, null))
-          );
-          devLog("admin React root attached");
-        } catch (err) {
-          console.error("[elvish admin] createRoot failed", err);
-          el.textContent = "";
-          const pre = document.createElement("pre");
-          pre.style.cssText = "padding:16px;font:12px monospace;color:#b00;white-space:pre-wrap";
-          pre.textContent = "Admin failed to start.\n\n" + String(err && err.stack || err);
-          el.appendChild(pre);
-        }
-      })();
     }
   });
 
@@ -4734,6 +4932,7 @@ ${(post.openpgp_sig || "").trim() ? `
       init_admin_state();
       init_admin_sections_1();
       init_admin_sections_2();
+      init_admin_content_hub();
       init_admin_uptime();
       init_admin_telemetry();
       init_admin_auth_captcha();
