@@ -178,12 +178,25 @@ func (b *smtpBackend) resolveSubmissionPrincipal(ctx context.Context, principal 
 	}
 	if b.store != nil {
 		if u, err := b.store.UserByEmail(ctx, p); err == nil {
+			if store.IsDisabledUser(u) {
+				return "", errors.New("disabled principal")
+			}
 			return u.Email, nil
 		}
 	}
 	if b.meta != nil {
 		uid, _, err := b.meta.SMTPCredentialForAuth(ctx, p)
 		if err == nil {
+			if b.store == nil {
+				return "", errors.New("user store unavailable")
+			}
+			u, err := b.store.UserByID(ctx, uid)
+			if err != nil {
+				return "", err
+			}
+			if store.IsDisabledUser(u) {
+				return "", errors.New("disabled principal")
+			}
 			ik, err := b.meta.DefaultIdentityForUser(ctx, uid)
 			if err != nil {
 				return "", err
@@ -210,10 +223,11 @@ func (b *smtpBackend) Authenticator() sasl.Authenticator {
 		}
 		if b.meta != nil {
 			authLookupStartedAt := time.Now()
-			_, hash, err := b.meta.SMTPCredentialForAuth(context.Background(), uStr)
+			userID, hash, err := b.meta.SMTPCredentialForAuth(context.Background(), uStr)
 			b.recordDependency(context.Background(), "auth_lookup", err == nil, authLookupStartedAt)
 			if err == nil {
-				if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil {
+				u, userErr := b.store.UserByID(context.Background(), userID)
+				if userErr == nil && !store.IsDisabledUser(u) && bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil {
 					b.recordSMTP(context.Background(), "auth", true, startedAt)
 					return nil
 				}

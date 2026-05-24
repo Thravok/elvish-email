@@ -12,6 +12,7 @@ import (
 
 	"elvish/internal/mailmeta"
 	"elvish/internal/models"
+	"elvish/internal/store"
 )
 
 func newTestHTTPServer() *Server {
@@ -152,7 +153,7 @@ func TestFilterActiveUsers(t *testing.T) {
 	t.Parallel()
 	users := []models.User{
 		{Email: "active@example.com", PasswordHash: "bcrypt$hash"},
-		{Email: "disabled@example.com", PasswordHash: "$disabled$"},
+		{Email: "disabled@example.com", PasswordHash: store.DisabledPasswordHash()},
 	}
 	active := filterActiveUsers(users)
 	if len(active) != 1 {

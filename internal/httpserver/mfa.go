@@ -113,6 +113,9 @@ func (s *Server) sessionFromRequest(r *http.Request) (*models.User, *session.Pay
 	if err != nil {
 		return nil, nil, "", false
 	}
+	if store.IsDisabledUser(u) {
+		return nil, nil, "", false
+	}
 	now := time.Now().UTC()
 	if !sameActivityDay(u.LastActivityAt, now) {
 		if err := s.store.UpdateUserLastActivity(r.Context(), uid, now); err != nil {
@@ -129,6 +132,9 @@ func (s *Server) sessionFromRequest(r *http.Request) (*models.User, *session.Pay
 func (s *Server) issueLoginSession(w http.ResponseWriter, ctx context.Context, u *models.User, methods []string, mfaVerified bool) error {
 	if s.sessions == nil {
 		return errors.New("sessions not configured")
+	}
+	if store.IsDisabledUser(u) {
+		return errors.New("disabled user")
 	}
 	now := time.Now().UTC().Unix()
 	payload := session.Payload{

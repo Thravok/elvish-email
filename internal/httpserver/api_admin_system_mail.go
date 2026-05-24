@@ -17,6 +17,7 @@ import (
 
 	"elvish/internal/mailmeta"
 	"elvish/internal/models"
+	"elvish/internal/store"
 )
 
 const (
@@ -302,7 +303,7 @@ func (s *Server) resolveAdminSystemRecipients(ctx context.Context, audienceKind 
 func filterActiveUsers(users []models.User) []models.User {
 	out := make([]models.User, 0, len(users))
 	for _, user := range users {
-		if strings.TrimSpace(user.PasswordHash) == "$disabled$" {
+		if store.IsDisabledUser(&user) {
 			continue
 		}
 		out = append(out, user)
