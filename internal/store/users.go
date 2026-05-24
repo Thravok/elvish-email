@@ -16,6 +16,21 @@ import (
 const disabledPasswordSentinel = "$disabled$"
 const srpPasswordSentinel = "$srp$"
 
+// DisabledPasswordHash returns the sentinel hash used to disable user logins.
+func DisabledPasswordHash() string {
+	return disabledPasswordSentinel
+}
+
+// IsDisabledPasswordHash reports whether passwordHash is the disabled-user sentinel.
+func IsDisabledPasswordHash(passwordHash string) bool {
+	return strings.TrimSpace(passwordHash) == disabledPasswordSentinel
+}
+
+// IsDisabledUser reports whether u is marked disabled.
+func IsDisabledUser(u *models.User) bool {
+	return u != nil && IsDisabledPasswordHash(u.PasswordHash)
+}
+
 // AuthMethodStats summarizes browser-auth posture across the user table.
 type AuthMethodStats struct {
 	TotalUsers      int64

@@ -151,4 +151,18 @@ func TestAdminUptimeAPIIntegration(t *testing.T) {
 	if rec2.Code != http.StatusForbidden {
 		t.Fatalf("non-admin: want 403 got %d %s", rec2.Code, rec2.Body.String())
 	}
+
+	if err := st.UpdateUserPasswordHash(ctx, user.ID, store.DisabledPasswordHash()); err != nil {
+		t.Fatalf("disable user: %v", err)
+	}
+	req3 := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
+	req3.AddCookie(&http.Cookie{Name: sessionCookie, Value: tok2})
+	rec3 := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(rec3, req3)
+	if rec3.Code != http.StatusOK {
+		t.Fatalf("disabled me: status %d body %s", rec3.Code, rec3.Body.String())
+	}
+	if rec3.Body.String() != `{"user":null}`+"\n" {
+		t.Fatalf("disabled session remained authenticated: %s", rec3.Body.String())
+	}
 }

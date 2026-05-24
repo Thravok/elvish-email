@@ -135,7 +135,7 @@ func loadSRPUserForEmail(ctx context.Context, st *store.Store, email string) (*m
 		}
 		return nil, false, err
 	}
-	if strings.TrimSpace(u.PasswordHash) == "$disabled$" {
+	if store.IsDisabledUser(u) {
 		return nil, false, nil
 	}
 	if strings.TrimSpace(u.AuthMethod) != "srp" || len(u.SRPSalt) == 0 || len(u.SRPVerifier) == 0 {

@@ -134,7 +134,7 @@ func (s *Server) apiAdminUsersDisable(w http.ResponseWriter, r *http.Request, id
 		return
 	}
 
-	if err := s.store.UpdateUserPasswordHash(r.Context(), userID, "$disabled$"); err != nil {
+	if err := s.store.UpdateUserPasswordHash(r.Context(), userID, store.DisabledPasswordHash()); err != nil {
 		s.writeErrAPIInternal(w, "disable user", err)
 		return
 	}

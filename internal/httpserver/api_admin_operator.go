@@ -15,6 +15,7 @@ import (
 
 	"elvish/internal/mailtest"
 	"elvish/internal/pake"
+	"elvish/internal/store"
 )
 
 func (s *Server) apiAdminTestHealth(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +100,7 @@ func (s *Server) apiAdminTestEcho(w http.ResponseWriter, r *http.Request) {
 		s.writeErr(w, http.StatusBadRequest, "recipient must be an active local user")
 		return
 	}
-	if strings.TrimSpace(recipient.PasswordHash) == "$disabled$" {
+	if store.IsDisabledUser(recipient) {
 		s.writeErr(w, http.StatusBadRequest, "recipient must be an active local user")
 		return
 	}
