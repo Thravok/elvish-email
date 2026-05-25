@@ -5,6 +5,7 @@ import {
   STORE_MAIL_ENVELOPES,
   get,
   put,
+  del,
 } from './search/db.js';
 import { deriveScopedKeyFromLabel, sealJSON, openJSON } from './search/key.js';
 
@@ -111,6 +112,13 @@ class MailCache {
     });
     const t = this.db.transaction([STORE_MAIL_ENVELOPES], 'readwrite');
     await put(t.objectStore(STORE_MAIL_ENVELOPES), String(messageID), sealed);
+    await txComplete(t);
+  }
+
+  async deleteEnvelope(messageID) {
+    if (!this.db || !messageID) return;
+    const t = this.db.transaction([STORE_MAIL_ENVELOPES], 'readwrite');
+    await del(t.objectStore(STORE_MAIL_ENVELOPES), String(messageID));
     await txComplete(t);
   }
 

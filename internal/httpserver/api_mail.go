@@ -311,7 +311,7 @@ func (s *Server) apiMailMessageBlob(w http.ResponseWriter, r *http.Request, user
 		s.writeErrAPIInternal(w, "mail blob manifest", err)
 		return
 	}
-	if err := s.enforceMessageReadable(r.Context(), userID, id, true); err != nil {
+	if err := s.enforceMessageReadable(r.Context(), userID, id, false); err != nil {
 		switch {
 		case errors.Is(err, mailmeta.ErrMessageExpired), errors.Is(err, mailmeta.ErrMessageBurned):
 			s.writeErr(w, http.StatusGone, "message expired or read limit reached")
@@ -329,6 +329,17 @@ func (s *Server) apiMailMessageBlob(w http.ResponseWriter, r *http.Request, user
 			return
 		}
 		s.writeErrAPIInternal(w, "mail blob get", err)
+		return
+	}
+	if err := s.enforceMessageReadable(r.Context(), userID, id, true); err != nil {
+		switch {
+		case errors.Is(err, mailmeta.ErrMessageExpired), errors.Is(err, mailmeta.ErrMessageBurned):
+			s.writeErr(w, http.StatusGone, "message expired or read limit reached")
+		case errors.Is(err, scyllastore.ErrNotFound), errors.Is(err, mailmeta.ErrNotFound):
+			http.NotFound(w, r)
+		default:
+			s.writeErrAPIInternal(w, "mail blob access", err)
+		}
 		return
 	}
 	w.Header().Set("Content-Type", "application/pgp-encrypted")
