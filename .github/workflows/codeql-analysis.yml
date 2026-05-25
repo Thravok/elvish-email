@@ -32,13 +32,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
-        config-file: ./.github/codeql/codeql-config.yml
-
+    # Go must be on PATH before init so CodeQL's manual build tracer wraps the compiler.
     - name: Set up Go
       if: matrix.language == 'go'
       uses: actions/setup-go@v5
@@ -46,9 +40,16 @@ jobs:
         go-version-file: go.mod
         cache: true
 
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+        config-file: ./.github/codeql/codeql-config.yml
+
     - name: Build Go
       if: matrix.language == 'go'
-      run: CGO_ENABLED=0 go build ./...
+      run: CGO_ENABLED=0 go build -v ./...
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
@@ -65,7 +66,7 @@ jobs:
       security-events: write
 
     env:
-      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2g
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g
 
     steps:
     - name: Checkout repository
@@ -104,7 +105,7 @@ jobs:
 
     - name: Build Flutter Android (debug)
       working-directory: flutter/elvish_mail
-      run: flutter build apk --debug
+      run: flutter build apk --debug --target-platform android-arm64
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

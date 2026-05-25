@@ -18,6 +18,14 @@ CodeQL analyses from advanced configurations cannot be processed when the defaul
 
 Use **one** mode only. For this repo, keep advanced setup and turn off default setup.
 
+### Go job (`Analyze (go)`)
+
+Run `actions/setup-go` **before** `codeql-action/init`. If Go is installed after init, manual `go build` is not traced and finalize fails with “no source code seen during build”.
+
+### Flutter Android job (`Analyze (flutter-android)`)
+
+Keep `android.enableJetifier=false` in `flutter/elvish_mail/android/gradle.properties` (Jetifier OOMs on Flutter engine JARs in CI). The workflow sets `GRADLE_OPTS` to 4 GB heap and builds a single ABI (`android-arm64`) to reduce Gradle memory use.
+
 ### Fix (repository settings)
 
 1. **Settings** → **Advanced Security** → **Code scanning** → **CodeQL analysis**.
