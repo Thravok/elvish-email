@@ -225,8 +225,7 @@ func doValidatedSenderFetch(client *http.Client, req *http.Request, validated va
 	if req.URL.String() != validated.String() {
 		return nil, fmt.Errorf("sender icon fetch URL mismatch")
 	}
-	// codeql[go/request-forgery]: fetch URL validated for sender domain and matched to the request URL.
-	return client.Do(req)
+	return client.Do(req) //codeql[go/request-forgery]: fetch URL validated for sender domain; req URL must match validated.String().
 }
 
 func parseValidatedSenderFetchURL(raw string, relatedDomain string) (validatedSenderFetchURL, error) {
@@ -291,7 +290,7 @@ func (s *Server) fetchExternalImage(ctx context.Context, fetchURL string, maxByt
 			if len(via) >= 3 {
 				return http.ErrUseLastResponse
 			}
-			if err := validateSenderFetchURL(req.URL.String(), relatedDomain); err != nil {
+			if _, err := parseValidatedSenderFetchURL(req.URL.String(), relatedDomain); err != nil {
 				return fmt.Errorf("redirect blocked: %w", err)
 			}
 			return nil

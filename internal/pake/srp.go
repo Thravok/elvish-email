@@ -277,11 +277,10 @@ func serverProofBytes(A *big.Int, clientProof, key []byte) []byte {
 func digest(parts ...[]byte) []byte {
 	// SHA-256 is the SRP-6a mixing function for this implementation (RFC 5054); not offline password hashing.
 	var buf []byte
-	for _, p := range parts {
+	for _, p := range parts { //codeql[go/weak-sensitive-data-hashing]: RFC 5054 SRP mixing, not password storage.
 		buf = append(buf, p...)
 	}
-	// codeql[go/weak-sensitive-data-hashing]: SRP-6a protocol mixing hash per RFC 5054, not offline password storage.
-	sum := sha256.Sum256(buf)
+	sum := sha256.Sum256(buf) //codeql[go/weak-sensitive-data-hashing]: RFC 5054 SRP mixing, not password storage.
 	return sum[:]
 }
 

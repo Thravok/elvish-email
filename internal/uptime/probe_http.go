@@ -13,6 +13,5 @@ func doValidatedProbeRequest(hc *http.Client, req *http.Request, validated Valid
 	if req.URL.String() != validated.String() {
 		return nil, fmt.Errorf("uptime: probe request URL mismatch")
 	}
-	// codeql[go/request-forgery]: probe URL validated by NewValidatedProbeURL and matched to the request URL.
-	return hc.Do(req)
+	return hc.Do(req) //codeql[go/request-forgery]: URL validated by NewValidatedProbeURL; req URL must match validated.String().
 }

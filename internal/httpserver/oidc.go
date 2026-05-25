@@ -9,7 +9,6 @@ import (
 	"html"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -192,13 +191,11 @@ func (s *Server) handleOIDCAuthorize(w http.ResponseWriter, r *http.Request) {
 
 	u, ok := s.userFromRequest(r)
 	if !ok || u == nil {
-		next := safeOAuthAuthorizeNext(r.URL.RequestURI())
-		if next == "" {
+		if safeOAuthAuthorizeNext(r.URL.RequestURI()) == "" {
 			http.Error(w, "invalid authorize url", http.StatusBadRequest)
 			return
 		}
-		login := "/login?next=" + url.QueryEscape(next)
-		http.Redirect(w, r, login, http.StatusFound)
+		redirectLoginWithOAuthNext(w, r, r.URL.RequestURI())
 		return
 	}
 
@@ -253,12 +250,11 @@ func (s *Server) oidcRecentMFAGate(w http.ResponseWriter, r *http.Request, u *mo
 	}
 	_, pay, _, ok := s.sessionFromRequest(r)
 	if !ok || pay == nil {
-		next := safeOAuthAuthorizeNext(r.URL.RequestURI())
-		if next == "" {
+		if safeOAuthAuthorizeNext(r.URL.RequestURI()) == "" {
 			http.Error(w, "session invalid", http.StatusUnauthorized)
 			return false
 		}
-		http.Redirect(w, r, "/login?next="+url.QueryEscape(next), http.StatusFound)
+		redirectLoginWithOAuthNext(w, r, r.URL.RequestURI())
 		return false
 	}
 	if pay.MFAVerifiedAt == 0 || time.Since(time.Unix(pay.MFAVerifiedAt, 0)) > mfaRecentVerificationTTL {

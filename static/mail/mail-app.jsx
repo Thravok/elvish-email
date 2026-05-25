@@ -429,15 +429,36 @@ function parseHeaderBlock(headerBlock) {
   return { headers, totalHeaders, knownHeaders };
 }
 
+function collapseDisplayWhitespace(s) {
+  let out = "";
+  let lastSpace = false;
+  for (let i = 0; i < s.length; i += 1) {
+    const c = s[i];
+    if (c === " " || c === "\t" || c === "\n" || c === "\r") {
+      if (!lastSpace) {
+        out += " ";
+        lastSpace = true;
+      }
+      continue;
+    }
+    out += c;
+    lastSpace = false;
+  }
+  let start = 0;
+  let end = out.length;
+  while (start < end && out[start] === " ") start += 1;
+  while (end > start && out[end - 1] === " ") end -= 1;
+  return out.slice(start, end);
+}
+
 function htmlToDisplayText(html) {
   const s = String(html || "").trim();
   if (!s) return "";
   const purify = typeof globalThis !== "undefined" && globalThis.DOMPurify;
   if (purify && typeof purify.sanitize === "function") {
-    return purify
-      .sanitize(s, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
-      .replace(/\s+/g, " ")
-      .trim();
+    return collapseDisplayWhitespace(
+      purify.sanitize(s, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }),
+    );
   }
   return stripHtmlTagsToText(s);
 }
@@ -460,7 +481,7 @@ function stripHtmlTagsToText(s) {
       out += c;
     }
   }
-  return out.replace(/\s+/g, " ").trim();
+  return collapseDisplayWhitespace(out);
 }
 
 function splitMultipartBody(body, boundary) {

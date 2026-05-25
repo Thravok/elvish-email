@@ -62,7 +62,7 @@ jobs:
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: >-
             database run-queries
-            --additional-packs=${{ github.workspace }}/.github/codeql
+            --additional-packs=${{ github.workspace }}/.github/codeql/elvish-go-models
             --model-packs=elvish/go-models
         with:
           category: /language:${{ matrix.language }}

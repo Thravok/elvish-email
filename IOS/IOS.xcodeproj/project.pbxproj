@@ -9,10 +9,10 @@
 /* Begin PBXBuildFile section */
 		6A9A3CC02FB3D5CC00819DE8 /* BigInt in Frameworks */ = {isa = PBXBuildFile; productRef = 6A9A3CC12FB3D5CC00819DE8 /* BigInt */; };
 		6A9A3CC52FB3D5CC00819DE8 /* ElvishSRPClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A9A3CC42FB3D5CC00819DE8 /* ElvishSRPClientTests.swift */; };
-		7B0A3CC72FB3D5CC00819DE8 /* MailFilterEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0A3CC62FB3D5CC00819DE8 /* MailFilterEngineTests.swift */; };
 		6A9A3CD12FB3D5CC00819DE8 /* BigInt in Frameworks */ = {isa = PBXBuildFile; productRef = 6A9A3CC12FB3D5CC00819DE8 /* BigInt */; };
 		6A9A3CEC2FB3D5CC00819DE8 /* ObjectivePGP in Frameworks */ = {isa = PBXBuildFile; productRef = 6A9A3CF02FB3D5CC00819DE8 /* ObjectivePGP */; };
 		6A9A3CED2FB3D5CC00819DE8 /* Argon2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 6A9A3CF12FB3D5CC00819DE8 /* Argon2Swift */; };
+		7B0A3CC72FB3D5CC00819DE8 /* MailFilterEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0A3CC62FB3D5CC00819DE8 /* MailFilterEngineTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -352,16 +352,20 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = IOS/IOS.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 77Q7V2R5RU;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/ElvishInfo.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Elvish Mail";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -397,16 +401,20 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = IOS/IOS.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 77Q7V2R5RU;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/ElvishInfo.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Elvish Mail";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
