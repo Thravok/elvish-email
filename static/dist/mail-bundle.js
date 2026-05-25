@@ -15459,6 +15459,7 @@ ${body || ""}`;
             return defaultFrom ? [defaultFrom] : [];
           }, [identities, defaultFrom]);
           const pwdMeter = useMemo5(() => passwordStrength(pwd), [pwd]);
+          const localExpiryAvailable = mode === "pgp" && !manualKeyOverride && recipientMeta && recipientMeta.source === "local" && String(recipientMeta.email || "").toLowerCase() === singleComposeRecipient(to);
           if (!open) return null;
           return /* @__PURE__ */ React6.createElement("div", { className: "mail-compose" }, /* @__PURE__ */ React6.createElement("span", { className: "br-bl" }), /* @__PURE__ */ React6.createElement("span", { className: "br-br" }), /* @__PURE__ */ React6.createElement("div", { className: "mail-compose-header" }, /* @__PURE__ */ React6.createElement("span", { className: "kind" }, "\u25B8 COMPOSE"), /* @__PURE__ */ React6.createElement("span", { className: "title" }, "New Message"), /* @__PURE__ */ React6.createElement("button", { className: "mail-compose-btn-close", onClick: onClose, "aria-label": "Close" }, "\xD7")), /* @__PURE__ */ React6.createElement("div", { className: "mail-compose-mode-bar" }, /* @__PURE__ */ React6.createElement(
             "button",
@@ -15539,7 +15540,7 @@ ${body || ""}`;
               attachPublicKey,
               setAttachPublicKey
             }
-          ), mode === "pgp" && keyStatus === "local" && /* @__PURE__ */ React6.createElement(
+          ), localExpiryAvailable && /* @__PURE__ */ React6.createElement(
             ExpiryOptionsPanel,
             {
               enabled: expiryEnabled,
@@ -16986,6 +16987,11 @@ ${body || ""}`;
     if (!list.length) return true;
     return list.every((a) => a && a.bytes instanceof Uint8Array);
   }
+  function messageHasBodyCacheRestriction(message) {
+    if (!message) return false;
+    const maxReads = Number(message.max_reads || 0);
+    return !!message.expires_at || !!message.expired || !!message.burned || maxReads > 0;
+  }
   async function persistRecoveredArtifacts(message, recovered, envelope, decryptFingerprint) {
     const cache = window.ElvishMailCache;
     const version = cache && typeof cache.extractVersion === "function" ? cache.extractVersion(message) : "";
@@ -16994,7 +17000,7 @@ ${body || ""}`;
     if (cache && version && typeof cache.putHeader === "function") {
       await cache.putHeader(message.id, version, headerPayload);
     }
-    if (cache && version && envelope && typeof cache.putEnvelope === "function") {
+    if (cache && version && envelope && !messageHasBodyCacheRestriction(message) && typeof cache.putEnvelope === "function") {
       const envelopePayload = buildCachedEnvelopePayload(envelope, recovered);
       if (envelopePayload) await cache.putEnvelope(message.id, version, envelopePayload);
     }
@@ -17263,7 +17269,12 @@ ${body || ""}`;
       try {
         const cache = window.ElvishMailCache;
         const version = cache && typeof cache.extractVersion === "function" ? cache.extractVersion(message) : "";
-        if (cache && version && typeof cache.getEnvelope === "function" && typeof cache.unwrapVersionedPayload === "function") {
+        const bodyCacheRestricted = messageHasBodyCacheRestriction(message);
+        if (bodyCacheRestricted && cache && typeof cache.deleteEnvelope === "function") {
+          await cache.deleteEnvelope(message.id).catch(() => {
+          });
+        }
+        if (!bodyCacheRestricted && cache && version && typeof cache.getEnvelope === "function" && typeof cache.unwrapVersionedPayload === "function") {
           const cachedEnvelopeEntry = await cache.getEnvelope(message.id);
           const cachedEnvelope = inflateCachedEnvelopePayload(cache.unwrapVersionedPayload(cachedEnvelopeEntry, version));
           if (cachedEnvelope && cachedEnvelope.bodyText != null && envelopeHasHydratedAttachmentBytes(cachedEnvelope)) {
@@ -17291,7 +17302,15 @@ ${body || ""}`;
             return;
           }
         }
-        blob = await window.ElvishMailManifest.fetchBlob(message.id);
+        try {
+          blob = await window.ElvishMailManifest.fetchBlob(message.id);
+        } catch (e) {
+          if (bodyCacheRestricted && cache && typeof cache.deleteEnvelope === "function") {
+            await cache.deleteEnvelope(message.id).catch(() => {
+            });
+          }
+          throw e;
+        }
         const res = await decryptMessageBlobLocally(blob, identities);
         const envelope = extractDisplayEnvelope(res.data || "");
         const recovered = extractDecryptedMessageMetadata(res.data || "", envelope);
