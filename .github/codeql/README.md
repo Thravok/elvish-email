@@ -45,6 +45,12 @@ gh api -X PATCH /repos/Thravok/elvish-email/code-scanning/default-setup -f state
 
 `actions/setup-go` must run **before** `codeql-action/init`. Do not reorder those steps.
 
+### `Package 'local' cannot be used with a package registry`
+
+CodeQL 2.25 rejects `packs: - local:./…` in `codeql-config.yml`. The `elvish/go-models` MaD pack is loaded at **analyze** time via `CODEQL_ACTION_EXTRA_OPTIONS` (`--additional-packs=…/elvish-go-models`).
+
+**Do not use “Re-run failed jobs”** on an old failed CodeQL run from commit `0a75d7c` or earlier — GitHub re-executes that commit’s workflow file and init will fail again. Push to `main` or run the workflow on the latest `main` commit instead.
+
 ### Flutter: Gradle `Java heap space` / JetifyTransform
 
 Keep `android.enableJetifier=false` in `flutter/elvish_mail/android/gradle.properties`. CI sets `GRADLE_OPTS` to 4 GB and builds a single ABI.
