@@ -14,10 +14,14 @@ final class ElvishKeyVault {
     private var defaultFingerprint16: String?
     private var orderedIdentityFingerprintsFull: [String] = []
 
+    /// Identity rows from the last successful unlock (for compose From picker).
+    private(set) var identityRows: [IdentityRowDTO] = []
+
     func zero() {
         identitySecretKeys.removeAll()
         defaultFingerprint16 = nil
         orderedIdentityFingerprintsFull.removeAll()
+        identityRows = []
         isUnlocked = false
     }
 
@@ -144,8 +148,52 @@ final class ElvishKeyVault {
         return isUnlocked
     }
 
+    /// Encrypt UTF-8 or binary plaintext to an armored PGP message for `armoredRecipientPub`.
+    func encryptToRecipient(armoredRecipientPub: String, plaintext: Data) throws -> String {
+        guard isUnlocked else { throw KeyVaultError.vaultLocked }
+        let recipientKeys = try readPublicKeys(fromArmored: armoredRecipientPub)
+        let encrypted = try ObjectivePGP.encrypt(
+            plaintext,
+            addSignature: false,
+            using: recipientKeys,
+            passphraseForKey: { _ in nil }
+        )
+        return try armorMessage(encrypted)
+    }
+
+    /// Encrypt and sign to recipient; `signerFingerprint` is full or 16-char key id.
+    func encryptAndSignToRecipient(armoredRecipientPub: String, plaintext: Data, signerFingerprint: String) throws -> String {
+        guard isUnlocked else { throw KeyVaultError.vaultLocked }
+        let recipientKeys = try readPublicKeys(fromArmored: armoredRecipientPub)
+        let kid = fingerprintKeyId16(signerFingerprint)
+        guard let signer = identitySecretKeys[kid] else {
+            throw KeyVaultError.signingIdentityUnavailable
+        }
+        let allKeys = recipientKeys + [signer]
+        let encrypted = try ObjectivePGP.encrypt(
+            plaintext,
+            addSignature: true,
+            using: allKeys,
+            passphraseForKey: { _ in nil }
+        )
+        return try armorMessage(encrypted)
+    }
+
+    func encryptToRecipient(armoredRecipientPub: String, plaintext: String) throws -> String {
+        try encryptToRecipient(armoredRecipientPub: armoredRecipientPub, plaintext: Data(plaintext.utf8))
+    }
+
+    func encryptAndSignToRecipient(armoredRecipientPub: String, plaintext: String, signerFingerprint: String) throws -> String {
+        try encryptAndSignToRecipient(
+            armoredRecipientPub: armoredRecipientPub,
+            plaintext: Data(plaintext.utf8),
+            signerFingerprint: signerFingerprint
+        )
+    }
+
     private func unlockIdentities(client: APIClient, accountKey: Key) async throws {
         let idList = try await client.send(IdentitiesListResponse.self, method: "GET", path: "/api/v1/identities")
+        identityRows = idList.identities
         var ordered: [String] = []
         for row in idList.identities {
             guard let fp = row.fingerprint, !fp.isEmpty,
@@ -257,6 +305,26 @@ final class ElvishKeyVault {
         }
     }
 
+    private func readPublicKeys(fromArmored armored: String) throws -> [Key] {
+        guard let data = armored.data(using: .utf8), !data.isEmpty else {
+            throw KeyVaultError.openPGP("empty recipient public key")
+        }
+        let keys = try readSecretKeys(from: data)
+        let pubs = keys.filter { !$0.isSecret }
+        if pubs.isEmpty {
+            throw KeyVaultError.openPGP("no public key in armored block")
+        }
+        return pubs
+    }
+
+    private func armorMessage(_ encrypted: Data) throws -> String {
+        let armored = Armor.armored(encrypted, as: .message)
+        guard let s = String(data: armored, encoding: .utf8), !s.isEmpty else {
+            throw KeyVaultError.openPGP("armor encoding failed")
+        }
+        return s
+    }
+
     private func fingerprintHexFull(for key: Key) throws -> String {
         guard let fp = key.publicKey?.fingerprint ?? key.secretKey?.fingerprint else {
             throw KeyVaultError.openPGP("missing fingerprint")
@@ -291,6 +359,7 @@ enum KeyVaultError: Error, LocalizedError {
     case vaultLocked
     case emptyCiphertext
     case bodyDecryptFailed
+    case signingIdentityUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -310,6 +379,8 @@ enum KeyVaultError: Error, LocalizedError {
             return "Empty message body from server."
         case .bodyDecryptFailed:
             return "Could not decrypt this message with your identities."
+        case .signingIdentityUnavailable:
+            return "Sender signing identity is not unlocked."
         }
     }
 }

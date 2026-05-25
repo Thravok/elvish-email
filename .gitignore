@@ -44,6 +44,12 @@ content/blog/signing.key
 .DS_Store
 Thumbs.db
 
+# Flutter (generated under flutter/elvish_mail/; see flutter/elvish_mail/.gitignore)
+flutter/**/.dart_tool/
+flutter/**/build/
+flutter/**/.flutter-plugins
+flutter/**/.flutter-plugins-dependencies
+
 # Playwright (e2e/)
 e2e/node_modules/
 e2e/test-results/

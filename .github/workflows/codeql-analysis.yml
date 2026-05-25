@@ -1,3 +1,5 @@
+# Advanced CodeQL only — do not enable "default setup" on GitHub for this repo
+# (SARIF upload fails if both are active). See .github/codeql/README.md.
 name: CodeQL
 
 on:

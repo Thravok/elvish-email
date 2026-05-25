@@ -2,13 +2,22 @@ import Argon2Swift
 import CommonCrypto
 import CryptoKit
 import Foundation
+import Security
 
 enum ElvishAccountWrapError: Error, Sendable {
     case unsupportedKDF(String)
     case invalidBase64
     case invalidWrappedBlob
     case aesUnwrapFailed
+    case aesWrapFailed
     case pbkdf2Failed
+}
+
+/// Result of password-based KEK derivation (matches `static/auth/keygen.js` `deriveKEK`).
+struct ElvishKekDerivation: Sendable {
+    let kdf: String
+    let kek: Data
+    let paramsJSON: String
 }
 
 /// Mirrors `static/auth/keygen.js` — KEK derivation + AES-256-GCM unwrap of the account OpenPGP secret.
@@ -24,10 +33,19 @@ enum ElvishAccountWrap {
         let parallelism: Int?
     }
 
-    static func deriveKEK(password: String, salt: Data, kdf: String, kdfParamsJSON: String?) throws -> Data {
+    static func randomBytes(_ count: Int) throws -> Data {
+        var bytes = [UInt8](repeating: 0, count: count)
+        let status = SecRandomCopyBytes(kSecRandomDefault, count, &bytes)
+        guard status == errSecSuccess else {
+            throw ElvishAccountWrapError.aesWrapFailed
+        }
+        return Data(bytes)
+    }
+
+    /// Derive KEK and record KDF name + params JSON for protected-link uploads.
+    static func deriveKEKWithMetadata(password: String, salt: Data, kdf: String, kdfParamsJSON: String?) throws -> ElvishKekDerivation {
         let trimmed = kdf.trimmingCharacters(in: .whitespacesAndNewlines)
-        switch trimmed {
-        case "argon2id":
+        if trimmed.isEmpty || trimmed == "argon2id" {
             let params: Argon2Params
             if let raw = kdfParamsJSON?.data(using: .utf8), !raw.isEmpty {
                 params = (try? JSONDecoder().decode(Argon2Params.self, from: raw)) ?? Argon2Params(time: nil, mem: nil, parallelism: nil)
@@ -47,11 +65,41 @@ enum ElvishAccountWrap {
                 length: 32,
                 type: .id
             )
-            return result.hashData()
-        case "pbkdf2-sha256", "pbkdf2-sha256-600k":
-            return try pbkdf2SHA256(password: password, salt: salt, iterations: pbkdf2Iterations)
-        default:
-            throw ElvishAccountWrapError.unsupportedKDF(trimmed)
+            let meta: [String: Any] = [
+                "time": t,
+                "mem": m,
+                "parallelism": p,
+                "hash_len": 32,
+            ]
+            let paramsData = try JSONSerialization.data(withJSONObject: meta)
+            let paramsStr = String(data: paramsData, encoding: .utf8) ?? "{}"
+            return ElvishKekDerivation(kdf: "argon2id", kek: result.hashData(), paramsJSON: paramsStr)
+        }
+        if trimmed == "pbkdf2-sha256" || trimmed == "pbkdf2-sha256-600k" {
+            let kek = try pbkdf2SHA256(password: password, salt: salt, iterations: pbkdf2Iterations)
+            let meta: [String: Any] = ["iterations": pbkdf2Iterations, "hash": "SHA-256"]
+            let paramsData = try JSONSerialization.data(withJSONObject: meta)
+            let paramsStr = String(data: paramsData, encoding: .utf8) ?? "{}"
+            return ElvishKekDerivation(kdf: "pbkdf2-sha256", kek: kek, paramsJSON: paramsStr)
+        }
+        throw ElvishAccountWrapError.unsupportedKDF(trimmed)
+    }
+
+    static func deriveKEK(password: String, salt: Data, kdf: String, kdfParamsJSON: String?) throws -> Data {
+        try deriveKEKWithMetadata(password: password, salt: salt, kdf: kdf, kdfParamsJSON: kdfParamsJSON).kek
+    }
+
+    /// AES-256-GCM wrap: nonce || ciphertext+tag (CryptoKit `combined` layout; matches web `aesWrap`).
+    static func aesWrap(kek: Data, plaintext: Data) throws -> Data {
+        let key = SymmetricKey(data: kek)
+        do {
+            let sealed = try AES.GCM.seal(plaintext, using: key)
+            guard let combined = sealed.combined else {
+                throw ElvishAccountWrapError.aesWrapFailed
+            }
+            return combined
+        } catch {
+            throw ElvishAccountWrapError.aesWrapFailed
         }
     }
 

@@ -26,6 +26,10 @@ type MessageLifecycle struct {
 	FolderEnteredAt time.Time
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	ExpiresAt       *time.Time
+	MaxReads        int64
+	Reads           int64
+	BurnedAt        *time.Time
 }
 
 // ExpiredMessage is one lifecycle row selected by the retention sweeper.
@@ -144,11 +148,12 @@ func (s *Store) UpsertMessageLifecycle(ctx context.Context, lc MessageLifecycle)
 	if lc.CurrentFolder == "" {
 		return errors.New("mailmeta: lifecycle folder required")
 	}
-	_, err := s.pool.Exec(ctx, `INSERT INTO mail_message_lifecycle (user_id, message_id, current_folder, folder_entered_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, now(), now())
+	_, err := s.pool.Exec(ctx, `INSERT INTO mail_message_lifecycle
+		(user_id, message_id, current_folder, folder_entered_at, created_at, updated_at, expires_at, max_reads, reads)
+		VALUES ($1, $2, $3, $4, now(), now(), $5, $6, 0)
 		ON CONFLICT (user_id, message_id) DO UPDATE
 		SET current_folder = $3, folder_entered_at = $4, updated_at = now()`,
-		lc.UserID, lc.MessageID, lc.CurrentFolder, lc.FolderEnteredAt,
+		lc.UserID, lc.MessageID, lc.CurrentFolder, lc.FolderEnteredAt, lc.ExpiresAt, lc.MaxReads,
 	)
 	return err
 }
@@ -159,9 +164,11 @@ func (s *Store) GetMessageLifecycle(ctx context.Context, userID, messageID uuid.
 		return nil, errors.New("mailmeta: nil")
 	}
 	var lc MessageLifecycle
-	err := s.pool.QueryRow(ctx, `SELECT user_id, message_id, current_folder, folder_entered_at, created_at, updated_at
+	err := s.pool.QueryRow(ctx, `SELECT user_id, message_id, current_folder, folder_entered_at, created_at, updated_at,
+		expires_at, max_reads, reads, burned_at
 		FROM mail_message_lifecycle WHERE user_id = $1 AND message_id = $2`, userID, messageID).Scan(
 		&lc.UserID, &lc.MessageID, &lc.CurrentFolder, &lc.FolderEnteredAt, &lc.CreatedAt, &lc.UpdatedAt,
+		&lc.ExpiresAt, &lc.MaxReads, &lc.Reads, &lc.BurnedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
@@ -189,12 +196,17 @@ func (s *Store) ListExpiredMessages(ctx context.Context, limit int) ([]ExpiredMe
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.pool.Query(ctx, `SELECT l.user_id, l.message_id, l.current_folder, l.folder_entered_at, r.retention_days
+	rows, err := s.pool.Query(ctx, `SELECT l.user_id, l.message_id, l.current_folder, l.folder_entered_at,
+		COALESCE(r.retention_days, 0)
 		FROM mail_message_lifecycle l
-		JOIN mail_folder_retention r ON r.user_id = l.user_id AND r.folder = l.current_folder
-		WHERE r.retention_days IS NOT NULL
-		  AND r.retention_days > 0
-		  AND l.folder_entered_at <= now() - (r.retention_days * interval '1 day')
+		LEFT JOIN mail_folder_retention r ON r.user_id = l.user_id AND r.folder = l.current_folder
+		WHERE (
+		  (r.retention_days IS NOT NULL AND r.retention_days > 0
+		   AND l.folder_entered_at <= now() - (r.retention_days * interval '1 day'))
+		  OR (l.expires_at IS NOT NULL AND l.expires_at <= now())
+		  OR (l.max_reads > 0 AND l.reads >= l.max_reads)
+		  OR l.burned_at IS NOT NULL
+		)
 		ORDER BY l.folder_entered_at ASC
 		LIMIT $1`, limit)
 	if err != nil {

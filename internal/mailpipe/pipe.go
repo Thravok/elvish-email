@@ -97,7 +97,7 @@ func (p *Pipe) ingestPlaintext(ctx context.Context, source, fromAddr, recipient 
 		p.recordTelemetry(ctx, source, startedAt, err)
 		return nil, fmt.Errorf("mailpipe: encrypt header: %w", err)
 	}
-	res, err := p.persist(ctx, rec.UserID, targetFolder, ciphertext, headerCT, provenance, source, headers, fromAddr, rcpt)
+	res, err := p.persist(ctx, rec.UserID, targetFolder, ciphertext, headerCT, provenance, source, headers, fromAddr, rcpt, nil)
 	if err != nil {
 		p.recordTelemetry(ctx, source, startedAt, err)
 		return nil, err
@@ -158,6 +158,7 @@ func (p *Pipe) IngestExternal(ctx context.Context, fromAddr string, recipient st
 		headers,
 		fromAddr,
 		[]string{recipient},
+		nil,
 	)
 	p.recordTelemetry(ctx, mailmeta.SourceSMTPInbound, startedAt, err)
 	return res, err
@@ -187,14 +188,15 @@ func (p *Pipe) IngestSubmission(ctx context.Context, principalEmail, fromAddr st
 		p.recordTelemetry(ctx, mailmeta.SourceSMTPSubmission, startedAt, err)
 		return nil, err
 	}
-	res, err := p.persist(ctx, sender.UserID, mailmeta.FolderSent, ciphertext, headerCT, provenance, mailmeta.SourceSMTPSubmission, headers, fromAddr, rcpt)
+	res, err := p.persist(ctx, sender.UserID, mailmeta.FolderSent, ciphertext, headerCT, provenance, mailmeta.SourceSMTPSubmission, headers, fromAddr, rcpt, nil)
 	p.recordTelemetry(ctx, mailmeta.SourceSMTPSubmission, startedAt, err)
 	return res, err
 }
 
 // IngestInternal stores a message that arrived as PGP ciphertext from the API (client-encrypted).
 // rawCipher is treated as the body blob (no re-encryption).
-func (p *Pipe) IngestInternal(ctx context.Context, recipient string, headerCiphertext, rawCipher []byte, fromAddr string, rcpt []string) (*IngestResult, error) {
+// expiry applies only to the recipient copy when the sender opts into expiring delivery.
+func (p *Pipe) IngestInternal(ctx context.Context, recipient string, headerCiphertext, rawCipher []byte, fromAddr string, rcpt []string, expiry *mailmeta.MessageExpiry) (*IngestResult, error) {
 	if err := p.checkBodySize(rawCipher); err != nil {
 		return nil, err
 	}
@@ -210,7 +212,7 @@ func (p *Pipe) IngestInternal(ctx context.Context, recipient string, headerCiphe
 		return nil, err
 	}
 	headers := HeaderSummary{}
-	res, err := p.persist(ctx, rec.UserID, mailmeta.FolderInbox, rawCipher, headerCiphertext, mailmeta.ProvenanceClientEncrypted, mailmeta.SourceAPIClient, headers, fromAddr, rcpt)
+	res, err := p.persist(ctx, rec.UserID, mailmeta.FolderInbox, rawCipher, headerCiphertext, mailmeta.ProvenanceClientEncrypted, mailmeta.SourceAPIClient, headers, fromAddr, rcpt, expiry)
 	p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
 	return res, err
 }
@@ -232,7 +234,7 @@ func (p *Pipe) IngestClientSent(ctx context.Context, principalEmail string, head
 		return nil, err
 	}
 	headers := HeaderSummary{}
-	res, err := p.persist(ctx, sender.UserID, mailmeta.FolderSent, rawCipher, headerCiphertext, mailmeta.ProvenanceClientEncrypted, mailmeta.SourceAPIClient, headers, fromAddr, rcpt)
+	res, err := p.persist(ctx, sender.UserID, mailmeta.FolderSent, rawCipher, headerCiphertext, mailmeta.ProvenanceClientEncrypted, mailmeta.SourceAPIClient, headers, fromAddr, rcpt, nil)
 	p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
 	return res, err
 }
@@ -264,7 +266,7 @@ func (p *Pipe) IngestInternalPlaintextWithHeader(ctx context.Context, fromAddr, 
 		p.recordTelemetry(ctx, mailmeta.SourceInternal, startedAt, err)
 		return nil, fmt.Errorf("mailpipe: encrypt header: %w", err)
 	}
-	res, err := p.persist(ctx, rec.UserID, mailmeta.FolderInbox, ciphertext, headerCT, provenance, mailmeta.SourceInternal, headers, fromAddr, rcpt)
+	res, err := p.persist(ctx, rec.UserID, mailmeta.FolderInbox, ciphertext, headerCT, provenance, mailmeta.SourceInternal, headers, fromAddr, rcpt, nil)
 	if err != nil {
 		p.recordTelemetry(ctx, mailmeta.SourceInternal, startedAt, err)
 		return nil, err
@@ -315,6 +317,7 @@ func (p *Pipe) persist(
 	provenance, source string,
 	headers HeaderSummary,
 	fromAddr string, rcpt []string,
+	expiry *mailmeta.MessageExpiry,
 ) (*IngestResult, error) {
 	if p.Blob == nil || p.Scylla == nil || p.Meta == nil {
 		return nil, errors.New("mailpipe: missing dependencies")
@@ -366,12 +369,17 @@ func (p *Pipe) persist(
 		_ = p.Blob.Delete(ctx, bodyKey)
 		return nil, fmt.Errorf("mailpipe: ensure folder retention: %w", err)
 	}
-	if err := p.Meta.UpsertMessageLifecycle(ctx, mailmeta.MessageLifecycle{
+	lifecycle := mailmeta.MessageLifecycle{
 		UserID:          userID,
 		MessageID:       messageID,
 		CurrentFolder:   folder,
 		FolderEnteredAt: manifest.CreatedAt,
-	}); err != nil {
+	}
+	if expiry != nil {
+		lifecycle.ExpiresAt = expiry.ExpiresAt
+		lifecycle.MaxReads = expiry.MaxReads
+	}
+	if err := p.Meta.UpsertMessageLifecycle(ctx, lifecycle); err != nil {
 		_ = p.Scylla.DeleteOptInMetadata(ctx, userID, messageID)
 		_ = p.Scylla.DeleteManifest(ctx, userID, folder, manifest.CreatedAt, messageID)
 		_ = p.Blob.Delete(ctx, bodyKey)

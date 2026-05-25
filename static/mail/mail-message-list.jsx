@@ -5,6 +5,17 @@ import { messageEncryptionDisplay } from "./lib/mail-encryption-labels.js";
 import { canonicalizeSenderId } from "./lib/mail-address.js";
 import { SenderAvatar } from "./mail-sender-avatar.jsx";
 
+function messageExpiryHint(m) {
+  if (!m) return "";
+  if (m.expired) return "Expired";
+  if (m.expires_at) return `Expires ${formatDate(m.expires_at)}`;
+  if (m.max_reads > 0) {
+    const left = typeof m.reads_remaining === "number" ? m.reads_remaining : Math.max(0, m.max_reads - (m.reads || 0));
+    return left === 1 ? "1 read left" : `${left} reads left`;
+  }
+  return "";
+}
+
 export function MessageList({
   messages,
   selectedIds,
@@ -155,6 +166,7 @@ export function MessageList({
         >
           {messages.map((m) => {
             const enc = messageEncryptionDisplay(m.provenance);
+            const expiryHint = messageExpiryHint(m);
             const senderLabel = m.from_addr || (m.headerDecrypted ? "(missing from)" : "[ENCRYPTED]");
             const senderId = canonicalizeSenderId(m.from_addr);
             const senderProfile = senderId ? senderProfiles[senderId] : null;
@@ -195,6 +207,7 @@ export function MessageList({
                   <span className="mail-item-time">{formatDate(m.received_at)}</span>
                   <div className="mail-item-flags">
                     <span className={`mail-flag ${enc.flagClass}`} title={enc.title}>{Icons.lock}</span>
+                    {expiryHint ? <span className={`mail-flag expiry${m.expired ? " expired" : ""}`} title={expiryHint}>⏱</span> : null}
                     {m.has_attachments && <span className="mail-flag attachment" title="Attachments">{Icons.attach}</span>}
                   </div>
                 </div>

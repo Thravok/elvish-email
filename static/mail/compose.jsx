@@ -20,6 +20,11 @@ import * as React from "react";
     { v: 30 * 24 * 60 * 60, label: "30 days (max)" },
   ];
 
+  const INTERNAL_EXPIRY_TTL_OPTIONS = [
+    { v: 0, label: "no time limit" },
+    ...TTL_OPTIONS,
+  ];
+
   const MAXVIEWS_OPTIONS = [
     { v: 0, label: "unlimited" },
     { v: 1, label: "1 view (burn after read)" },
@@ -222,6 +227,8 @@ import * as React from "react";
     bccDisplay,
     inReplyTo,
     references,
+    expiresInSeconds,
+    maxReads,
   }) {
     if (!window.openpgp || !window.ElvishKeyVault) throw new Error("crypto subsystem not loaded");
     const recipients = [recipient];
@@ -278,6 +285,8 @@ import * as React from "react";
         senderBodyCiphertextB64,
         fromAddr: from,
         toAddrs: recipients,
+        expiresInSeconds,
+        maxReads,
       });
     }
     const outboundPGPMIME = buildPGPMIMEMessage({
@@ -890,6 +899,7 @@ import * as React from "react";
     const [pwdConfirm, setPwdConfirm] = useState("");
     const [ttlSeconds, setTtlSeconds] = useState(7 * 24 * 60 * 60);
     const [maxViews, setMaxViews] = useState(0);
+    const [expiryEnabled, setExpiryEnabled] = useState(false);
     const [notify, setNotify] = useState(true);
     const [linkResult, setLinkResult] = useState(null);
     const [attachPublicKey, setAttachPublicKey] = useState(false);
@@ -1179,6 +1189,9 @@ import * as React from "react";
           const senderFingerprint = senderIdentity.fingerprint
             || await window.ElvishKeyVault.ensureIdentityUnlockedByEmail(from);
           if (!senderFingerprint) throw new Error("sender identity signing key unavailable");
+          if (localDelivery && expiryEnabled && ttlSeconds <= 0 && maxViews <= 0) {
+            throw new Error("choose a time limit and/or max reads for expiring delivery");
+          }
           const r = await sendPGPDirect({
             from,
             recipient,
@@ -1193,6 +1206,8 @@ import * as React from "react";
             bccDisplay: bccLines,
             inReplyTo,
             references,
+            expiresInSeconds: localDelivery && expiryEnabled && ttlSeconds > 0 ? ttlSeconds : 0,
+            maxReads: localDelivery && expiryEnabled && maxViews > 0 ? maxViews : 0,
           });
           const addressBookEntry = manualTargetMatch
             ? {
@@ -1244,7 +1259,7 @@ import * as React from "react";
     }, [mode, from, to, cc, bcc, subject, body, recipientArmored, recipientMeta, saveToAddressBook, identities,
         manualKeyOverride, manualKeyEmail, uploadedKeyName, detectRecipientKey, attachPublicKey,
         inReplyTo, references,
-        pwd, pwdConfirm, ttlSeconds, maxViews, notify, busy, onClose, onToast]);
+        pwd, pwdConfirm, ttlSeconds, maxViews, expiryEnabled, notify, busy, onClose, onToast]);
 
     const fromOptions = useMemo(() => {
       if (Array.isArray(identities) && identities.length > 0) {
@@ -1382,6 +1397,18 @@ import * as React from "react";
               setSaveToAddressBook={setSaveToAddressBook}
               attachPublicKey={attachPublicKey}
               setAttachPublicKey={setAttachPublicKey}
+            />
+          )}
+
+          {mode === "pgp" && keyStatus === "local" && (
+            <ExpiryOptionsPanel
+              enabled={expiryEnabled}
+              setEnabled={setExpiryEnabled}
+              ttlSeconds={ttlSeconds}
+              setTtlSeconds={setTtlSeconds}
+              maxReads={maxViews}
+              setMaxReads={setMaxViews}
+              hint="Applies to the recipient's Elvish inbox copy. External SMTP delivery ignores expiry."
             />
           )}
 
@@ -1588,6 +1615,35 @@ import * as React from "react";
         )}
 
         {keyError && <div className="mail-encrypt-error">! {keyError}</div>}
+      </div>
+    );
+  }
+
+  function ExpiryOptionsPanel({ enabled, setEnabled, ttlSeconds, setTtlSeconds, maxReads, setMaxReads, hint }) {
+    return (
+      <div className="mail-link-panel">
+        <div className="mail-link-panel-h">Expiring Message</div>
+        <label className="mail-checkbox-row">
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+          <span>Enable expiry for this message</span>
+        </label>
+        {hint && <p className="mail-link-hint dim">{hint}</p>}
+        {enabled && (
+          <div className="mail-link-row-grid">
+            <label className="mail-compose-field inline">
+              <span className="label">Expires in</span>
+              <select value={ttlSeconds} onChange={(e) => setTtlSeconds(Number(e.target.value))}>
+                {INTERNAL_EXPIRY_TTL_OPTIONS.map((o) => (<option key={o.v} value={o.v}>{o.label}</option>))}
+              </select>
+            </label>
+            <label className="mail-compose-field inline">
+              <span className="label">Max reads</span>
+              <select value={maxReads} onChange={(e) => setMaxReads(Number(e.target.value))}>
+                {MAXVIEWS_OPTIONS.map((o) => (<option key={o.v} value={o.v}>{o.label}</option>))}
+              </select>
+            </label>
+          </div>
+        )}
       </div>
     );
   }

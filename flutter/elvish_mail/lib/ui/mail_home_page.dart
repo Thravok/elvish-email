@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/mail_dtos.dart';
 import '../app_state.dart';
+import 'compose_page.dart';
 import 'message_detail_page.dart';
 
 class MailHomePage extends StatelessWidget {
@@ -21,6 +22,18 @@ class MailHomePage extends StatelessWidget {
         final selectedIdx = rawIdx < 0 ? 0 : rawIdx;
 
         return Scaffold(
+          floatingActionButton: model.mailKeysUnlocked
+              ? FloatingActionButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ComposePage(model: model),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.edit),
+                )
+              : null,
           appBar: AppBar(
             title: const Text('Mail'),
             actions: [

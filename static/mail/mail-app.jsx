@@ -444,7 +444,7 @@ function htmlToDisplayText(html) {
   }
   const d = document.createElement("div");
   d.textContent = s;
-  return (d.textContent || "").trim();
+  return (d.textContent || "").replace(/\s+/g, " ").trim();
 }
 
 function splitMultipartBody(body, boundary) {
@@ -1535,6 +1535,9 @@ function MessageDetail({ message, identities, unlocked, onMetadataRecovered, onC
 
   const signatureDisplay = describeSignatureState(signatureState);
   const encDisplay = messageEncryptionDisplay(message.provenance);
+  const expiryHint = message.expires_at
+    ? (message.expired ? "Expired" : `Expires ${formatFullDate(message.expires_at)}`)
+    : (message.max_reads > 0 ? `${message.reads_remaining ?? Math.max(0, message.max_reads - (message.reads || 0))} reads remaining` : "");
 
   return (
     <div className="mail-detail">
@@ -1555,6 +1558,12 @@ function MessageDetail({ message, identities, unlocked, onMetadataRecovered, onC
             <span className="v dim">{formatFullDate(message.received_at)}</span>
             <span className="k">Encryption</span>
             <span className="v dim" title={encDisplay.title}>{encDisplay.label}</span>
+            {expiryHint ? (
+              <>
+                <span className="k">Expiry</span>
+                <span className={`v dim${message.expired ? " mail-expiry-expired" : ""}`}>{expiryHint}</span>
+              </>
+            ) : null}
           </div>
           {typeof onComposeReply === "function" && (
             <div className="mail-msg-actions">

@@ -14326,6 +14326,10 @@
           { v: 7 * 24 * 60 * 60, label: "7 days (default)" },
           { v: 30 * 24 * 60 * 60, label: "30 days (max)" }
         ];
+        const INTERNAL_EXPIRY_TTL_OPTIONS = [
+          { v: 0, label: "no time limit" },
+          ...TTL_OPTIONS
+        ];
         const MAXVIEWS_OPTIONS = [
           { v: 0, label: "unlimited" },
           { v: 1, label: "1 view (burn after read)" },
@@ -14504,7 +14508,9 @@
           ccDisplay,
           bccDisplay,
           inReplyTo,
-          references
+          references,
+          expiresInSeconds,
+          maxReads
         }) {
           if (!window.openpgp || !window.ElvishKeyVault) throw new Error("crypto subsystem not loaded");
           const recipients = [recipient];
@@ -14558,7 +14564,9 @@
               senderHeaderCiphertextB64,
               senderBodyCiphertextB64,
               fromAddr: from,
-              toAddrs: recipients
+              toAddrs: recipients,
+              expiresInSeconds,
+              maxReads
             });
           }
           const outboundPGPMIME = buildPGPMIMEMessage({
@@ -15076,6 +15084,7 @@ ${body || ""}`;
           const [pwdConfirm, setPwdConfirm] = useState6("");
           const [ttlSeconds, setTtlSeconds] = useState6(7 * 24 * 60 * 60);
           const [maxViews, setMaxViews] = useState6(0);
+          const [expiryEnabled, setExpiryEnabled] = useState6(false);
           const [notify, setNotify] = useState6(true);
           const [linkResult, setLinkResult] = useState6(null);
           const [attachPublicKey, setAttachPublicKey] = useState6(false);
@@ -15351,6 +15360,9 @@ ${body || ""}`;
                 if (!senderIdentity || !senderIdentity.armored_public) throw new Error("sender identity public key unavailable");
                 const senderFingerprint = senderIdentity.fingerprint || await window.ElvishKeyVault.ensureIdentityUnlockedByEmail(from);
                 if (!senderFingerprint) throw new Error("sender identity signing key unavailable");
+                if (localDelivery && expiryEnabled && ttlSeconds <= 0 && maxViews <= 0) {
+                  throw new Error("choose a time limit and/or max reads for expiring delivery");
+                }
                 const r = await sendPGPDirect({
                   from,
                   recipient,
@@ -15364,7 +15376,9 @@ ${body || ""}`;
                   ccDisplay: ccLines,
                   bccDisplay: bccLines,
                   inReplyTo,
-                  references
+                  references,
+                  expiresInSeconds: localDelivery && expiryEnabled && ttlSeconds > 0 ? ttlSeconds : 0,
+                  maxReads: localDelivery && expiryEnabled && maxViews > 0 ? maxViews : 0
                 });
                 const addressBookEntry = manualTargetMatch ? {
                   email: recipient,
@@ -15432,6 +15446,7 @@ ${body || ""}`;
             pwdConfirm,
             ttlSeconds,
             maxViews,
+            expiryEnabled,
             notify,
             busy,
             onClose,
@@ -15523,6 +15538,17 @@ ${body || ""}`;
               setSaveToAddressBook,
               attachPublicKey,
               setAttachPublicKey
+            }
+          ), mode === "pgp" && keyStatus === "local" && /* @__PURE__ */ React6.createElement(
+            ExpiryOptionsPanel,
+            {
+              enabled: expiryEnabled,
+              setEnabled: setExpiryEnabled,
+              ttlSeconds,
+              setTtlSeconds,
+              maxReads: maxViews,
+              setMaxReads: setMaxViews,
+              hint: "Applies to the recipient's Elvish inbox copy. External SMTP delivery ignores expiry."
             }
           ), mode === "link" && /* @__PURE__ */ React6.createElement(
             ProtectedLinkPanel,
@@ -15665,6 +15691,9 @@ ${body || ""}`;
               rows: 3
             }
           )), keyError && /* @__PURE__ */ React6.createElement("div", { className: "mail-encrypt-error" }, "! ", keyError));
+        }
+        function ExpiryOptionsPanel({ enabled, setEnabled, ttlSeconds, setTtlSeconds, maxReads, setMaxReads, hint }) {
+          return /* @__PURE__ */ React6.createElement("div", { className: "mail-link-panel" }, /* @__PURE__ */ React6.createElement("div", { className: "mail-link-panel-h" }, "Expiring Message"), /* @__PURE__ */ React6.createElement("label", { className: "mail-checkbox-row" }, /* @__PURE__ */ React6.createElement("input", { type: "checkbox", checked: enabled, onChange: (e) => setEnabled(e.target.checked) }), /* @__PURE__ */ React6.createElement("span", null, "Enable expiry for this message")), hint && /* @__PURE__ */ React6.createElement("p", { className: "mail-link-hint dim" }, hint), enabled && /* @__PURE__ */ React6.createElement("div", { className: "mail-link-row-grid" }, /* @__PURE__ */ React6.createElement("label", { className: "mail-compose-field inline" }, /* @__PURE__ */ React6.createElement("span", { className: "label" }, "Expires in"), /* @__PURE__ */ React6.createElement("select", { value: ttlSeconds, onChange: (e) => setTtlSeconds(Number(e.target.value)) }, INTERNAL_EXPIRY_TTL_OPTIONS.map((o) => /* @__PURE__ */ React6.createElement("option", { key: o.v, value: o.v }, o.label)))), /* @__PURE__ */ React6.createElement("label", { className: "mail-compose-field inline" }, /* @__PURE__ */ React6.createElement("span", { className: "label" }, "Max reads"), /* @__PURE__ */ React6.createElement("select", { value: maxReads, onChange: (e) => setMaxReads(Number(e.target.value)) }, MAXVIEWS_OPTIONS.map((o) => /* @__PURE__ */ React6.createElement("option", { key: o.v, value: o.v }, o.label))))));
         }
         function ProtectedLinkPanel({ pwd, setPwd, pwdConfirm, setPwdConfirm, meter, ttlSeconds, setTtlSeconds, maxViews, setMaxViews, notify, setNotify }) {
           return /* @__PURE__ */ React6.createElement("div", { className: "mail-link-panel" }, /* @__PURE__ */ React6.createElement("div", { className: "mail-link-panel-h" }, "Protected Link Settings"), /* @__PURE__ */ React6.createElement("div", { className: "mail-compose-field" }, /* @__PURE__ */ React6.createElement("span", { className: "label" }, "Password"), /* @__PURE__ */ React6.createElement("input", { type: "password", value: pwd, onChange: (e) => setPwd(e.target.value), placeholder: "\u2265 12 chars; share out-of-band" })), /* @__PURE__ */ React6.createElement("div", { className: "mail-compose-field" }, /* @__PURE__ */ React6.createElement("span", { className: "label" }, "Confirm"), /* @__PURE__ */ React6.createElement("input", { type: "password", value: pwdConfirm, onChange: (e) => setPwdConfirm(e.target.value), placeholder: "confirm password" })), /* @__PURE__ */ React6.createElement("div", { className: "mail-pwd-meter" }, /* @__PURE__ */ React6.createElement("div", { className: `mail-pwd-meter-bar score-${meter.score}`, style: { width: `${meter.score / 5 * 100}%` } }), /* @__PURE__ */ React6.createElement("span", { className: "mail-pwd-meter-label" }, "strength: ", meter.label)), /* @__PURE__ */ React6.createElement("div", { className: "mail-link-row-grid" }, /* @__PURE__ */ React6.createElement("label", { className: "mail-compose-field inline" }, /* @__PURE__ */ React6.createElement("span", { className: "label" }, "Expires in"), /* @__PURE__ */ React6.createElement("select", { value: ttlSeconds, onChange: (e) => setTtlSeconds(Number(e.target.value)) }, TTL_OPTIONS.map((o) => /* @__PURE__ */ React6.createElement("option", { key: o.v, value: o.v }, o.label)))), /* @__PURE__ */ React6.createElement("label", { className: "mail-compose-field inline" }, /* @__PURE__ */ React6.createElement("span", { className: "label" }, "Max views"), /* @__PURE__ */ React6.createElement("select", { value: maxViews, onChange: (e) => setMaxViews(Number(e.target.value)) }, MAXVIEWS_OPTIONS.map((o) => /* @__PURE__ */ React6.createElement("option", { key: o.v, value: o.v }, o.label))))), /* @__PURE__ */ React6.createElement("label", { className: "mail-checkbox-row" }, /* @__PURE__ */ React6.createElement("input", { type: "checkbox", checked: notify, onChange: (e) => setNotify(e.target.checked) }), /* @__PURE__ */ React6.createElement("span", null, "Email recipient(s) the link automatically")));
@@ -15977,6 +16006,16 @@ ${body || ""}`;
   });
 
   // ../static/mail/mail-message-list.jsx
+  function messageExpiryHint(m) {
+    if (!m) return "";
+    if (m.expired) return "Expired";
+    if (m.expires_at) return `Expires ${formatDate(m.expires_at)}`;
+    if (m.max_reads > 0) {
+      const left = typeof m.reads_remaining === "number" ? m.reads_remaining : Math.max(0, m.max_reads - (m.reads || 0));
+      return left === 1 ? "1 read left" : `${left} reads left`;
+    }
+    return "";
+  }
   function MessageList({
     messages,
     selectedIds,
@@ -16059,6 +16098,7 @@ ${body || ""}`;
       },
       messages.map((m) => {
         const enc = messageEncryptionDisplay(m.provenance);
+        const expiryHint = messageExpiryHint(m);
         const senderLabel = m.from_addr || (m.headerDecrypted ? "(missing from)" : "[ENCRYPTED]");
         const senderId = canonicalizeSenderId(m.from_addr);
         const senderProfile = senderId ? senderProfiles[senderId] : null;
@@ -16091,7 +16131,7 @@ ${body || ""}`;
             "\u2713"
           ), /* @__PURE__ */ import_react7.default.createElement(SenderAvatar, { senderLabel, senderId, profile: senderProfile })),
           /* @__PURE__ */ import_react7.default.createElement("div", { className: "mail-item-content" }, /* @__PURE__ */ import_react7.default.createElement("div", { className: "mail-item-from" }, senderLabel), /* @__PURE__ */ import_react7.default.createElement("div", { className: "mail-item-subject" }, m.subject || (m.headerDecrypted ? "(no subject)" : "[ENCRYPTED]")), /* @__PURE__ */ import_react7.default.createElement("div", { className: "mail-item-preview dim" }, m.preview || "")),
-          /* @__PURE__ */ import_react7.default.createElement("div", { className: "mail-item-meta" }, /* @__PURE__ */ import_react7.default.createElement("span", { className: "mail-item-time" }, formatDate(m.received_at)), /* @__PURE__ */ import_react7.default.createElement("div", { className: "mail-item-flags" }, /* @__PURE__ */ import_react7.default.createElement("span", { className: `mail-flag ${enc.flagClass}`, title: enc.title }, Icons2.lock), m.has_attachments && /* @__PURE__ */ import_react7.default.createElement("span", { className: "mail-flag attachment", title: "Attachments" }, Icons2.attach)))
+          /* @__PURE__ */ import_react7.default.createElement("div", { className: "mail-item-meta" }, /* @__PURE__ */ import_react7.default.createElement("span", { className: "mail-item-time" }, formatDate(m.received_at)), /* @__PURE__ */ import_react7.default.createElement("div", { className: "mail-item-flags" }, /* @__PURE__ */ import_react7.default.createElement("span", { className: `mail-flag ${enc.flagClass}`, title: enc.title }, Icons2.lock), expiryHint ? /* @__PURE__ */ import_react7.default.createElement("span", { className: `mail-flag expiry${m.expired ? " expired" : ""}`, title: expiryHint }, "\u23F1") : null, m.has_attachments && /* @__PURE__ */ import_react7.default.createElement("span", { className: "mail-flag attachment", title: "Attachments" }, Icons2.attach)))
         );
       })
     ));
@@ -16503,7 +16543,7 @@ ${body || ""}`;
     }
     const d = document.createElement("div");
     d.textContent = s;
-    return (d.textContent || "").trim();
+    return (d.textContent || "").replace(/\s+/g, " ").trim();
   }
   function splitMultipartBody(body, boundary) {
     const marker = `--${boundary}`;
@@ -17405,7 +17445,8 @@ ${body || ""}`;
     }
     const signatureDisplay = describeSignatureState(signatureState);
     const encDisplay = messageEncryptionDisplay(message.provenance);
-    return /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-detail" }, /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-detail-header" }, /* @__PURE__ */ import_react8.default.createElement("span", { className: "kind" }, "\u25B8 MAIL"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "title" }, "Message"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "status" }, "ID ", (message.id || "").slice(0, 8).toUpperCase())), /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-detail-body" }, /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-msg-head" }, /* @__PURE__ */ import_react8.default.createElement("h1", { className: "mail-msg-subject" }, message.subject || "(no subject)"), /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-msg-meta" }, /* @__PURE__ */ import_react8.default.createElement("span", { className: "k" }, "From"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "v" }, message.from_addr || "[encrypted header]"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "k" }, "To"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "v" }, (message.to_addrs || []).join(", ") || "[encrypted header]"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "k" }, "Date"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "v dim" }, formatFullDate(message.received_at)), /* @__PURE__ */ import_react8.default.createElement("span", { className: "k" }, "Encryption"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "v dim", title: encDisplay.title }, encDisplay.label)), typeof onComposeReply === "function" && /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-msg-actions" }, /* @__PURE__ */ import_react8.default.createElement(
+    const expiryHint = message.expires_at ? message.expired ? "Expired" : `Expires ${formatFullDate(message.expires_at)}` : message.max_reads > 0 ? `${message.reads_remaining ?? Math.max(0, message.max_reads - (message.reads || 0))} reads remaining` : "";
+    return /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-detail" }, /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-detail-header" }, /* @__PURE__ */ import_react8.default.createElement("span", { className: "kind" }, "\u25B8 MAIL"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "title" }, "Message"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "status" }, "ID ", (message.id || "").slice(0, 8).toUpperCase())), /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-detail-body" }, /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-msg-head" }, /* @__PURE__ */ import_react8.default.createElement("h1", { className: "mail-msg-subject" }, message.subject || "(no subject)"), /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-msg-meta" }, /* @__PURE__ */ import_react8.default.createElement("span", { className: "k" }, "From"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "v" }, message.from_addr || "[encrypted header]"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "k" }, "To"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "v" }, (message.to_addrs || []).join(", ") || "[encrypted header]"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "k" }, "Date"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "v dim" }, formatFullDate(message.received_at)), /* @__PURE__ */ import_react8.default.createElement("span", { className: "k" }, "Encryption"), /* @__PURE__ */ import_react8.default.createElement("span", { className: "v dim", title: encDisplay.title }, encDisplay.label), expiryHint ? /* @__PURE__ */ import_react8.default.createElement(import_react8.default.Fragment, null, /* @__PURE__ */ import_react8.default.createElement("span", { className: "k" }, "Expiry"), /* @__PURE__ */ import_react8.default.createElement("span", { className: `v dim${message.expired ? " mail-expiry-expired" : ""}` }, expiryHint)) : null), typeof onComposeReply === "function" && /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-msg-actions" }, /* @__PURE__ */ import_react8.default.createElement(
       "button",
       {
         type: "button",

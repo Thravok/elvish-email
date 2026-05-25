@@ -242,6 +242,79 @@ class IdentitiesListResponse {
   }
 }
 
+class KeyLookupHitDto {
+  KeyLookupHitDto({
+    this.email,
+    this.fingerprint,
+    this.armoredPublic,
+    this.source,
+  });
+
+  final String? email;
+  final String? fingerprint;
+  final String? armoredPublic;
+  final String? source;
+
+  factory KeyLookupHitDto.fromJson(Map<String, dynamic> j) {
+    return KeyLookupHitDto(
+      email: j['email'] as String?,
+      fingerprint: j['fingerprint'] as String?,
+      armoredPublic: (j['armored_public'] ?? j['armored']) as String?,
+      source: j['source'] as String?,
+    );
+  }
+}
+
+class PostEncryptedMessageResponse {
+  PostEncryptedMessageResponse({this.id, this.blobRef});
+
+  final String? id;
+  final String? blobRef;
+
+  factory PostEncryptedMessageResponse.fromJson(Map<String, dynamic> j) {
+    return PostEncryptedMessageResponse(
+      id: j['id'] as String?,
+      blobRef: j['blob_ref'] as String?,
+    );
+  }
+}
+
+class PostOutboxResponse {
+  PostOutboxResponse({this.id});
+
+  final String? id;
+
+  factory PostOutboxResponse.fromJson(Map<String, dynamic> j) {
+    return PostOutboxResponse(id: j['id'] as String?);
+  }
+}
+
+class ProtectedLinkCreateResponse {
+  ProtectedLinkCreateResponse({
+    this.token,
+    this.url,
+    this.expiresAt,
+    this.maxViews,
+    this.notifySent,
+  });
+
+  final String? token;
+  final String? url;
+  final String? expiresAt;
+  final int? maxViews;
+  final bool? notifySent;
+
+  factory ProtectedLinkCreateResponse.fromJson(Map<String, dynamic> j) {
+    return ProtectedLinkCreateResponse(
+      token: j['token'] as String?,
+      url: j['url'] as String?,
+      expiresAt: j['expires_at'] as String?,
+      maxViews: (j['max_views'] as num?)?.toInt(),
+      notifySent: j['notify_sent'] as bool?,
+    );
+  }
+}
+
 class MailFiltersListResponse {
   MailFiltersListResponse({required this.filters});
 

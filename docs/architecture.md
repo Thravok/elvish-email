@@ -9,8 +9,7 @@
 3. **Valkey** (Redis-compatible) holds **ephemeral** data: HTTP sessions, rate-limit counters, and short-lived negative caches used by the mail keyserver path.
 4. **Mail at scale** splits hot paths across **ScyllaDB** (mailbox-scale projections and time-ordered access) and **S3-compatible object storage** (ciphertext blobs). See [ADR 0007](adr/0007-four-store-mail-architecture.md). Local development uses Docker Compose for all of these; production sets the same env vars explicitly.
 5. **SMTP** receive and submission, outbound delivery, and **DKIM** signing are implemented in-tree (`internal/smtp/`, `internal/dkim/`, workers) per [ADR 0006](adr/0006-own-smtp-stack.md). Listeners are optional and controlled by env (see root README).
-6. **Native iOS** uses the same HTTP API; sources live under `IOS/` and read a configurable API base URL (see [IOS/README.md](../IOS/README.md)).
-7. **Flutter Android** mail client under `flutter/elvish_mail/` uses the same `/api/...` surface and session cookies (see [flutter/elvish_mail/README.md](../flutter/elvish_mail/README.md)).
+6. **Native iOS** and **Flutter Android** use the same HTTP API and session cookies as the browser (`IOS/`, `flutter/elvish_mail/`). Mobile compose implements **PGP direct** and **protected-link** send modes aligned with [`static/mail/compose.jsx`](../static/mail/compose.jsx) (see [IOS/README.md](../IOS/README.md), [flutter/elvish_mail/README.md](../flutter/elvish_mail/README.md)).
 
 ## Diagram
 

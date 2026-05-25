@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:dart_pg/dart_pg.dart';
+import 'dart_pg_openpgp.dart';
 
 /// Decrypt OpenPGP payloads (armored or binary) using identity/account secret keys.
 String decryptOpenPgpUtf8(Uint8List ciphertext, List<PrivateKeyInterface> keys) {

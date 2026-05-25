@@ -1,20 +1,46 @@
-# Flutter / Dart
+# Flutter / Dart (see flutter/flutter packages/flutter_tools/templates/app/.gitignore.tmpl)
 .dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
 .packages
 .pub-cache/
 .pub/
-build/
+/build/
+/coverage/
+**/doc/api/
+
+# Symbolication / obfuscation
+app.*.symbols
+app.*.map.json
+
+# IDE
 *.iml
 *.ipr
 *.iws
 .idea/
+**/*_android.iml
+# .vscode/
 
-# Android
+# Android build outputs (app module; paths relative to project root)
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+
+# Android secrets / local config
 **/local.properties
 **/captures/
 **/.cxx/
 *.keystore
 !debug.keystore
+**/key.properties
+*.jks
 
-# iOS (if generated later)
+# iOS (when platform is added)
 **/Pods/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+
+# Widget preview (Flutter 3.35+)
+.widget_preview/

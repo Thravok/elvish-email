@@ -297,22 +297,35 @@ async function pgpDecrypt(cipher) {
   return data instanceof Uint8Array ? data : new Uint8Array(data);
 }
 
+function stripHtmlForSearch(html) {
+  const s = String(html || "").trim();
+  if (!s) return "";
+  try {
+    if (typeof DOMParser !== "undefined") {
+      const doc = new DOMParser().parseFromString(s, "text/html");
+      if (doc && doc.body) {
+        return doc.body.textContent || "";
+      }
+    }
+  } catch (_) {
+    /* fall through */
+  }
+  let out = s;
+  const blockRe = /<(script|style)\b[^>]*>[\s\S]*?<\/\1\b[^>]*>/gi;
+  for (let prev = null; prev !== out; ) {
+    prev = out;
+    out = out.replace(blockRe, " ");
+  }
+  return out.replace(/<[^>]+>/g, " ");
+}
+
 function mimeToText(bytes) {
   const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
   const sep = text.indexOf('\r\n\r\n');
   let body = sep > 0 ? text.slice(sep + 4) : text;
   const sigStart = body.indexOf('-----BEGIN PGP SIGNATURE-----');
   if (sigStart >= 0) body = body.slice(0, sigStart);
-  return body
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return stripHtmlForSearch(body).replace(/\s+/g, ' ').trim();
 }
 
 async function writePostings(messageId, terms, snippet) {

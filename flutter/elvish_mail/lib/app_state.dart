@@ -4,6 +4,7 @@ import 'api/auth_dtos.dart';
 import 'api/auth_service.dart';
 import 'api/elvish_api_client.dart';
 import 'api/mail_dtos.dart';
+import 'api/compose_service.dart';
 import 'api/mail_service.dart';
 import 'keyvault/elvish_key_vault.dart';
 
@@ -31,6 +32,9 @@ class ElvishAppState extends ChangeNotifier {
   String selectedMailboxFolder = 'inbox';
   List<MailInboxRow> inboxRows = [];
   bool mailKeysUnlocked = false;
+  List<IdentityRowDto> get mailIdentities => keyVault.identityRows;
+
+  ComposeService get composeService => ComposeService(mail: mail, vault: keyVault);
   String? lastError;
   bool isBusy = false;
   LoginMfaRequired? mfaChallenge;

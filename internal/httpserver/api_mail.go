@@ -163,6 +163,12 @@ type manifestJSON struct {
 	ThreadID            string   `json:"thread_id,omitempty"`
 	FlagsSummary        string   `json:"flags_summary,omitempty"`
 	Read                bool     `json:"read"`
+	ExpiresAt           string   `json:"expires_at,omitempty"`
+	MaxReads            int64    `json:"max_reads,omitempty"`
+	Reads               int64    `json:"reads,omitempty"`
+	ReadsRemaining      int64    `json:"reads_remaining,omitempty"`
+	Expired             bool     `json:"expired,omitempty"`
+	Burned              bool     `json:"burned,omitempty"`
 }
 
 func (s *Server) apiMailMessagesList(w http.ResponseWriter, r *http.Request, userID uuid.UUID) {
@@ -232,6 +238,7 @@ func (s *Server) buildManifestJSON(ctx context.Context, userID uuid.UUID, row *s
 	if flags, err := s.scylla.GetFlags(ctx, userID, mf.MessageID); err == nil && flags != nil {
 		j.Read = flags.Read
 	}
+	s.applyManifestExpiry(ctx, userID, mf.MessageID, &j)
 	opt, err := s.scylla.GetOptInMetadata(ctx, userID, mf.MessageID)
 	if err != nil || opt == nil {
 		return j
@@ -245,6 +252,30 @@ func (s *Server) buildManifestJSON(ctx context.Context, userID uuid.UUID, row *s
 	j.ThreadID = opt.ThreadID
 	j.FlagsSummary = opt.FlagsSummary
 	return j
+}
+
+func (s *Server) applyManifestExpiry(ctx context.Context, userID, messageID uuid.UUID, j *manifestJSON) {
+	if s == nil || s.mailmeta == nil || j == nil {
+		return
+	}
+	lc, err := s.mailmeta.GetMessageLifecycle(ctx, userID, messageID)
+	if err != nil || lc == nil {
+		return
+	}
+	now := time.Now().UTC()
+	if lc.ExpiresAt != nil {
+		j.ExpiresAt = lc.ExpiresAt.UTC().Format(time.RFC3339Nano)
+	}
+	if lc.MaxReads > 0 {
+		j.MaxReads = lc.MaxReads
+		j.Reads = lc.Reads
+		j.ReadsRemaining = lc.MaxReads - lc.Reads
+		if j.ReadsRemaining < 0 {
+			j.ReadsRemaining = 0
+		}
+	}
+	j.Expired = mailmeta.MessageLifecycleExpired(lc, now)
+	j.Burned = lc.BurnedAt != nil || (lc.MaxReads > 0 && lc.Reads >= lc.MaxReads)
 }
 
 func (s *Server) apiMailManifestGet(w http.ResponseWriter, r *http.Request, userID uuid.UUID, idStr string) {
@@ -280,6 +311,17 @@ func (s *Server) apiMailMessageBlob(w http.ResponseWriter, r *http.Request, user
 		s.writeErrAPIInternal(w, "mail blob manifest", err)
 		return
 	}
+	if err := s.enforceMessageReadable(r.Context(), userID, id, true); err != nil {
+		switch {
+		case errors.Is(err, mailmeta.ErrMessageExpired), errors.Is(err, mailmeta.ErrMessageBurned):
+			s.writeErr(w, http.StatusGone, "message expired or read limit reached")
+		case errors.Is(err, scyllastore.ErrNotFound), errors.Is(err, mailmeta.ErrNotFound):
+			http.NotFound(w, r)
+		default:
+			s.writeErrAPIInternal(w, "mail blob access", err)
+		}
+		return
+	}
 	body, err := s.blob.Get(r.Context(), mf.BodyBlobRef)
 	if err != nil {
 		if errors.Is(err, blobstore.ErrNotFound) {
@@ -292,6 +334,32 @@ func (s *Server) apiMailMessageBlob(w http.ResponseWriter, r *http.Request, user
 	w.Header().Set("Content-Type", "application/pgp-encrypted")
 	w.Header().Set("Cache-Control", "private, no-store")
 	s.writeBytes(w, "mail blob", body)
+}
+
+// enforceMessageReadable rejects expired/burned messages and optionally consumes a read.
+func (s *Server) enforceMessageReadable(ctx context.Context, userID, messageID uuid.UUID, consumeRead bool) error {
+	if s == nil || s.mailmeta == nil {
+		return nil
+	}
+	lc, err := s.mailmeta.GetMessageLifecycle(ctx, userID, messageID)
+	if err != nil {
+		if errors.Is(err, mailmeta.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+	if lc.ExpiresAt != nil && !time.Now().Before(*lc.ExpiresAt) {
+		return mailmeta.ErrMessageExpired
+	}
+	if lc.BurnedAt != nil || (lc.MaxReads > 0 && lc.Reads >= lc.MaxReads) {
+		return mailmeta.ErrMessageBurned
+	}
+	if consumeRead && lc.MaxReads > 0 {
+		if _, err := s.mailmeta.ConsumeRead(ctx, userID, messageID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type messagePatchBody struct {
@@ -472,6 +540,8 @@ type messagesPostBody struct {
 	SenderBodyCiphertextB64   string   `json:"sender_body_ciphertext_b64"`
 	FromAddr                  string   `json:"from_addr"`
 	ToAddrs                   []string `json:"to_addrs"`
+	ExpiresInSeconds          int64    `json:"expires_in_seconds,omitempty"`
+	MaxReads                  int64    `json:"max_reads,omitempty"`
 }
 
 func (s *Server) apiMailMessagesPost(w http.ResponseWriter, r *http.Request, userID uuid.UUID) {
@@ -548,6 +618,11 @@ func (s *Server) apiMailMessagesPost(w http.ResponseWriter, r *http.Request, use
 	}
 	pipe := mailpipe.New(s.blob, s.scylla, s.mailmeta, s.log)
 	pipe.Telemetry = s.telemetry
+	expiry, err := mailmeta.NormalizeMessageExpiry(body.ExpiresInSeconds, body.MaxReads)
+	if err != nil {
+		s.writeErr(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	var senderCopy *mailpipe.IngestResult
 	if len(senderCipher) > 0 && len(senderHeaderCT) > 0 {
 		senderCopy, err = pipe.IngestClientSent(r.Context(), body.FromAddr, senderHeaderCT, senderCipher, body.FromAddr, body.ToAddrs)
@@ -556,7 +631,7 @@ func (s *Server) apiMailMessagesPost(w http.ResponseWriter, r *http.Request, use
 			return
 		}
 	}
-	res, err := pipe.IngestInternal(r.Context(), recipient, headerCT, cipher, body.FromAddr, body.ToAddrs)
+	res, err := pipe.IngestInternal(r.Context(), recipient, headerCT, cipher, body.FromAddr, body.ToAddrs, expiry)
 	if err != nil {
 		if senderCopy != nil {
 			_, _ = mailops.New(s.mailmeta, s.scylla, s.blob).DeletePermanent(r.Context(), senderCopy.UserID, senderCopy.MessageID)
@@ -849,7 +924,7 @@ func (s *Server) apiMailTestEcho(w http.ResponseWriter, r *http.Request, userID 
 	}
 	pipe := mailpipe.New(s.blob, s.scylla, s.mailmeta, s.log)
 	pipe.Telemetry = s.telemetry
-	res, err := pipe.IngestInternal(r.Context(), target, headerCT, cipher, target, []string{target})
+	res, err := pipe.IngestInternal(r.Context(), target, headerCT, cipher, target, []string{target}, nil)
 	if err != nil {
 		s.writeErrAPIInternal(w, "mail test echo", err)
 		return

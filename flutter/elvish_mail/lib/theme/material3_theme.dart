@@ -83,11 +83,6 @@ class ElvishMaterial3Theme {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
-      materialBannerTheme: MaterialBannerThemeData(
-        backgroundColor: colorScheme.errorContainer,
-        contentTextStyle: TextStyle(color: colorScheme.onErrorContainer),
-        dividerColor: Colors.transparent,
-      ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: colorScheme.primary,
         circularTrackColor: colorScheme.surfaceContainerHighest,

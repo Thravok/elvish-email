@@ -85,7 +85,7 @@ func TestSniffPGPCleartextDetection(t *testing.T) {
 // TestIngestInternalRejectsCleartext exercises the early refusal.
 func TestIngestInternalRejectsCleartext(t *testing.T) {
 	p := &Pipe{}
-	_, err := p.IngestInternal(context.Background(), "x@y.z", []byte("h"), []byte("plain text"), "a@b.c", []string{"x@y.z"})
+	_, err := p.IngestInternal(context.Background(), "x@y.z", []byte("h"), []byte("plain text"), "a@b.c", []string{"x@y.z"}, nil)
 	if err == nil {
 		t.Fatal("expected error for cleartext body")
 	}

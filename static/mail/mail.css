@@ -986,6 +986,9 @@ button.mail-item-check {
 .mail-flag.mail-enc-unknown { color: var(--dim); }
 .mail-flag.signed { color: var(--accent); }
 .mail-flag.attachment { color: var(--dim); }
+.mail-flag.expiry { color: var(--warn); font-size: 0.85em; }
+.mail-flag.expiry.expired { color: var(--err, #f87171); }
+.mail-expiry-expired { color: var(--err, #f87171); }
 .mail-flag.starred { color: var(--warn); }
 
 .mail-list-empty {

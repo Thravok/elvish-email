@@ -1,0 +1,10 @@
+# Android module (see flutter/flutter android.tmpl/.gitignore)
+# gradlew + gradle/wrapper are committed so CI/CodeQL can build without `flutter create`.
+/.gradle/
+/captures/
+/.cxx/
+/local.properties
+GeneratedPluginRegistrant.java
+key.properties
+**/*.keystore
+**/*.jks

@@ -692,6 +692,16 @@ func (s *Server) renderPostHTML(w http.ResponseWriter, r *http.Request, ctx cont
 	}
 }
 
+func isSafeAbsoluteRedirectPath(p string) bool {
+	if len(p) < 1 || p[0] != '/' {
+		return false
+	}
+	if len(p) >= 2 && (p[1] == '/' || p[1] == '\\') {
+		return false
+	}
+	return true
+}
+
 func safeRedirectPath(next string) string {
 	next = strings.TrimSpace(next)
 	if next == "" {
@@ -708,17 +718,11 @@ func safeRedirectPath(next string) string {
 	if strings.Contains(next, "://") {
 		return "/"
 	}
-	if !strings.HasPrefix(next, "/") {
-		return "/"
-	}
-	if strings.HasPrefix(next, "//") {
+	if !isSafeAbsoluteRedirectPath(next) {
 		return "/"
 	}
 	c := path.Clean(next)
-	if c == "." || !strings.HasPrefix(c, "/") {
-		return "/"
-	}
-	if strings.HasPrefix(c, "//") {
+	if c == "." || !isSafeAbsoluteRedirectPath(c) {
 		return "/"
 	}
 	return c

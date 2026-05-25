@@ -35,6 +35,23 @@ xcodebuild test -project IOS.xcodeproj -scheme IOS -destination 'platform=iOS Si
 
 Adjust `-destination` to a simulator you have installed. Tests that call the real network need a running backend and a matching **ElvishAPIBaseURL**.
 
+## Compose (mobile)
+
+Tap the **compose** (pencil) button in the mail toolbar when mail keys are unlocked.
+
+| Mode | Behavior |
+|------|----------|
+| **PGP Direct** | Encrypt+sign to one **To** address (Cc/Bcc are header-only). Local Elvish recipients use `POST /api/v1/mail/messages`; external addresses use `POST /api/v1/mail/outbox`. |
+| **Protected link** | Password-wrapped body + `POST /api/v1/mail/protected-links`; share the returned `/m/{token}` URL out-of-band. |
+
+Normative client behavior: [`static/mail/compose.jsx`](../static/mail/compose.jsx). Limitations: single **To** for PGP mode; no file attachments or HTML compose; WebAuthn-only accounts must use the web client.
+
+### Manual QA (`make dev`)
+
+1. **Local PGP** — User A → User B on the same server; message appears in B’s inbox.
+2. **External PGP** — User A → external address with a resolvable pubkey; check outbox id in UI (delivery requires mail worker).
+3. **Protected link** — Create link in app, open URL in browser `/m/{token}`, unlock with password.
+
 ## Layout
 
 | Path | Role |

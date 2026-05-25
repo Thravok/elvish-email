@@ -1,37 +1,40 @@
 plugins {
-    id "com.android.application"
-    id "kotlin-android"
-    id "dev.flutter.flutter-gradle-plugin"
+    id("com.android.application")
+    // Flutter Gradle Plugin must be applied after the Android plugin.
+    id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "org.elvish.mail"
-    compileSdk = 34
-
-    defaultConfig {
-        applicationId = "org.elvish.mail"
-        minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
-    }
-
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.debug
-        }
-    }
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+    defaultConfig {
+        applicationId = "org.elvish.mail"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
 flutter {
-    source = rootProject.projectDir.parentFile!!.absolutePath
+    source = "../.."
 }

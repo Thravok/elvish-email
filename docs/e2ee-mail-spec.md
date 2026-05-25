@@ -143,6 +143,8 @@ invariant from §2; only the path to wire-format differs.
 | **A — OpenPGP interop** | Recipient has a published OpenPGP key (resolver-fetched or pasted by sender) | OpenPGP ciphertext to recipient pubkey | Ship as-is |
 | **B — Protected link** | Any email address; recipient gets a notification with `/m/{token}` URL and unlocks in-browser with a sender-shared password | Body = AES-GCM(msgKey); msgKey = AES-GCM(KEK, msgKey); KEK = Argon2id(password, salt) | Sweeper deletes expired/burned blobs |
 
+**Expiring Elvish delivery:** when Mode A targets another local identity (`POST /api/v1/mail/messages`), senders may attach optional `expires_in_seconds` (≤ 30d) and/or `max_reads` (burn-after-N-opens). Policy is stored on `mail_message_lifecycle`; blob GET consumes a read atomically; the retention sweeper purges expired rows. Protected links (Mode B) use the same TTL/read-cap model via `mail_protected_links`.
+
 Implementation pointers: `static/mail/compose.jsx` (UI), `internal/httpserver/api_protected_links.go` (Mode B), `internal/maillinks/` (Mode B store + sweeper hooks), `internal/httpserver/api_mail.go` + `internal/httpserver/api_keys.go` (Mode A), and `internal/mailworker/worker.go` (interop dispatch). ADR 0010 is now legacy-only.
 
 ## 4. HTTP API surface
@@ -167,7 +169,7 @@ Implementation pointers: `static/mail/compose.jsx` (UI), `internal/httpserver/ap
 | GET | `/api/v1/mail/messages?folder=&limit=&before=` | session | Manifest list with `header_ciphertext_b64` + sparse consented fields |
 | GET | `/api/v1/mail/messages/{id}` | session | Single manifest |
 | GET | `/api/v1/mail/messages/{id}/blob` | session | Stream PGP body ciphertext |
-| POST | `/api/v1/mail/messages` | session | Internal-route ingest of pre-encrypted body |
+| POST | `/api/v1/mail/messages` | session | Internal-route ingest of pre-encrypted body; optional `expires_in_seconds`, `max_reads` for expiring delivery |
 | GET | `/api/v1/mail/settings` | session | Settings + per-field consent |
 | POST | `/api/v1/mail/settings` | session | Update settings + consent (forward-only) |
 | POST | `/api/v1/mail/test/echo` | session | Self-deliver a ciphertext (selfcheck) |

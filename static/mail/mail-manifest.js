@@ -31,6 +31,10 @@ export async function fetchManifest(id) {
 
 export async function fetchBlob(id) {
   const resp = await fetch(`${API}/messages/${encodeURIComponent(id)}/blob`, { credentials: 'include' });
+  if (resp.status === 410) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error || 'message expired or read limit reached');
+  }
   if (!resp.ok) throw new Error(`mail blob ${resp.status}`);
   return new Uint8Array(await resp.arrayBuffer());
 }
@@ -99,19 +103,28 @@ export async function postEncryptedMessage({
   senderBodyCiphertextB64,
   fromAddr,
   toAddrs,
+  expiresInSeconds,
+  maxReads,
 }) {
+  const payload = {
+    recipient,
+    header_ciphertext_b64: headerCiphertextB64,
+    body_ciphertext_b64: bodyCiphertextB64,
+    sender_header_ciphertext_b64: senderHeaderCiphertextB64 || '',
+    sender_body_ciphertext_b64: senderBodyCiphertextB64 || '',
+    from_addr: fromAddr || null,
+    to_addrs: toAddrs || [],
+  };
+  if (typeof expiresInSeconds === 'number' && expiresInSeconds > 0) {
+    payload.expires_in_seconds = expiresInSeconds;
+  }
+  if (typeof maxReads === 'number' && maxReads > 0) {
+    payload.max_reads = maxReads;
+  }
   const resp = await fetch(`${API}/messages`, {
     method: 'POST', credentials: 'include',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      recipient,
-      header_ciphertext_b64: headerCiphertextB64,
-      body_ciphertext_b64: bodyCiphertextB64,
-      sender_header_ciphertext_b64: senderHeaderCiphertextB64 || '',
-      sender_body_ciphertext_b64: senderBodyCiphertextB64 || '',
-      from_addr: fromAddr || null,
-      to_addrs: toAddrs || [],
-    }),
+    body: JSON.stringify(payload),
   });
   if (!resp.ok) throw new Error(`mail post ${resp.status}`);
   return resp.json();

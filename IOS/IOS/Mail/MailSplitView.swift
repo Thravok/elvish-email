@@ -7,6 +7,7 @@ struct MailSplitView: View {
     @Bindable var model: AppModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showMailboxSheet = false
+    @State private var showCompose = false
 
     private var isCompact: Bool {
 #if os(macOS)
@@ -80,17 +81,36 @@ struct MailSplitView: View {
                     }
 #if os(iOS)
                     ToolbarItem(placement: .topBarTrailing) {
-                        refreshButton
+                        HStack {
+                            Button {
+                                showCompose = true
+                            } label: {
+                                Image(systemName: "square.and.pencil")
+                            }
+                            .disabled(!model.mailKeysUnlocked)
+                            refreshButton
+                        }
                     }
 #else
                     ToolbarItem(placement: .automatic) {
-                        refreshButton
+                        HStack {
+                            Button {
+                                showCompose = true
+                            } label: {
+                                Image(systemName: "square.and.pencil")
+                            }
+                            .disabled(!model.mailKeysUnlocked)
+                            refreshButton
+                        }
                     }
 #endif
                 }
         }
         .task(id: model.selectedMailboxFolder) {
             await model.refreshMailbox()
+        }
+        .sheet(isPresented: $showCompose) {
+            ComposeView(model: model)
         }
     }
 
