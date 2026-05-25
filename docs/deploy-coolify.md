@@ -7,6 +7,7 @@ Coolify treats [`docker-compose.coolify.yaml`](../docker-compose.coolify.yaml) a
 | Service | Public access | Container port | Notes |
 |---------|---------------|------------------|--------|
 | `api` | Coolify domain | **8765** | Static site, SSR, and JSON API (`elvishapi`); health: `/api/healthz` |
+| `docs` | Coolify domain | **8080** | MkDocs static documentation (`docker/docs/Dockerfile`); no app secrets |
 | `mail-mta` | **Host ports** `25`, `587` | 25 / 587 | No HTTP domain; MX DNS → server IP |
 | `worker` | Internal only | — | `elvishworker`: outbox + sweepers; scale to **one** replica |
 | `cockroach`, `valkey`, `scylla`, `minio` | Optional admin domains | 8080 / — / 9042 / 9001 | Internal only by default |
@@ -26,6 +27,7 @@ In the stack **Domains** UI:
 | Service | Example domain field | Why |
 |---------|----------------------|-----|
 | `api` | `https://app.example.com:8765` | Listens on port **8765** (include `:8765` in the domain field) |
+| `docs` | `https://docs.example.com:8080` | Optional internal docs site; include `:8080` in the domain field |
 
 Coolify generates **magic variables from the compose service name** (hyphen + port when not 80, e.g. `SERVICE_URL_API_8765`):
 

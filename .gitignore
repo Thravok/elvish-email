@@ -71,3 +71,8 @@ e2e/.cache/
 # Build artifacts from standalone binaries
 /elvishmailtest
 /elvishrelay
+
+# MkDocs output and staged guide copies (make docs-stage / docs-build)
+docs-site/site/
+docs/guides/product-readme.md
+docs/guides/contributing.md

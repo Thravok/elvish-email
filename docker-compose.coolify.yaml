@@ -128,6 +128,12 @@ services:
       - elvish_data:/app/data
     restart: unless-stopped
 
+  docs:
+    build:
+      context: .
+      dockerfile: docker/docs/Dockerfile
+    restart: unless-stopped
+
   mail-mta:
     build:
       context: .

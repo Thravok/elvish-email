@@ -3,7 +3,8 @@
 # Databases only (for `make dev` / `make dev-once` on the host): `make db-up`
 #   → cockroach + valkey + scylla + minio (+ automatic scylla-init + minio-init)
 #
-# Full stack in Docker: `make compose-up` (profile full) — browser + API on http://127.0.0.1:8765 via elvishapi
+# Full stack in Docker: `make compose-up` (profile full) — browser + API on http://127.0.0.1:8765 via elvishapi; docs on http://127.0.0.1:8766
+# Docs only: `make docs-up` or `docker compose --profile docs up docs`
 #
 # Do not set COOKIE_SECURE for plain http://127.0.0.1 — session cookies must not use Secure on HTTP.
 
@@ -192,6 +193,15 @@ services:
     ports:
       - "2525:25"
       - "2587:587"
+
+  docs:
+    profiles: [docs, full]
+    build:
+      context: .
+      dockerfile: docker/docs/Dockerfile
+    container_name: elvish-docs
+    ports:
+      - "8766:8080"
 
   worker:
     profiles: [full]

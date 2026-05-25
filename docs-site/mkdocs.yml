@@ -1,0 +1,106 @@
+# ELVish documentation site — builds repo markdown under docs/ into static HTML.
+# Local preview: make docs-serve  ·  Container: docker compose --profile docs up docs
+
+site_name: ELVish Documentation
+site_description: Architecture, E2EE mail spec, ADRs, and runbooks for the ELVish platform.
+copyright: ELVish contributors
+
+docs_dir: ../docs
+site_dir: site
+
+exclude_docs: |
+  openapi/
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: README.md
+  - Architecture: architecture.md
+  - Repository layout: repo-layout.md
+  - E2EE mail spec: e2ee-mail-spec.md
+  - Client parity roadmap: client-parity-roadmap.md
+  - Backend settings API: backend-settings-api.md
+  - Guides:
+      - Product README: guides/product-readme.md
+      - Contributing: guides/contributing.md
+  - Deployment:
+      - Coolify: deploy-coolify.md
+  - Runbooks:
+      - Split deploy: runbooks/split-deploy.md
+      - Support mailbox: runbooks/support-mailbox.md
+  - Architecture decisions:
+      - ADR index: adr/README.md
+      - "0001 — Primary database (Cockroach)": adr/0001-primary-database-cockroach.md
+      - "0002 — Mail transport in Go binary": adr/0002-mail-transport-go-smtp.md
+      - "0003 — Keyserver resolution chain": adr/0003-keyserver-resolution-chain.md
+      - "0004 — Per-field metadata consent": adr/0004-per-field-metadata-consent.md
+      - "0005 — Account key hierarchy": adr/0005-account-key-hierarchy.md
+      - "0006 — Own SMTP stack": adr/0006-own-smtp-stack.md
+      - "0007 — Four-store mail architecture": adr/0007-four-store-mail-architecture.md
+      - "0008 — Local-only body search": adr/0008-local-only-body-search.md
+      - "0009 — Protected-link send mode": adr/0009-protected-link-mode.md
+      - "0010 — Plaintext relay mode": adr/0010-plaintext-relay-mode.md
+      - "0011 — Anonymous operational telemetry": adr/0011-anonymous-operational-telemetry.md
+      - "0012 — Browser mail UI strategy": adr/0012-browser-mail-ui-strategy.md
+      - "0013 — Login with Elvish OIDC": adr/0013-login-with-elvish-oidc-issuer.md
+      - "0014 — Inbound mail authentication": adr/0014-inbound-mail-authentication.md
+      - "0015 — Multi-service deployment": adr/0015-multi-service-deployment.md
+      - "0016 — Operator settings in SQL": adr/0016-operator-settings-in-sql.md
+      - "0017 — Mandatory split deployment": adr/0017-mandatory-split-deployment.md
+
+extra:
+  generator: false

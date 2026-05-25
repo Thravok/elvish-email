@@ -35,7 +35,7 @@ define DEV_AUTO_DB_UP
 	fi;
 endef
 
-.PHONY: openapi openapi-check codeql codeql-go codeql-js codeql-all codeql-summary codeql-clean codeql-install-hint codeql-build
+.PHONY: openapi openapi-check codeql codeql-go codeql-js codeql-all codeql-summary codeql-clean codeql-install-hint codeql-build docs-stage docs-serve docs-build docs-up
 openapi:
 	go run ./cmd/apiroutes -write
 
@@ -109,8 +109,30 @@ compose-up:
 	docker compose --profile full up -d --build
 	@printf '%s\n' \
 	  "Full stack: http://127.0.0.1:8765 (elvishapi: static + API + SSR)" \
+	  "Docs:      http://127.0.0.1:8766 (MkDocs static site)" \
 	  "SMTP: localhost:2525 / :2587" \
 	  "worker: mail outbox + sweepers"
+
+# MkDocs Material static site from docs/ (see docs-site/mkdocs.yml, docker/docs/Dockerfile).
+docs-stage:
+	@mkdir -p docs/guides
+	@cp README.md docs/guides/product-readme.md
+	@cp CONTRIBUTING.md docs/guides/contributing.md
+
+docs-serve: docs-stage
+	@command -v python3 >/dev/null 2>&1 || { printf '%s\n' "python3 required (or: docker compose --profile docs up docs)"; exit 1; }
+	@python3 -m pip install -q -r docs-site/requirements.txt
+	@cd docs-site && python3 -m mkdocs serve -a 127.0.0.1:8766
+
+docs-build: docs-stage
+	@command -v python3 >/dev/null 2>&1 || { printf '%s\n' "python3 required (or: docker build -f docker/docs/Dockerfile .)"; exit 1; }
+	@python3 -m pip install -q -r docs-site/requirements.txt
+	@cd docs-site && python3 -m mkdocs build
+
+docs-up:
+	@command -v docker >/dev/null 2>&1 || { printf '%s\n' "docker not found"; exit 1; }
+	docker compose --profile docs up -d --build docs
+	@printf '%s\n' "Documentation site: http://127.0.0.1:8766"
 
 # Rebuild $(BINARY) when sources change; run the binary separately (e.g. ./bin/elvish). For build + run with auto-restart, use make dev.
 dev-watch:

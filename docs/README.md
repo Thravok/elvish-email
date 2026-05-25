@@ -1,8 +1,10 @@
 # Documentation
 
-Design notes, architecture, and feature specs for the **ELVish** server and clients. For how to run the stack locally, environment variables, and deploy notes, start at the repository [README.md](../README.md). For contributor workflows and Make targets, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+Design notes, architecture, and feature specs for the **ELVish** server and clients. For how to run the stack locally, environment variables, and deploy notes, start at [Guides → Product README](guides/product-readme.md) (repository root `README.md`). For contributor workflows and Make targets, see [Guides → Contributing](guides/contributing.md).
 
-## How to read this repository
+**Browsable site:** run `make docs-serve` (http://127.0.0.1:8766) or `make docs-up` / `docker compose --profile docs up docs` for the nginx container. Config lives in [`docs-site/`](../docs-site/); build recipe in [`docker/docs/Dockerfile`](../docker/docs/Dockerfile).
+
+For how to read this repository:
 
 - **Server binaries:** [`cmd/elvishapi`](../cmd/elvishapi/), [`cmd/elvishmta`](../cmd/elvishmta/), [`cmd/elvishworker`](../cmd/elvishworker/) — split deploy; `elvishapi` serves [`static/`](../static/) and `/api/*`. See [runbooks/split-deploy.md](runbooks/split-deploy.md).
 - **Go module path:** `elvish` (see [`go.mod`](../go.mod)). Application code lives under [`internal/`](../internal/).

@@ -25,7 +25,10 @@ From the repository root:
 | `make dev-api-once` | API + browser tier (`elvishapi` on `PORT`, default 8765). |
 | `make dev-mta-once` / `make dev-worker-once` | SMTP or worker role only. |
 | `make dev-once` | Alias for `make dev-api-once`. Run `make static-js` after editing [static/mail/](static/mail/) or [frontend/](frontend/). |
-| `make db-up` / `make db-down` | Start/stop local Docker backends. |
+| `make compose-up` | Full stack in Docker (profile `full`), including docs on :8766. |
+| `make docs-serve` | Live-reload MkDocs preview at http://127.0.0.1:8766. |
+| `make docs-build` | Build static HTML under `docs-site/site/`. |
+| `make docs-up` | Run the documentation nginx container (`docker compose --profile docs up docs`). |
 | `make build` | Run `make static-js` (unless `SKIP_STATIC_JS=1`), then produce `bin/elvish`. |
 | `make static-js` | Install `frontend/node_modules` on first use (`npm ci`), copy vendored OpenPGP 6, emit `static/dist/*.js` from [frontend/build.mjs](frontend/build.mjs). |
 | `make fmt` | Fail if `gofmt` would change files. |

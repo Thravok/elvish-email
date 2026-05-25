@@ -9,7 +9,8 @@ This repository implements **ELVish**: split Go services (`elvishapi`, `elvishmt
 3. [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md) — four-process layout, ports, `make dev`, Coolify scaling.
 4. [docs/architecture.md](docs/architecture.md) — data planes and high-level diagram.
 5. [docs/client-parity-roadmap.md](docs/client-parity-roadmap.md) — web / iOS / Android feature matrix and tiers (update when changing native clients).
-6. Relevant [docs/adr/](docs/adr/) entries for mail, storage, or privacy changes (including [ADR 0017](docs/adr/0017-mandatory-split-deployment.md)).
+6. [docs-site/](docs-site/) — MkDocs static documentation site (`make docs-serve`, `docs` compose service).
+7. Relevant [docs/adr/](docs/adr/) entries for mail, storage, or privacy changes (including [ADR 0017](docs/adr/0017-mandatory-split-deployment.md)).
 
 **Contributing**
 

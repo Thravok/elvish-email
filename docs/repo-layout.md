@@ -14,8 +14,9 @@ Single-page map of the **ELVish** monorepo (Go module `elvish`). For architectur
 | [`content/`](../content/) | Default site JSON and Markdown blog posts (seed when SQL is empty) |
 | [`IOS/`](../IOS/) | SwiftUI iOS mail client (Xcode) |
 | [`flutter/elvish_mail/`](../flutter/elvish_mail/) | Flutter Android mail client |
-| [`docker/`](../docker/), [`docker-compose.yml`](../docker-compose.yml) | Local and deploy service definitions |
-| [`docs/`](../docs/) | Specs, ADRs, OpenAPI supplement, runbooks |
+| [`docker/`](../docker/), [`docker-compose.yml`](../docker-compose.yml) | Local and deploy service definitions; [`docker/docs/`](../docker/docs/) builds the MkDocs static site |
+| [`docs/`](../docs/) | Specs, ADRs, OpenAPI supplement, runbooks; browsable via `make docs-serve` or the `docs` compose service |
+| [`docs-site/`](../docs-site/) | MkDocs Material config for the documentation container |
 | [`e2e/`](../e2e/) | Playwright admin smoke tests |
 | [`.gitlab-ci.yml`](../.gitlab-ci.yml) | Primary CI (merge gate) |
 | [`.github/workflows/`](../.github/workflows/) | GitHub Actions (CodeQL, iOS, Android, image publish) |
