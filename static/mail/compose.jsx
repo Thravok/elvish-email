@@ -1269,6 +1269,11 @@ import * as React from "react";
     }, [identities, defaultFrom]);
 
     const pwdMeter = useMemo(() => passwordStrength(pwd), [pwd]);
+    const localExpiryAvailable = mode === "pgp"
+      && !manualKeyOverride
+      && recipientMeta
+      && recipientMeta.source === "local"
+      && String(recipientMeta.email || "").toLowerCase() === singleComposeRecipient(to);
 
     if (!open) return null;
 
@@ -1400,7 +1405,7 @@ import * as React from "react";
             />
           )}
 
-          {mode === "pgp" && keyStatus === "local" && (
+          {localExpiryAvailable && (
             <ExpiryOptionsPanel
               enabled={expiryEnabled}
               setEnabled={setExpiryEnabled}

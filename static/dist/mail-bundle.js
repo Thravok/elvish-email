@@ -15459,6 +15459,7 @@ ${body || ""}`;
             return defaultFrom ? [defaultFrom] : [];
           }, [identities, defaultFrom]);
           const pwdMeter = useMemo5(() => passwordStrength(pwd), [pwd]);
+          const localExpiryAvailable = mode === "pgp" && !manualKeyOverride && recipientMeta && recipientMeta.source === "local" && String(recipientMeta.email || "").toLowerCase() === singleComposeRecipient(to);
           if (!open) return null;
           return /* @__PURE__ */ React6.createElement("div", { className: "mail-compose" }, /* @__PURE__ */ React6.createElement("span", { className: "br-bl" }), /* @__PURE__ */ React6.createElement("span", { className: "br-br" }), /* @__PURE__ */ React6.createElement("div", { className: "mail-compose-header" }, /* @__PURE__ */ React6.createElement("span", { className: "kind" }, "\u25B8 COMPOSE"), /* @__PURE__ */ React6.createElement("span", { className: "title" }, "New Message"), /* @__PURE__ */ React6.createElement("button", { className: "mail-compose-btn-close", onClick: onClose, "aria-label": "Close" }, "\xD7")), /* @__PURE__ */ React6.createElement("div", { className: "mail-compose-mode-bar" }, /* @__PURE__ */ React6.createElement(
             "button",
@@ -15539,7 +15540,7 @@ ${body || ""}`;
               attachPublicKey,
               setAttachPublicKey
             }
-          ), mode === "pgp" && keyStatus === "local" && /* @__PURE__ */ React6.createElement(
+          ), localExpiryAvailable && /* @__PURE__ */ React6.createElement(
             ExpiryOptionsPanel,
             {
               enabled: expiryEnabled,
