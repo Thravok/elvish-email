@@ -218,6 +218,17 @@ type validatedSenderFetchURL string
 
 func (u validatedSenderFetchURL) String() string { return string(u) }
 
+func doValidatedSenderFetch(client *http.Client, req *http.Request, validated validatedSenderFetchURL) (*http.Response, error) {
+	if client == nil || req == nil || req.URL == nil {
+		return nil, fmt.Errorf("invalid sender icon fetch request")
+	}
+	if req.URL.String() != validated.String() {
+		return nil, fmt.Errorf("sender icon fetch URL mismatch")
+	}
+	// codeql[go/request-forgery]: fetch URL validated for sender domain and matched to the request URL.
+	return client.Do(req)
+}
+
 func parseValidatedSenderFetchURL(raw string, relatedDomain string) (validatedSenderFetchURL, error) {
 	if err := validateSenderFetchURL(raw, relatedDomain); err != nil {
 		return "", err
@@ -288,7 +299,7 @@ func (s *Server) fetchExternalImage(ctx context.Context, fetchURL string, maxByt
 	}
 
 	// Host constrained to relatedDomain; HTTPS only; redirect targets re-validated in CheckRedirect.
-	resp, err := client.Do(req) //codeql[go/request-forgery]
+	resp, err := doValidatedSenderFetch(client, req, safeURL)
 	if err != nil {
 		return nil, "", err
 	}

@@ -54,8 +54,7 @@ func probeOne(ctx context.Context, hc *http.Client, t ResolvedTarget, timeout ti
 	}
 	req.Header.Set("User-Agent", defaultUserAgent)
 
-	// URL validated by NewValidatedProbeURL (scheme, host, blocks private/link-local IPs).
-	res, err := hc.Do(req) //codeql[go/request-forgery]
+	res, err := doValidatedProbeRequest(hc, req, safeURL)
 	lat := time.Since(start).Milliseconds()
 	if err != nil {
 		return ProbeResult{ID: t.ID, URL: t.URL, Method: method, OK: false, LatencyMS: lat, Error: err.Error()}
@@ -94,7 +93,7 @@ func probeGETFallback(ctx context.Context, hc *http.Client, t ResolvedTarget, ti
 		return ProbeResult{ID: t.ID, URL: t.URL, Method: "GET", OK: false, LatencyMS: headLatency, Error: err.Error()}
 	}
 	req.Header.Set("User-Agent", defaultUserAgent)
-	res, err := hc.Do(req) //codeql[go/request-forgery]
+	res, err := doValidatedProbeRequest(hc, req, safeURL)
 	lat := time.Since(start).Milliseconds()
 	if err != nil {
 		return ProbeResult{ID: t.ID, URL: t.URL, Method: "GET", OK: false, LatencyMS: lat, Error: err.Error()}

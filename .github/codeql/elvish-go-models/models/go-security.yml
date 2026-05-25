@@ -1,0 +1,14 @@
+extensions:
+  - addsTo:
+      pack: codeql/go-all
+      extensible: barrierModel
+    data:
+      - ["elvish/internal/uptime", "", false, "NewValidatedProbeURL", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/uptime", "ValidatedProbeURL", false, "String", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/httpserver", "", false, "parseValidatedSenderFetchURL", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/httpserver", "validatedSenderFetchURL", false, "String", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/keyserver", "", false, "newWKDAdvancedURL", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/keyserver", "", false, "newWKDDirectURL", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/keyserver", "wkdHTTPSURL", false, "String", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/oauthoidc", "Issuer", false, "RedirectTarget", "", "", "ReturnValue", "unvalidated-url-redirection", "manual"]
+      - ["elvish/internal/httpserver", "", false, "safeRedirectPath", "", "", "ReturnValue", "unvalidated-url-redirection", "manual"]

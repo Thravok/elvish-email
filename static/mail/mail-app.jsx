@@ -432,13 +432,35 @@ function parseHeaderBlock(headerBlock) {
 function htmlToDisplayText(html) {
   const s = String(html || "").trim();
   if (!s) return "";
-  // Strip tags without DOMParser (avoids treating untrusted HTML as a live document tree).
-  return s
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ")
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const purify = typeof globalThis !== "undefined" && globalThis.DOMPurify;
+  if (purify && typeof purify.sanitize === "function") {
+    return purify
+      .sanitize(s, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  return stripHtmlTagsToText(s);
+}
+
+function stripHtmlTagsToText(s) {
+  let out = "";
+  let inTag = false;
+  for (let i = 0; i < s.length; i += 1) {
+    const c = s[i];
+    if (c === "<") {
+      inTag = true;
+      continue;
+    }
+    if (c === ">" && inTag) {
+      inTag = false;
+      out += " ";
+      continue;
+    }
+    if (!inTag) {
+      out += c;
+    }
+  }
+  return out.replace(/\s+/g, " ").trim();
 }
 
 function splitMultipartBody(body, boundary) {

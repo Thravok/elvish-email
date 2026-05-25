@@ -84,7 +84,7 @@ func runMonitorHTTP(ctx context.Context, hc *http.Client, id string, row models.
 		return ProbeResult{ID: id, URL: u, Method: method, OK: false, Error: err.Error()}
 	}
 	req.Header.Set("User-Agent", defaultUserAgent)
-	res, err := hc.Do(req) //codeql[go/request-forgery]
+	res, err := doValidatedProbeRequest(hc, req, safeURL)
 	lat := time.Since(start).Milliseconds()
 	if err != nil {
 		return ProbeResult{ID: id, URL: u, Method: method, OK: false, LatencyMS: lat, Error: err.Error()}

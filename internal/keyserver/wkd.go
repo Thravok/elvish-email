@@ -69,7 +69,7 @@ func (s *WKDSource) Lookup(ctx context.Context, email string) (*KeyHit, error) {
 			continue
 		}
 		req.Header.Set("Accept", "application/octet-stream, application/pgp-keys")
-		resp, err := hc.Do(req) //codeql[go/request-forgery]
+		resp, err := doWKDFetch(hc, req, candidate.u)
 		if err != nil {
 			continue
 		}

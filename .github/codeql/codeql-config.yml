@@ -1,5 +1,8 @@
 name: "ELVish server CodeQL"
 
+packs:
+  - local:./.github/codeql/elvish-go-models
+
 # Flutter Android is scanned in the analyze-flutter-android job.
 paths-ignore:
   - flutter/**

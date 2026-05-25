@@ -233,13 +233,7 @@ func (s *Server) handleOIDCAuthorize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid redirect_uri", http.StatusBadRequest)
 		return
 	}
-	qq := redir.Query()
-	qq.Set("code", code)
-	qq.Set("state", state)
-	redir.RawQuery = qq.Encode()
-	w.Header().Set("Cache-Control", cacheControlRedirect)
-	// redirect_uri was validated against the registered OAuth client in RedirectTarget.
-	http.Redirect(w, r, redir.String(), http.StatusFound) //codeql[go/unvalidated-url-redirection]
+	redirectAllowlistedOAuth(w, r, redir, code, state)
 }
 
 // oidcRecentMFAGate requires a fresh MFA verification when MFA is enabled.

@@ -7,6 +7,7 @@
 | **Mode** | Advanced (workflow file) | Full control; must not enable **default setup** in GitHub settings |
 | **Workflow** | [`.github/workflows/codeql-analysis.yml`](../workflows/codeql-analysis.yml) | Three analyses per run |
 | **Server + web** | [codeql-config.yml](codeql-config.yml) | Go + JS/TS; ignores `flutter/`, `IOS/`, `e2e/` |
+| **Go validators** | [elvish-go-models/](elvish-go-models/) | MaD barriers for probe/WKD/sender fetch URLs and safe redirects |
 | **Flutter Android** | [codeql-config-flutter.yml](codeql-config-flutter.yml) | `java-kotlin` on `flutter/elvish_mail/android` only (no Dart extractor) |
 
 GitHub may also show a **dynamic** workflow (`dynamic/github-code-scanning/codeql`) from the Code Scanning product. That is separate from this file. **Default setup API state** must stay `not-configured` or SARIF uploads from this workflow are rejected.
