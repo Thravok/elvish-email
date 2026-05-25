@@ -4,7 +4,7 @@ Thank you for helping improve this project. This file is the short path for **lo
 
 Pull requests and focused issues are welcome. Please keep changes aligned with existing docs and ADRs for mail, storage, and privacy. **Security-sensitive reports** should not go through public issues; use [SECURITY.md](SECURITY.md) instead. **Conduct:** follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-Continuous integration runs on **GitLab CI** via [.gitlab-ci.yml](.gitlab-ci.yml) (`gofmt`, `go vet`, `golangci-lint`, [`scripts/lint-invariants.sh`](scripts/lint-invariants.sh), OpenAPI check, `lint-static-js` bundle freshness, `go test` / `go test -race`, Flutter client tests, release build of `elvishserver`, and optional stages defined there). **GitHub Actions** runs CodeQL, iOS, and Android workflows — see [docs/repo-layout.md](docs/repo-layout.md#ci-map). Issue and merge request description templates live under [.gitlab/issue_templates/](.gitlab/issue_templates/) and [.gitlab/merge_request_templates/](.gitlab/merge_request_templates/).
+Continuous integration runs on **GitLab CI** via [.gitlab-ci.yml](.gitlab-ci.yml) (`gofmt`, `go vet`, `golangci-lint`, [`scripts/lint-invariants.sh`](scripts/lint-invariants.sh), OpenAPI check, `lint-static-js` bundle freshness, `go test` / `go test -race`, Flutter client tests, release build of `elvishapi`/`elvishmta`/`elvishworker`, and optional stages defined there). **GitHub Actions** runs CodeQL, iOS, and Android workflows — see [docs/repo-layout.md](docs/repo-layout.md#ci-map). Issue and merge request description templates live under [.gitlab/issue_templates/](.gitlab/issue_templates/) and [.gitlab/merge_request_templates/](.gitlab/merge_request_templates/).
 
 **Dependency updates (Renovate, free):** [Renovate](https://docs.renovatebot.com/) is the usual Dependabot-like option on GitLab. This repo includes [renovate.json](renovate.json) plus a scheduled **child pipeline** ([.gitlab/ci/renovate-child.gitlab-ci.yml](.gitlab/ci/renovate-child.gitlab-ci.yml)) so Renovate does not run the full CI graph. To enable it: **Settings → Access tokens** (or a bot user) → create a **project access token** with scopes **`api`** and **`write_repository`**; add it as a masked CI variable **`RENOVATE_TOKEN`**. **Build → Pipeline schedules** → new schedule on the default branch → add variable **`RENOVATE_SCHEDULE`** = **`true`**. Optionally set **`RENOVATE_EXTRA_ARGS`** (e.g. `--dry-run`) while testing. For GitLab.com you can instead install the hosted **Mend Renovate** GitLab app if you prefer not to use a long-lived token in CI.
 
@@ -21,8 +21,10 @@ From the repository root:
 
 | Command | Purpose |
 |---------|---------|
-| `make dev` | Build and run `elvishserver` with file watching; runs `make db-up` unless `SKIP_AUTO_DB_UP=1`. |
-| `make dev-once` | Single `go run` with the same dev env defaults. Does not rebuild JS bundles; run `make static-js` after editing [static/mail/](static/mail/) or [frontend/](frontend/). |
+| `make dev` | Split stack via Overmind ([Procfile](Procfile)) or `scripts/dev-split.sh`; runs `make db-up` unless `SKIP_AUTO_DB_UP=1`. App on :8765. |
+| `make dev-api-once` | API + browser tier (`elvishapi` on `PORT`, default 8765). |
+| `make dev-mta-once` / `make dev-worker-once` | SMTP or worker role only. |
+| `make dev-once` | Alias for `make dev-api-once`. Run `make static-js` after editing [static/mail/](static/mail/) or [frontend/](frontend/). |
 | `make db-up` / `make db-down` | Start/stop local Docker backends. |
 | `make build` | Run `make static-js` (unless `SKIP_STATIC_JS=1`), then produce `bin/elvish`. |
 | `make static-js` | Install `frontend/node_modules` on first use (`npm ci`), copy vendored OpenPGP 6, emit `static/dist/*.js` from [frontend/build.mjs](frontend/build.mjs). |

@@ -1,4 +1,4 @@
-package main
+package elvishboot
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ func mfaKeyPathForRoot(root string) (string, bool) {
 }
 
 func maybeBootstrapMFAEncryptionKey(root string, logger *slog.Logger) error {
-	if strings.TrimSpace(os.Getenv("ELVISH_MFA_ENCRYPTION_KEY")) != "" || !envTruthyMain(envMFAAutoGenerate) {
+	if strings.TrimSpace(os.Getenv("ELVISH_MFA_ENCRYPTION_KEY")) != "" || !envTruthy(envMFAAutoGenerate) {
 		return nil
 	}
 	path, _ := mfaKeyPathForRoot(root)

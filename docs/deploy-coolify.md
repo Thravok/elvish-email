@@ -6,10 +6,12 @@ Coolify treats [`docker-compose.coolify.yaml`](../docker-compose.coolify.yaml) a
 
 | Service | Public access | Container port | Notes |
 |---------|---------------|------------------|--------|
-| `public` | Coolify domain | **80** | Static assets + SSR proxy to `api` (service name drives `SERVICE_*_PUBLIC` magic vars) |
-| `api` | Coolify domain | **8765** | JSON API, health: `/api/healthz` |
+| `api` | Coolify domain | **8765** | Static site, SSR, and JSON API (`elvishapi`); health: `/api/healthz` |
 | `mail-mta` | **Host ports** `25`, `587` | 25 / 587 | No HTTP domain; MX DNS → server IP |
+| `worker` | Internal only | — | `elvishworker`: outbox + sweepers; scale to **one** replica |
 | `cockroach`, `valkey`, `scylla`, `minio` | Optional admin domains | 8080 / — / 9042 / 9001 | Internal only by default |
+
+There is **no** separate nginx or static-only container. Browsers use one origin on `api` (same-origin `/api/*`; `static/shared/api-config.js` keeps an empty `__ELVISH_API_BASE__` in the image).
 
 ## One-time Coolify setup
 
@@ -23,26 +25,14 @@ In the stack **Domains** UI:
 
 | Service | Example domain field | Why |
 |---------|----------------------|-----|
-| `public` | `https://app.example.com` | Listens on port 80 in-container |
-| `api` | `https://api.example.com:8765` | Listens on port **8765** (include `:8765` in the domain field) |
+| `api` | `https://app.example.com:8765` | Listens on port **8765** (include `:8765` in the domain field) |
 
-Coolify generates **magic variables from the compose service name** (not from `ELVISH_*` names):
+Coolify generates **magic variables from the compose service name** (hyphen + port when not 80, e.g. `SERVICE_URL_API_8765`):
 
 | Magic variable | Shape | Example use in this stack |
 |----------------|--------|---------------------------|
-| `SERVICE_URL_PUBLIC` | Full URL (`https://…`) | Default `ELVISH_WEB_ORIGINS` on `api` |
-| `SERVICE_FQDN_PUBLIC` | Hostname only | DNS / debugging; not enough alone for browser URLs |
-| `SERVICE_URL_API_8765` | Full URL | Default `ELVISH_PUBLIC_BASE_URL`, `ELVISH_API_PUBLIC_URL` |
-| `SERVICE_FQDN_API` | Hostname only | Same caveat — app needs `SERVICE_URL_*` for OIDC and fetch bases |
-
-There is **no** built-in `SERVICE_FQDN_PUBLIC` unless the service is literally named `public` (we use that name for the browser tier). **`ELVISH_PUBLIC_BASE_URL` is the API’s canonical URL**, not the `public` service hostname — keep the `ELVISH_*` name in application code and default it from `$SERVICE_URL_API_8765` in compose.
-
-Optional admin UIs (only if you want them exposed):
-
-| Service | Example |
-|---------|---------|
-| `cockroach` | `https://db.example.com:8080` → `SERVICE_URL_COCKROACH_8080` |
-| `minio` | `https://minio.example.com:9001` → `SERVICE_URL_MINIO_9001` |
+| `SERVICE_URL_API_8765` | Full URL | Default `ELVISH_PUBLIC_BASE_URL` and `ELVISH_WEB_ORIGINS` on `api` |
+| `SERVICE_FQDN_API` | Hostname only | DNS / debugging; use `SERVICE_URL_*` for browser and OIDC bases |
 
 ### 3. Required environment variables (Coolify UI)
 
@@ -51,15 +41,17 @@ These use `${VAR:?}` in compose and show a **red border** until set:
 | Variable | Example |
 |----------|---------|
 | `ELVISH_MAIL_DOMAIN` | `mail.example.com` |
-| `ELVISH_COOKIE_DOMAIN` | `.example.com` (leading dot for split-origin cookies) |
+| `COOKIE_SECURE` | `1` (production HTTPS) |
+
+`ELVISH_COOKIE_DOMAIN` is optional for single-origin deploys (leave empty). Set it (e.g. `.example.com`) only if you intentionally split app and API across different registrable domains.
 
 ### 4. Recommended overrides
 
 | Variable | Where | Value |
 |----------|-------|--------|
-| `ELVISH_BACKGROUND_JOBS` | **One** `api` replica only | `1` (default in compose is `0` so scaled replicas stay safe) |
-| `ELVISH_WEB_ORIGINS` | `api` | Usually leave default `$SERVICE_URL_PUBLIC` after `public` domain is assigned |
-| `ELVISH_API_PUBLIC_URL` | `public` | Usually leave default `$SERVICE_URL_API_8765` after `api` domain is assigned |
+| `worker` service | Deploy enabled | Outbox delivery; do not run multiple workers until leader lock exists |
+| `ELVISH_WEB_ORIGINS` | `api` | Usually leave default `$SERVICE_URL_API_8765` after the `api` domain is assigned |
+| `ELVISH_PUBLIC_BASE_URL` | `api` | Usually leave default `$SERVICE_URL_API_8765` |
 
 ### 5. SMTP (`mail-mta`)
 
@@ -79,16 +71,18 @@ These use `${VAR:?}` in compose and show a **red border** until set:
 ### 7. Scaling `api`
 
 - Increase replica count in Coolify for `api` only.
-- Set `ELVISH_BACKGROUND_JOBS=1` on **exactly one** replica (or a dedicated “jobs” instance).
-- `mail-mta` (and optional second MTA) run outbound workers; `LeasePendingOutbox` is safe across workers.
+- Run **one** `worker` replica for outbox and sweepers.
+- `mail-mta` runs outbound SMTP workers on the MTA tier; `LeasePendingOutbox` is safe across workers.
 
 ## Magic variables declared in compose
 
 Declared on `api` (reused stack-wide per Coolify rules):
 
-- `SERVICE_URL_API_8765`, `SERVICE_FQDN_API`, `SERVICE_URL_PUBLIC`, `SERVICE_FQDN_PUBLIC`
+- `SERVICE_URL_API_8765`, `SERVICE_FQDN_API`
 - `SERVICE_PASSWORD_64_VALKEY`, `SERVICE_USER_MINIO`, `SERVICE_PASSWORD_64_MINIO`
 - `SERVICE_BASE64_64` (MFA key seed material)
+
+Compose env syntax follows [`.cursor/rules/docker-compose-coolify.mdc`](../.cursor/rules/docker-compose-coolify.mdc): `${VAR:?}` for required secrets, `${VAR:-default}` for optional values, and `$SERVICE_URL_*` for generated URLs — not hardcoded hostnames in the file.
 
 ## Init jobs
 
@@ -96,5 +90,6 @@ Declared on `api` (reused stack-wide per Coolify rules):
 
 ## Related
 
-- [ADR 0015](adr/0015-multi-service-deployment.md) — architecture
+- [ADR 0017](adr/0017-mandatory-split-deployment.md) — mandatory split
+- [runbooks/split-deploy.md](runbooks/split-deploy.md) — ports and scaling
 - [README.md](../README.md) — env reference

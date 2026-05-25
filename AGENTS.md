@@ -1,14 +1,15 @@
 # Agent notes (ELVish)
 
-This repository implements **ELVish**: a Go HTTP server (`cmd/elvishserver`, module **`elvish`**) with optional E2EE mail, Valkey-backed sessions, and browser / iOS / Flutter (Android) clients.
+This repository implements **ELVish**: split Go services (`elvishapi`, `elvishmta`, `elvishworker`; module **`elvish`**). `elvishapi` serves static, API, and SSR. E2EE mail, Valkey-backed sessions, and browser / iOS / Flutter (Android) clients.
 
 **Read first**
 
 1. [docs/README.md](docs/README.md) — documentation map and “where things live”.
 2. [docs/repo-layout.md](docs/repo-layout.md) — top-level tree, `cmd/` / `internal/` index, CI and artifact policy.
-3. [docs/architecture.md](docs/architecture.md) — data planes and high-level diagram.
-4. [docs/client-parity-roadmap.md](docs/client-parity-roadmap.md) — web / iOS / Android feature matrix and tiers (update when changing native clients).
-5. Relevant [docs/adr/](docs/adr/) entries for mail, storage, or privacy changes.
+3. [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md) — four-process layout, ports, `make dev`, Coolify scaling.
+4. [docs/architecture.md](docs/architecture.md) — data planes and high-level diagram.
+5. [docs/client-parity-roadmap.md](docs/client-parity-roadmap.md) — web / iOS / Android feature matrix and tiers (update when changing native clients).
+6. Relevant [docs/adr/](docs/adr/) entries for mail, storage, or privacy changes (including [ADR 0017](docs/adr/0017-mandatory-split-deployment.md)).
 
 **Contributing**
 

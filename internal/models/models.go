@@ -105,17 +105,17 @@ func DefaultAuthCaptchaSettings() *AuthCaptchaSettingsDoc {
 
 // OperatorSettingsDoc is the singleton platform configuration (URLs, auth policy, mail domain).
 type OperatorSettingsDoc struct {
-	ID                    string    `json:"id"`
-	PublicBaseURL         string    `json:"public_base_url,omitempty"`
-	PlatformMailDomain    string    `json:"platform_mail_domain,omitempty"`
-	WebOrigins            string    `json:"web_origins,omitempty"`
-	CookieDomain          string    `json:"cookie_domain,omitempty"`
-	RegistrationClosed    bool      `json:"registration_closed"`
-	PaidFeaturesEnabled   bool      `json:"paid_features_enabled"`
-	TrustForwardedFor     bool      `json:"trust_forwarded_for"`
-	ContentCacheSec       int       `json:"content_cache_sec"`
-	SMTPRateLimitPerHour  int       `json:"smtp_rate_limit_per_hour"`
-	UpdatedAt             time.Time `json:"updated_at,omitempty"`
+	ID                   string    `json:"id"`
+	PublicBaseURL        string    `json:"public_base_url,omitempty"`
+	PlatformMailDomain   string    `json:"platform_mail_domain,omitempty"`
+	WebOrigins           string    `json:"web_origins,omitempty"`
+	CookieDomain         string    `json:"cookie_domain,omitempty"`
+	RegistrationClosed   bool      `json:"registration_closed"`
+	PaidFeaturesEnabled  bool      `json:"paid_features_enabled"`
+	TrustForwardedFor    bool      `json:"trust_forwarded_for"`
+	ContentCacheSec      int       `json:"content_cache_sec"`
+	SMTPRateLimitPerHour int       `json:"smtp_rate_limit_per_hour"`
+	UpdatedAt            time.Time `json:"updated_at,omitempty"`
 }
 
 // DefaultOperatorSettings returns empty URLs and safe numeric defaults.

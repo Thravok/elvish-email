@@ -1,4 +1,4 @@
-package main
+package elvishboot
 
 import (
 	"crypto/tls"

@@ -1,0 +1,80 @@
+---
+description: Coolify Docker Compose conventions for ELVish deployments
+globs:
+  - "**/docker-compose*.yml"
+  - "**/docker-compose*.yaml"
+alwaysApply: false
+---
+
+# Docker Compose (Coolify)
+
+Production deploys use [`docker-compose.coolify.yaml`](docker-compose.coolify.yaml) as the **single source of truth**. Local dev uses [`docker-compose.yml`](docker-compose.yml). Operator guide: [docs/deploy-coolify.md](docs/deploy-coolify.md).
+
+## Source of truth
+
+Define env vars, storage, ports, and health behavior **in the compose file** — not only in the Coolify UI. Coolify reads the file and surfaces `${VAR}` placeholders in the UI.
+
+## Exposing services
+
+| Goal | Pattern |
+|------|---------|
+| HTTP via Coolify proxy | Assign a domain in Coolify UI; no `ports:` needed. Include container port in domain when not 80 (e.g. `https://app.example.com:8765`). |
+| Host port binding | `ports: ["3000:3000"]` — bypasses proxy; avoid for private services in shared dev/prod files. Bind to localhost when needed: `127.0.0.1:3000:3000`. |
+| Internal only | Omit `ports` and domain; reach via service name: `http://valkey:6379`. |
+
+Do **not** add Traefik labels for Coolify deploys — configure domains in the Coolify UI instead.
+
+## Environment variables
+
+```yaml
+environment:
+  - HARD_CODED=hello                              # passed through; not editable in UI
+  - SOME_VAR=${SOME_VAR}                          # editable, uninitialized in UI
+  - WITH_DEFAULT=${OTHER:-hello}                  # optional with default
+  - REQUIRED=${DATABASE_URL:?}                    # required — red border if empty
+  - REQUIRED_DEFAULT=${PORT:?8765}                # required with prefilled default
+```
+
+- Use `${VAR:?}` for secrets and critical config operators must set.
+- Shared Coolify vars: define in compose, then set `VAR={{environment.SHARED_NAME}}` in the UI.
+- Magic vars (`SERVICE_URL_*`, `SERVICE_FQDN_*`, `SERVICE_PASSWORD_*`, etc.) are generated from **compose service names**. Use hyphens in identifiers when ports are needed (`SERVICE_URL_API-8765` is wrong — use `SERVICE_URL_API_8765` per Coolify’s port suffix convention).
+
+```yaml
+# ✅ GOOD — magic vars from service name "api" on port 8765
+environment:
+  - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-$SERVICE_URL_API_8765}
+  - ELVISH_WEB_ORIGINS=${ELVISH_WEB_ORIGINS:-$SERVICE_URL_API_8765}
+  - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
+
+# ❌ BAD — hardcoded public URL instead of SERVICE_URL_*
+environment:
+  - ELVISH_PUBLIC_BASE_URL=https://app.example.com
+```
+
+## Coolify-only compose extensions
+
+```yaml
+volumes:
+  - type: bind
+    source: ./srv
+    target: /srv
+    is_directory: true   # Coolify creates host dir
+
+services:
+  migrate:
+    exclude_from_hc: true  # one-shot jobs skip stack healthchecks
+```
+
+Prefer `configs:` with `content: |` for generated config files when bind-mount content is needed.
+
+## ELVish-specific defaults
+
+- **`api`** (port 8765): browser + API + SSR (`elvishapi`); assign one Coolify domain; defaults from `SERVICE_URL_API_8765`.
+- **`mail-mta`**: host `ports` for 25/587 — HTTP proxy cannot carry SMTP.
+- **`worker`**, **`cockroach`**, **`valkey`**, **`scylla`**, **`minio`**: internal by default.
+- **No nginx** — do not add a `public` static tier; same-origin is the default production shape.
+- Keep dev-only `ports:` in `docker-compose.yml`; production exposure goes through Coolify domains or intentional host binds in `docker-compose.coolify.yaml`.
+
+## Predefined networks
+
+Connecting stacks via Coolify's "Connect to Predefined Network" breaks normal Docker DNS — use renamed hosts like `postgres-<uuid>` instead of bare service names.

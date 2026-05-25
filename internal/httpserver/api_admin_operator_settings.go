@@ -26,17 +26,17 @@ func operatorSettingsAPIResponse(doc *models.OperatorSettingsDoc) map[string]any
 		doc = models.DefaultOperatorSettings()
 	}
 	return map[string]any{
-		"id":                      doc.ID,
-		"public_base_url":         doc.PublicBaseURL,
-		"platform_mail_domain":    doc.PlatformMailDomain,
-		"registration_closed":     doc.RegistrationClosed,
-		"paid_features_enabled":   doc.PaidFeaturesEnabled,
-		"trust_forwarded_for":     doc.TrustForwardedFor,
-		"content_cache_sec":       doc.ContentCacheSec,
+		"id":                       doc.ID,
+		"public_base_url":          doc.PublicBaseURL,
+		"platform_mail_domain":     doc.PlatformMailDomain,
+		"registration_closed":      doc.RegistrationClosed,
+		"paid_features_enabled":    doc.PaidFeaturesEnabled,
+		"trust_forwarded_for":      doc.TrustForwardedFor,
+		"content_cache_sec":        doc.ContentCacheSec,
 		"smtp_rate_limit_per_hour": doc.SMTPRateLimitPerHour,
-		"web_origins":             doc.WebOrigins,
-		"cookie_domain":           doc.CookieDomain,
-		"updated_at":              doc.UpdatedAt,
+		"web_origins":              doc.WebOrigins,
+		"cookie_domain":            doc.CookieDomain,
+		"updated_at":               doc.UpdatedAt,
 	}
 }
 

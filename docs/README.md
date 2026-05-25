@@ -4,7 +4,7 @@ Design notes, architecture, and feature specs for the **ELVish** server and clie
 
 ## How to read this repository
 
-- **Primary server binary:** [`cmd/elvishserver`](../cmd/elvishserver/) — HTTP site, JSON API under `/api/`, React admin and mail UI (static assets from [`static/`](../static/), templates from [`templates/`](../templates/)).
+- **Server binaries:** [`cmd/elvishapi`](../cmd/elvishapi/), [`cmd/elvishmta`](../cmd/elvishmta/), [`cmd/elvishworker`](../cmd/elvishworker/) — split deploy; `elvishapi` serves [`static/`](../static/) and `/api/*`. See [runbooks/split-deploy.md](runbooks/split-deploy.md).
 - **Go module path:** `elvish` (see [`go.mod`](../go.mod)). Application code lives under [`internal/`](../internal/).
 - **SQL migrations:** [`internal/db/migrations/`](../internal/db/migrations/) — applied by goose when `elvishserver` starts with a configured `COCKROACH_DSN`.
 - **E2EE mail (browser):** [`static/mail/`](../static/mail/) — React/JSX mail app; local-only search worker in [`static/mail/search/`](../static/mail/search/README.md).

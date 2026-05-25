@@ -18,5 +18,6 @@ Numbered decisions for ELVish mail, storage, and operational choices. When addin
 | [0012](0012-browser-mail-ui-strategy.md) | Browser mail UI delivery (compiled React vs Go shell) | Accepted (2026-05) | esbuild/React + vendors; lazy admin embed; **recorded off-React order: auth → thin TS → admin shell → mail last**; templ+vanilla+TS target. |
 | [0013](0013-login-with-elvish-oidc-issuer.md) | “Login with Elvish” OIDC issuer (Tailscale + registered clients) | Accepted (2026-05) | Minimal RS256 issuer + WebFinger + Valkey codes; no inbound social OIDC; MFA gate when enabled. |
 | [0014](0014-inbound-mail-authentication.md) | Inbound mail authentication (SPF, DKIM, DMARC) | Proposed (Phase 2) | Verify sender auth on MX receive; store results for UI; optional quarantine/reject. |
-| [0015](0015-multi-service-deployment.md) | Multi-service deployment (API, frontend, mail-mta) | Accepted (2026-05) | One binary with `ELVISH_COMPONENT`; Coolify splits HTTP, static, and SMTP tiers. |
+| [0015](0015-multi-service-deployment.md) | Multi-service deployment (API, frontend, mail-mta) | Superseded by 0017 | Historical: `ELVISH_COMPONENT` on one binary. |
 | [0016](0016-operator-settings-in-sql.md) | Operator settings in SQL | Accepted (2026-05) | Product config in admin Platform section; env for bootstrap/secrets only. |
+| [0017](0017-mandatory-split-deployment.md) | Mandatory split (api, mta, worker, frontend) | Accepted (2026-05) | Three binaries; worker owns outbox; migrations on api only. |

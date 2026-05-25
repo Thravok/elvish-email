@@ -220,20 +220,20 @@ func New(opts Options, bundle *db.Bundle) (*Server, error) {
 		lg = slog.Default()
 	}
 	return &Server{
-		log:               lg,
-		root:              root,
-		staticRoot:        filepath.Join(root, "static"),
-		templatesFS:       tmplFS,
-		bundle:            rdb,
-		store:             st,
-		sessions:          sess,
-		eng:               eng,
-		cookieSecure:      opts.CookieSecure,
-		telemetry:         telemetry.New(st),
-		toolCalls:         tc,
-		uptimeSnap:        up,
-		rateLimit:         rl,
-		authChallenges:    map[string]*srpChallenge{},
+		log:            lg,
+		root:           root,
+		staticRoot:     filepath.Join(root, "static"),
+		templatesFS:    tmplFS,
+		bundle:         rdb,
+		store:          st,
+		sessions:       sess,
+		eng:            eng,
+		cookieSecure:   opts.CookieSecure,
+		telemetry:      telemetry.New(st),
+		toolCalls:      tc,
+		uptimeSnap:     up,
+		rateLimit:      rl,
+		authChallenges: map[string]*srpChallenge{},
 	}, nil
 }
 

@@ -29,7 +29,10 @@ Single-page map of the **ELVish** monorepo (Go module `elvish`). For architectur
 
 | Command | Purpose |
 |---------|---------|
-| [`elvishserver`](../cmd/elvishserver/) | Primary HTTP server: site HTML, `/api/`, mail UI static files, optional SMTP workers (`ELVISH_COMPONENT`) |
+| [`elvishapi`](../cmd/elvishapi/) | HTTP/API tier: `/api/`, SSR, SQL migrations |
+| [`elvishmta`](../cmd/elvishmta/) | SMTP MX + submission ingest |
+| [`elvishworker`](../cmd/elvishworker/) | Outbox delivery + background sweepers |
+| [`elvishserver`](../cmd/elvishserver/) | Removed (stub points to split binaries) |
 | [`elvishdb`](../cmd/elvishdb/) | Connectivity check for `COCKROACH_DSN`, `VALKEY_ADDR`, etc. (`make db-health`) |
 | [`elvishsign`](../cmd/elvishsign/) | Minisign signatures for disk blog posts under `content/blog/` |
 | [`elvishdkim`](../cmd/elvishdkim/) | Generate DKIM key + DNS TXT record |
@@ -75,7 +78,7 @@ Feature parity: [client-parity-roadmap.md](client-parity-roadmap.md).
 
 | Platform | Role |
 |----------|------|
-| **GitLab CI** ([`.gitlab-ci.yml`](../.gitlab-ci.yml)) | **Merge gate:** `gofmt`, `go vet`, golangci-lint + repo invariants, `apiroutes -check`, `static-js` freshness, `go test`, `go test -race`, Flutter analyze/test, `govulncheck`, Docker image build |
+| **GitLab CI** ([`.gitlab-ci.yml`](../.gitlab-ci.yml)) | **Merge gate:** `gofmt`, `go vet`, golangci-lint + repo invariants, `apiroutes -check`, `static-js` freshness, `go test`, `go test -race`, Flutter analyze/test, `govulncheck`, Docker image build (`elvishapi`, `elvishmta`, `elvishworker`) |
 | **GitHub Actions** ([`.github/workflows/`](../.github/workflows/)) | CodeQL (Go + JS), iOS `xcodebuild test` (macOS), Android workflow, optional docker publish |
 
 Local equivalent of the GitLab lint/test stack: **`make check`** plus **`make check-clients`** on macOS.
@@ -97,4 +100,5 @@ Shared ADR invariant checks: [`scripts/lint-invariants.sh`](../scripts/lint-inva
 
 - [README.md](README.md) — documentation index
 - [architecture.md](architecture.md) — system diagram
-- [adr/README.md](adr/README.md) — ADRs 0001–0015
+- [runbooks/split-deploy.md](runbooks/split-deploy.md) — four-process deploy and `make dev`
+- [adr/README.md](adr/README.md) — ADRs 0001–0017

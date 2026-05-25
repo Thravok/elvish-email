@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"strings"
-
 )
 
 func matchWebOrigin(origin string, allow []string) bool {

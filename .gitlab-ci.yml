@@ -266,10 +266,14 @@ build-binary:
       - .go-cache/
   script:
     - mkdir -p bin
-    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishserver ./cmd/elvishserver
+    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishapi ./cmd/elvishapi
+    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishmta ./cmd/elvishmta
+    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishworker ./cmd/elvishworker
   artifacts:
     paths:
-      - bin/elvishserver
+      - bin/elvishapi
+      - bin/elvishmta
+      - bin/elvishworker
     expire_in: 1 week
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"

@@ -1,6 +1,6 @@
 # Architecture overview
 
-**ELVish** ships as the Go binary **`elvishserver`** (module **`elvish`**), deployable as one process or split into **API**, **frontend** (nginx + static), and **mail-mta** (SMTP + workers) via `ELVISH_COMPONENT` — see [ADR 0015](adr/0015-multi-service-deployment.md). This page is a map; authoritative decisions live in [adr/](adr/) and [e2ee-mail-spec.md](e2ee-mail-spec.md).
+**ELVish** ships as **`elvishapi`**, **`elvishmta`**, and **`elvishworker`** (module **`elvish`**) — see [ADR 0017](adr/0017-mandatory-split-deployment.md) and [runbooks/split-deploy.md](runbooks/split-deploy.md). `elvishapi` is the browser tier (static, SSR, API). This page is a map; authoritative decisions live in [adr/](adr/) and [e2ee-mail-spec.md](e2ee-mail-spec.md).
 
 ## Narrative
 
@@ -21,9 +21,9 @@ flowchart TB
     FlutterApp[Flutter_Android]
   end
   subgraph edge [Deployable_tiers]
-    FE[frontend_nginx]
-    API[api_elvishserver]
-    MTA[mail_mta_elvishserver]
+    API[elvishapi]
+    MTA[elvishmta]
+    Worker[elvishworker]
   end
   SQL[(Cockroach_or_Postgres)]
   Valkey[(Valkey)]
@@ -32,13 +32,10 @@ flowchart TB
   subgraph external [External_mail]
     PeerMX[Recipient_MX_hosts]
   end
-  Browser --> FE
-  Browser -->|credentialed_API| API
-  FE -->|SSR_proxy| API
+  Browser --> API
   IOSapp --> API
   FlutterApp --> API
   InternetMX[Internet_MX] --> MTA
-  MTA --> PeerMX
   API --> SQL
   API --> Valkey
   MTA --> SQL
@@ -46,6 +43,10 @@ flowchart TB
   API --> Blobs
   MTA --> Scylla
   MTA --> Blobs
+  Worker --> SQL
+  Worker --> Scylla
+  Worker --> Blobs
+  MTA --> PeerMX
 ```
 
 Edges are simplified: some read paths hit only SQL; blob and Scylla usage follow the four-store split in ADR 0007. For telemetry rollups only, see [ADR 0011](adr/0011-anonymous-operational-telemetry.md).

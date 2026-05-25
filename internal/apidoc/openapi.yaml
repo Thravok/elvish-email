@@ -119,6 +119,27 @@ paths:
                 type: object
           description: Response (JSON or error body; see handler and docs/e2ee-mail-spec.md for mail).
       summary: Verify mail domain DNS (admin)
+  /api/admin/operator-settings:
+    get:
+      operationId: get_api_admin_operator-settings
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Response (JSON or error body; see handler and docs/e2ee-mail-spec.md for mail).
+      summary: GET /api/admin/operator-settings
+    post:
+      operationId: post_api_admin_operator-settings
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Response (JSON or error body; see handler and docs/e2ee-mail-spec.md for mail).
+      summary: POST /api/admin/operator-settings
   /api/admin/outbox:
     get:
       operationId: get_api_admin_outbox

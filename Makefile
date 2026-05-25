@@ -1,15 +1,13 @@
-# ELVISH — live server (CockroachDB/Postgres + Valkey required unless ELVISH_ALLOW_EMPTY_DB=1) + static assets
+# ELVISH — split deploy: elvishapi + elvishmta + elvishworker (browser tier is elvishapi)
 #
-# `make dev` uses fswatch for auto-restart (brew install fswatch). Use `make dev-once` for a single `go run`.
-# `make dev` / `make dev-once` auto-run `make db-up` unless SKIP_AUTO_DB_UP=1. Dev defaults include
-# Scylla + MinIO S3 (same ports as compose). Set SKIP_MAIL_BACKENDS=1 to run without those exports
-# (mail routes stay 503 unless you set SCYLLA_* / BLOB_S3_* yourself).
+# `make dev` starts all roles (Overmind if installed, else scripts/dev-split.sh).
+# App http://127.0.0.1:8765 · auto `make db-up` unless SKIP_AUTO_DB_UP=1
 
 SHELL := /bin/bash
 
 PORT ?= 8765
 ROOT ?= .
-BINARY ?= bin/elvish
+BINARY ?= bin/elvishapi
 
 # Shell prefix: DB + optional mail backends (hostPublished ports from docker-compose.yml).
 define DEV_ENV_EXPORTS
@@ -30,9 +28,9 @@ endef
 
 define DEV_AUTO_DB_UP
 	if [ "$${SKIP_AUTO_DB_UP:-}" = "1" ]; then \
-		printf '%s\n' "[elvishserver] skipping automatic db-up (SKIP_AUTO_DB_UP=1)"; \
+		printf '%s\n' "[elvish] skipping automatic db-up (SKIP_AUTO_DB_UP=1)"; \
 	else \
-		printf '%s\n' "[elvishserver] ensuring local Docker backends via make db-up"; \
+		printf '%s\n' "[elvish] ensuring local Docker backends via make db-up"; \
 		$(MAKE) -s db-up || exit $$?; \
 	fi;
 endef
@@ -43,7 +41,7 @@ openapi:
 
 openapi-check:
 	go run ./cmd/apiroutes -check
-.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e test-flutter test-ios check-clients vuln bench-smoke check dev-api dev-mta compose-up
+.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e test-flutter test-ios check-clients vuln bench-smoke check dev dev-api dev-mta dev-worker dev-api-once dev-mta-once dev-worker-once compose-up
 
 FLUTTER_APP ?= flutter/elvish_mail
 IOS_SCHEME ?= IOS
@@ -62,109 +60,57 @@ ifneq ($(SKIP_STATIC_JS),1)
 	@$(MAKE) static-js
 endif
 	@mkdir -p bin
-	go build -o $(BINARY) ./cmd/elvishserver
+	go build -o bin/elvishapi ./cmd/elvishapi
+	go build -o bin/elvishmta ./cmd/elvishmta
+	go build -o bin/elvishworker ./cmd/elvishworker
 
-# Run elvishserver on http://127.0.0.1:$(PORT)/ (not Docker). Auto-starts local Docker backends unless
-# SKIP_AUTO_DB_UP=1. For one shot without watching: make dev-once
-# Requires fswatch. For one shot without watching: make dev-once
+# Split stack (api + mta + worker). Prefer: brew install overmind
 dev:
-	@command -v fswatch >/dev/null 2>&1 || { printf '%s\n' "fswatch required: brew install fswatch (or: make dev-once)"; exit 1; }
-	@$(DEV_AUTO_DB_UP) \
-	$(DEV_ENV_EXPORTS) \
-	pid=""; \
-	kill_pid() { \
-		local target="$$1"; \
-		if [ -z "$$target" ]; then \
-			return 0; \
-		fi; \
-		kill -TERM "$$target" 2>/dev/null || true; \
-		for _ in 1 2 3 4 5 6 7 8 9 10; do \
-			if ! kill -0 "$$target" 2>/dev/null; then return 0; fi; \
-			sleep 0.05; \
-		done; \
-		kill -KILL "$$target" 2>/dev/null || true; \
-		wait "$$target" 2>/dev/null || true; \
-	}; \
-	kill_stale_listener() { \
-		local listener listener_cmd; \
-		listener="$$(lsof -tiTCP:$(PORT) -sTCP:LISTEN 2>/dev/null | awk 'NR == 1 { print; exit }')"; \
-		if [ -z "$$listener" ]; then \
-			return 0; \
-		fi; \
-		listener_cmd="$$(ps -p "$$listener" -o command= 2>/dev/null || true)"; \
-		case "$$listener_cmd" in \
-			*elvishserver*|*bin/elvish*) \
-				printf '%s\n' "[elvishserver] stopping stale listener $$listener on :$(PORT)"; \
-				kill_pid "$$listener"; \
-				;; \
-			*) \
-				printf '%s\n' "[elvishserver] port $(PORT) already in use by $$listener_cmd"; \
-				return 1; \
-				;; \
-		esac; \
-	}; \
-	cleanup() { \
-		if [ -n "$$pid" ]; then \
-			kill_pid "$$pid"; \
-		fi; \
-		kill_stale_listener || return $$?; \
-		sleep 0.15; \
-	}; \
-	trap 'cleanup; exit 130' INT; \
-	trap 'cleanup; exit 143' TERM; \
-	trap cleanup EXIT; \
-	while true; do \
-		kill_stale_listener || exit $$?; \
-		printf '%s\n' "[elvishserver] http://127.0.0.1:$(PORT)/ — Ctrl+C to stop; watching for changes"; \
-		if $(MAKE) -s build; then \
-			"$(BINARY)" -addr :$(PORT) -root $(ROOT) & \
-			pid=$$!; \
-		else \
-			pid=""; \
-			printf '%s\n' "[elvishserver] build failed — waiting for changes"; \
-		fi; \
-		fswatch -1 -r \
-			"$(ROOT)/content" \
-			"$(ROOT)/static" \
-			"$(ROOT)/templates" \
-			"$(ROOT)/cmd" \
-			"$(ROOT)/internal" \
-			"$(ROOT)/go.mod" \
-			"$(ROOT)/go.sum" || { st=$$?; cleanup; exit $$st; }; \
-		printf '%s\n' "[elvishserver] change detected — restarting"; \
-		cleanup; \
-		pid=""; \
-	done
+	@$(DEV_AUTO_DB_UP)
+	@command -v overmind >/dev/null 2>&1 && overmind start -f Procfile || bash scripts/dev-split.sh
 
-# Single `go run` (no fswatch). Same env defaults and automatic db-up behavior as make dev.
-dev-once:
-	@$(DEV_AUTO_DB_UP) \
-	$(DEV_ENV_EXPORTS) \
-	go run ./cmd/elvishserver -addr :$(PORT) -root $(ROOT)
+define DEV_API_EXPORTS
+	export ELVISH_WEB_ORIGINS="$${ELVISH_WEB_ORIGINS:-http://127.0.0.1:$(PORT)}"; \
+	export ELVISH_PUBLIC_BASE_URL="$${ELVISH_PUBLIC_BASE_URL:-http://127.0.0.1:$(PORT)}"; \
+	export ELVISH_SMTP_ADDR=; \
+	export ELVISH_SMTP_SUBMISSION_ADDR=;
+endef
 
-# API role only (no SMTP listeners).
-dev-api:
+dev-api-once:
 	@$(DEV_AUTO_DB_UP) \
 	$(DEV_ENV_EXPORTS) \
-	ELVISH_COMPONENT=api ELVISH_SMTP_ADDR= ELVISH_SMTP_SUBMISSION_ADDR= \
-	go run ./cmd/elvishserver -addr :$(PORT) -root $(ROOT)
+	$(DEV_API_EXPORTS) \
+	go run ./cmd/elvishapi -addr :$(PORT) -root $(ROOT)
 
-# MTA role (SMTP + mail worker; HTTP off unless ELVISH_HTTP_ENABLED=1).
-dev-mta:
+dev-mta-once:
 	@$(DEV_AUTO_DB_UP) \
 	$(DEV_ENV_EXPORTS) \
-	ELVISH_COMPONENT=mta ELVISH_HTTP_ENABLED=0 \
 	ELVISH_MAIL_DOMAIN=$${ELVISH_MAIL_DOMAIN:-localhost.test} \
+	ELVISH_HOSTNAME=$${ELVISH_HOSTNAME:-localhost.test} \
 	ELVISH_SMTP_ADDR=$${ELVISH_SMTP_ADDR:-:2525} \
 	ELVISH_SMTP_SUBMISSION_ADDR=$${ELVISH_SMTP_SUBMISSION_ADDR:-:2587} \
-	go run ./cmd/elvishserver -addr :$(PORT) -root $(ROOT)
+	go run ./cmd/elvishmta -root $(ROOT)
 
-# Full app tier in Docker (databases + api + frontend + mail-mta). Site on http://127.0.0.1:8765
+dev-worker-once:
+	@$(DEV_AUTO_DB_UP) \
+	$(DEV_ENV_EXPORTS) \
+	go run ./cmd/elvishworker -root $(ROOT)
+
+dev-api: dev-api-once
+dev-mta: dev-mta-once
+dev-worker: dev-worker-once
+
+# Aliases
+dev-once: dev-api-once
+
 compose-up:
 	@command -v docker >/dev/null 2>&1 || { printf '%s\n' "docker not found"; exit 1; }
 	$(MAKE) -s static-js
 	docker compose --profile full up -d --build
-	@printf '%s\n' "Full stack: http://127.0.0.1:8765 (frontend)" "SMTP (mail-mta): localhost:2525 / :2587"
+	@printf '%s\n' \
+	  "Full stack: http://127.0.0.1:8765 (elvishapi: static + API + SSR)" \
+	  "SMTP: localhost:2525 / :2587" \
+	  "worker: mail outbox + sweepers"
 
 # Rebuild $(BINARY) when sources change; run the binary separately (e.g. ./bin/elvish). For build + run with auto-restart, use make dev.
 dev-watch:
@@ -177,13 +123,13 @@ dev-watch:
 		"$(ROOT)/internal" \
 		"$(ROOT)/go.mod" \
 		"$(ROOT)/go.sum"; do \
-		$(MAKE) -s build && printf '%s\n' "[elvishserver] rebuilt"; \
+		$(MAKE) -s build && printf '%s\n' "[elvish] rebuilt"; \
 	done
 
 # Import posts from content/blog into SQL, then exit.
 migrate:
 	COCKROACH_DSN="$${COCKROACH_DSN:-postgres://root@127.0.0.1:26257/defaultdb?sslmode=disable}" \
-	go run ./cmd/elvishserver -root $(ROOT) -migrate
+	go run ./cmd/elvishapi -root $(ROOT) -migrate
 
 # Detached minisign signatures for Markdown posts (needs content/blog/signing.key; MINISIGN_PASSWORD if encrypted).
 blog-sign:

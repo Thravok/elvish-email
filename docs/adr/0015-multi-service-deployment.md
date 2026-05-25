@@ -1,6 +1,6 @@
 # ADR 0015 — Multi-service deployment (API, frontend, mail-mta)
 
-**Status:** Accepted (2026-05)
+**Status:** Superseded by [0017](0017-mandatory-split-deployment.md)
 
 ## Context
 
@@ -13,9 +13,9 @@
    - `mta`: SMTP + `mailworker`; HTTP off unless `ELVISH_HTTP_ENABLED=1` (health checks).
    - `all`: legacy monolith behavior (default when unset).
 
-2. **Coolify compose** — [`docker-compose.coolify.yaml`](../../docker-compose.coolify.yaml) defines `api`, `public` (nginx + static; Coolify magic `SERVICE_*_PUBLIC`), `mail-mta`, and optional `mail-mta-2` (profile `dual-mta` on a second host). Domains and TLS are configured in the Coolify UI per service, not in-repo. See [`docs/deploy-coolify.md`](../deploy-coolify.md).
+2. **Coolify compose** — [`docker-compose.coolify.yaml`](../../docker-compose.coolify.yaml) defines `api` (`elvishapi` on 8765: static + API + SSR), `mail-mta`, `worker`, and optional `mail-mta-2` (profile `dual-mta`). Domains and TLS are configured in the Coolify UI per service, not in-repo. See [`docs/deploy-coolify.md`](../deploy-coolify.md).
 
-3. **Split-origin browsers** — `app.*` serves static shells via nginx; `api.*` serves `/api/*`. Cross-origin credentialed fetches use `ELVISH_WEB_ORIGINS`, `ELVISH_COOKIE_DOMAIN`, and `ELVISH_API_PUBLIC_URL` (injected into `static/shared/api-config.js` on the frontend container).
+3. **Browsers** — Default is single-origin on the `api` Coolify domain (`SERVICE_URL_API_8765`). Optional split-origin uses `ELVISH_WEB_ORIGINS` and `ELVISH_COOKIE_DOMAIN` without a separate static container.
 
 4. **Shared DKIM/relay volume** — `elvish_data` is mounted on `api` and `mail-mta` services so outbound signing keys stay consistent.
 
@@ -23,7 +23,7 @@
 
 ## Consequences
 
-- Operators must assign two Coolify domains (`public`, `api`) and publish SMTP ports on `mail-mta`.
+- Operators assign one Coolify domain on `api` (include `:8765`) and publish SMTP ports on `mail-mta`.
 - Two MTAs on one host cannot both bind port 25; use two servers or DNS to distinct IPs.
 - Horizontal API replicas must set `ELVISH_BACKGROUND_JOBS=1` on exactly one instance until a Valkey leader lock exists.
 - Outbox delivery remains safe across workers (`LeasePendingOutbox` uses `FOR UPDATE SKIP LOCKED`).

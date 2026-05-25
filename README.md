@@ -13,20 +13,20 @@ When you publish your own deployment, point the site footer **Source** link at y
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — dev commands, conventions, code map
 - **[AGENTS.md](AGENTS.md)** — short orientation for automation / AI assistants
 
-Go HTTP server **`elvishserver`** serves HTML (same templates as before), static assets from `static/`, JSON API under `/api/`, and the operator panel embedded in the mail client at **`/mail?view=admin`**. **Defaults** still come from `content/home.json` and Markdown in `content/blog/` when the SQL database has no posts yet. By default the process **refuses to start** until **CockroachDB/Postgres** (`COCKROACH_DSN`) and **Valkey** are configured in the environment **and** respond to a health ping (see `ELVISH_ALLOW_EMPTY_DB` below for the rare static-only case).
+ELVish runs as **`elvishapi`** (static site, HTTP API, SSR), **`elvishmta`** (SMTP), and **`elvishworker`** (outbox + sweepers). The operator panel is embedded in the mail client at **`/mail?view=admin`**. **Defaults** still come from `content/home.json` and Markdown in `content/blog/` when the SQL database has no posts yet. Backend roles **refuse to start** until **CockroachDB/Postgres** (`COCKROACH_DSN`) and **Valkey** are configured and healthy (see `ELVISH_ALLOW_EMPTY_DB` for rare static-only API demos).
 
 **Feeds** (at site root): RSS `/feed.xml`, Atom `/atom.xml`, [JSON Feed 1.1](https://jsonfeed.org/version/1.1) `/feed.json`. `<link rel="alternate">` is emitted on home, log index, and post pages.
 
 ## Run locally
 
 ```bash
-make db-up   # once: CockroachDB + Valkey + Scylla + MinIO (no app containers); applies Scylla schema and creates the S3 bucket
-make dev     # local `go run` with auto-restart on changes (needs fswatch: brew install fswatch; auto-runs db-up)
+make db-up   # once: CockroachDB + Valkey + Scylla + MinIO
+make dev     # split stack: elvishapi :8765 + mta + worker (Overmind or scripts/dev-split.sh)
 ```
 
-Use **`make dev-once`** for a single local run without file watching; it also auto-runs **`make db-up`** unless you set **`SKIP_AUTO_DB_UP=1`**. Plain `go run ./cmd/elvishserver -addr :8765 -root .` **does not** inject `COCKROACH_DSN` / `VALKEY_ADDR` (or mail backend vars) — export them yourself, use **`make dev-once`**, or use **`ELVISH_ALLOW_EMPTY_DB=1`** only if you intentionally want a disk-only demo without auth.
+See [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md). Single roles: **`make dev-api-once`**, **`make dev-mta-once`**, **`make dev-worker-once`**. Docker all-in-one: **`make compose-up`**.
 
-For site-only work without Scylla/S3 locally, run **`SKIP_AUTO_DB_UP=1 SKIP_MAIL_BACKENDS=1 make dev`** so the server starts without booting the Docker mail stack (mail APIs stay unavailable until you export `SCYLLA_*` / `BLOB_S3_*`).
+For site-only work without Scylla/S3, use **`SKIP_MAIL_BACKENDS=1`** (mail APIs return 503 until backends are configured).
 
 Open `http://127.0.0.1:8765/`. Operator panel: `http://127.0.0.1:8765/mail?view=admin` (requires admin session).
 
@@ -57,14 +57,14 @@ Then run the app with **`make dev`** (watches and restarts; auto-runs **`make db
 
 **`make dev`** / **`make dev-once`** default `COCKROACH_DSN` and `VALKEY_ADDR` to the same hosts/ports as **`make db-up`**, auto-run **`make db-up`** unless **`SKIP_AUTO_DB_UP=1`**, and also export **`SCYLLA_*`** / **`BLOB_S3_*`** for the host-published compose ports unless **`SKIP_MAIL_BACKENDS=1`** (see below). Production and ad-hoc `go run` should set **`COCKROACH_DSN`** (Postgres wire URI, e.g. `postgres://user@host:26257/db?sslmode=require`) plus **`VALKEY_ADDR`** (and optional **`VALKEY_PASSWORD`**, **`VALKEY_DB`**) explicitly; set mail variables the same way if you enable the mail subsystem.
 
-With a non-empty **`COCKROACH_DSN`**, **`elvishserver` applies embedded SQL migrations** (goose) on startup before serving traffic.
+With a non-empty **`COCKROACH_DSN`**, **`elvishapi` applies embedded SQL migrations** (goose) on startup before serving traffic.
 
 Set **`ELVISH_ALLOW_EMPTY_DB=1`** only to run **without** those backends (static HTML from disk; register/login and admin persistence unavailable).
 
 - **Register / login:** `POST /api/auth/register`, `POST /api/auth/login` (HTTP-only cookie `elvish_session`), or open **`/register`** / **`/login`** in the browser.
 - **Bootstrap for admin:** `GET /api/bootstrap.json`.
 - **OpenPGP public keys:** `POST /api/pgp/keys` (**admin** session) — listed at `/pgp/keys.json`, each at `/pgp/key/<fingerprint16>.asc`.
-- **Migrate disk posts → SQL:** `make migrate` or `go run ./cmd/elvishserver -root . -migrate`. **`POST /api/migrate/posts`** does the same import over HTTP and requires an **admin** session.
+- **Migrate disk posts → SQL:** `make migrate` or `go run ./cmd/elvishapi -root . -migrate`. **`POST /api/migrate/posts`** does the same import over HTTP and requires an **admin** session.
 - **Admin E2E:** `make test-e2e` (Playwright under [`e2e/`](e2e/); see [`e2e/README.md`](e2e/README.md)).
 
 Connectivity check: `go run ./cmd/elvishdb health` or `make db-health`.
@@ -126,7 +126,7 @@ curl -sI http://127.0.0.1:8765/api/auth/me | grep -i cache-control
 | `VALKEY_PASSWORD` | Optional |
 | `VALKEY_DB` | Numeric DB index (default `0`) |
 | `COOKIE_SECURE` | `1` or `true` for `Secure` session cookies |
-| `ELVISH_COMPONENT` | `api`, `mta`, `all` — see [ADR 0015](docs/adr/0015-multi-service-deployment.md) |
+| `ELVISH_COMPONENT` | Optional cross-check (`api`/`mta`/`worker`); see [ADR 0017](docs/adr/0017-mandatory-split-deployment.md) |
 | `ELVISH_HTTP_ENABLED` | `0`/`false` disables HTTP (default off for `mta`-only) |
 | `ELVISH_BACKGROUND_JOBS` | `1`/`true` for retention/deletion/uptime sweepers (one API replica when scaled) |
 | `ELVISH_ALLOW_EMPTY_DB` | `1`/`true` for static-only demos without DB |
@@ -142,12 +142,6 @@ curl -sI http://127.0.0.1:8765/api/auth/me | grep -i cache-control
 | `ELVISH_DKIM_KEY_PATH` | DKIM RSA PEM path (default `<root>/data/dkim.pem`; selector/domain in admin) |
 | `ELVISH_OIDC_*` | Optional “Login with Elvish” issuer — see [ADR 0013](docs/adr/0013-login-with-elvish-oidc-issuer.md) |
 | `ELVISH_ADDRESS_RESERVATION_KEY` | HMAC for deleted-address tombstones |
-
-### Frontend container
-
-| Variable | Purpose |
-|----------|---------|
-| `ELVISH_API_PUBLIC_URL` | Injected into `static/shared/api-config.js` on the nginx frontend tier |
 
 ### Development helpers
 
