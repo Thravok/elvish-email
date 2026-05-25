@@ -19,10 +19,7 @@ func toolOpenRedirectURL(t config.Tool) string {
 		if strings.HasPrefix(d, "//") {
 			return "/"
 		}
-		if !strings.HasPrefix(d, "/") {
-			return "/" + strings.TrimLeft(d, "/")
-		}
-		return d
+		return safeRedirectPath(d)
 	}
 	slug := strings.TrimSpace(t.Slug)
 	if slug == "" {

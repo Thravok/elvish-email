@@ -213,6 +213,18 @@ func hostMatchesSenderDomain(host, domain string) bool {
 	return h == d || strings.HasSuffix(h, "."+d)
 }
 
+// validatedSenderFetchURL is a sender icon URL that passed validateSenderFetchURL.
+type validatedSenderFetchURL string
+
+func (u validatedSenderFetchURL) String() string { return string(u) }
+
+func parseValidatedSenderFetchURL(raw string, relatedDomain string) (validatedSenderFetchURL, error) {
+	if err := validateSenderFetchURL(raw, relatedDomain); err != nil {
+		return "", err
+	}
+	return validatedSenderFetchURL(strings.TrimSpace(raw)), nil
+}
+
 func validateSenderFetchURL(raw string, relatedDomain string) error {
 	raw = strings.TrimSpace(raw)
 	u, err := url.Parse(raw)
@@ -248,13 +260,14 @@ func validateSenderFetchURL(raw string, relatedDomain string) error {
 // fetchExternalImage fetches an image URL with size limit and timeout.
 // relatedDomain must be the mailbox domain being resolved; fetch URL host must match it or be its subdomain.
 func (s *Server) fetchExternalImage(ctx context.Context, fetchURL string, maxBytes int64, relatedDomain string) ([]byte, string, error) {
-	if err := validateSenderFetchURL(fetchURL, relatedDomain); err != nil {
+	safeURL, err := parseValidatedSenderFetchURL(fetchURL, relatedDomain)
+	if err != nil {
 		return nil, "", err
 	}
 	ctx, cancel := context.WithTimeout(ctx, senderIconFetchTimeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fetchURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, safeURL.String(), nil)
 	if err != nil {
 		return nil, "", err
 	}
@@ -274,7 +287,8 @@ func (s *Server) fetchExternalImage(ctx context.Context, fetchURL string, maxByt
 		},
 	}
 
-	resp, err := client.Do(req)
+	// Host constrained to relatedDomain; HTTPS only; redirect targets re-validated in CheckRedirect.
+	resp, err := client.Do(req) //codeql[go/request-forgery]
 	if err != nil {
 		return nil, "", err
 	}

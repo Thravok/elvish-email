@@ -479,6 +479,22 @@ function validatePlusTagFromName(name) {
   return tag;
 }
 
+/** Unbiased alphanumeric string for disposable local parts (CodeQL: avoid modulo bias on getRandomValues). */
+function randomAlphanumeric(len) {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const n = chars.length;
+  const limit = Math.floor(256 / n) * n;
+  let out = '';
+  while (out.length < len) {
+    const buf = new Uint8Array(Math.max(len * 2, 16));
+    crypto.getRandomValues(buf);
+    for (let i = 0; i < buf.length && out.length < len; i++) {
+      if (buf[i] < limit) out += chars[buf[i] % n];
+    }
+  }
+  return out;
+}
+
 function buildGeneratedIdentityAddress({ type, domain, localPart, name }) {
   const dom = String(domain || '').trim().toLowerCase();
   if (!dom) throw new Error('Choose a domain');
@@ -491,11 +507,7 @@ function buildGeneratedIdentityAddress({ type, domain, localPart, name }) {
     const tag = validatePlusTagFromName(name);
     return { email: `${base}+${tag}@${dom}`, expiresAt: '' };
   }
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  const buf = new Uint8Array(14);
-  crypto.getRandomValues(buf);
-  let rand = '';
-  for (let i = 0; i < 14; i++) rand += chars[buf[i] % chars.length];
+  const rand = randomAlphanumeric(14);
   return {
     email: `d_${rand}@${dom}`,
     expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),

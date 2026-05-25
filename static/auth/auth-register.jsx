@@ -5,7 +5,22 @@ function safeClientRedirectPath(next) {
   if (typeof next !== "string") return "";
   next = next.trim();
   if (!next || !next.startsWith("/") || next.startsWith("//")) return "";
-  return next;
+  if (/[\r\n\x00\\]/.test(next) || next.includes("://")) return "";
+  try {
+    const u = new URL(next, window.location.origin);
+    if (u.origin !== window.location.origin) return "";
+    const p = u.pathname;
+    if (!p.startsWith("/") || p.startsWith("//") || p.includes("\\")) return "";
+    return p + u.search + u.hash;
+  } catch {
+    return "";
+  }
+}
+
+function assignClientRedirect(next, fallback) {
+  const fb = safeClientRedirectPath(fallback) || "/mail";
+  const dest = safeClientRedirectPath(next) || fb;
+  window.location.assign(dest);
 }
 
 function applyClientThemeFromUser(user) {
@@ -225,9 +240,7 @@ function RegisterPage() {
       setPhase("ok");
       setLoadingStep("redirect");
       setMsg("Account created. Opening mail…");
-      const fallback = "/mail";
-      const dest = nextOk || fallback;
-      window.location.href = dest;
+      assignClientRedirect(nextOk, "/mail");
     } catch (err) {
       if (window.ElvishPerf) window.ElvishPerf.end("auth_ui", "register_submit", submitStartedAt, "failure");
       setPhase("idle");

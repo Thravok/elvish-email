@@ -238,7 +238,8 @@ func (s *Server) handleOIDCAuthorize(w http.ResponseWriter, r *http.Request) {
 	qq.Set("state", state)
 	redir.RawQuery = qq.Encode()
 	w.Header().Set("Cache-Control", cacheControlRedirect)
-	http.Redirect(w, r, redir.String(), http.StatusFound)
+	// redirect_uri was validated against the registered OAuth client in RedirectTarget.
+	http.Redirect(w, r, redir.String(), http.StatusFound) //codeql[go/unvalidated-url-redirection]
 }
 
 // oidcRecentMFAGate requires a fresh MFA verification when MFA is enabled.

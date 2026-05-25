@@ -16533,18 +16533,7 @@ ${body || ""}`;
   function htmlToDisplayText(html2) {
     const s = String(html2 || "").trim();
     if (!s) return "";
-    try {
-      if (typeof DOMParser !== "undefined") {
-        const doc = new DOMParser().parseFromString(s, "text/html");
-        if (doc && doc.body) {
-          return doc.body.textContent.replace(/\s+/g, " ").trim();
-        }
-      }
-    } catch (_) {
-    }
-    const d = document.createElement("div");
-    d.textContent = s;
-    return (d.textContent || "").replace(/\s+/g, " ").trim();
+    return s.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ").replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   }
   function splitMultipartBody(body, boundary) {
     const marker = `--${boundary}`;

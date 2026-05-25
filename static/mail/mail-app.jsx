@@ -432,19 +432,13 @@ function parseHeaderBlock(headerBlock) {
 function htmlToDisplayText(html) {
   const s = String(html || "").trim();
   if (!s) return "";
-  try {
-    if (typeof DOMParser !== "undefined") {
-      const doc = new DOMParser().parseFromString(s, "text/html");
-      if (doc && doc.body) {
-        return doc.body.textContent.replace(/\s+/g, " ").trim();
-      }
-    }
-  } catch (_) {
-    /* fall through */
-  }
-  const d = document.createElement("div");
-  d.textContent = s;
-  return (d.textContent || "").replace(/\s+/g, " ").trim();
+  // Strip tags without DOMParser (avoids treating untrusted HTML as a live document tree).
+  return s
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ")
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function splitMultipartBody(body, boundary) {

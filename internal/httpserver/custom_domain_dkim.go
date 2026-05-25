@@ -59,12 +59,15 @@ func (s *Server) ensureCustomDomainDKIM(ctx context.Context, userID uuid.UUID, d
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(dir, base)
+	path, err := secretFileUnderDir(dir, base)
+	if err != nil {
+		return err
+	}
 	raw, err := dkim.GenerateRSAPrivatePEM(2048)
 	if err != nil {
 		return fmt.Errorf("dkim generate: %w", err)
 	}
-	if err := writeSecretFile(path, raw); err != nil {
+	if err := writeSecretFileAt(path, raw); err != nil {
 		return fmt.Errorf("dkim write: %w", err)
 	}
 	selector := strings.TrimSpace(strings.ToLower(models.DefaultAdminDKIMSelector))
@@ -87,7 +90,9 @@ func (s *Server) removeCustomDomainDKIMFiles(domain string) {
 	if err != nil {
 		return
 	}
-	_ = os.Remove(filepath.Join(dir, base))
+	if p, err := secretFileUnderDir(dir, base); err == nil {
+		_ = os.Remove(p)
+	}
 }
 
 // dkimKeyStatusForDomain returns DKIM DNS guidance material for domain (custom mail_domains row or platform default).

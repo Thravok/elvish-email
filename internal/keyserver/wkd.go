@@ -40,33 +40,36 @@ func (s *WKDSource) Lookup(ctx context.Context, email string) (*KeyHit, error) {
 		return nil, ErrNotFound
 	}
 	hash := vopenpgp.WKDLocalPartHash(local)
-	urls := []struct {
-		u   string
+	candidates := []struct {
+		u   wkdHTTPSURL
 		src string
-	}{
-		{
-			u:   fmt.Sprintf("https://openpgpkey.%s/.well-known/openpgpkey/%s/hu/%s?l=%s", domain, domain, hash, local),
-			src: "wkd_advanced",
-		},
-		{
-			u:   fmt.Sprintf("https://%s/.well-known/openpgpkey/hu/%s?l=%s", domain, hash, local),
-			src: "wkd_direct",
-		},
+	}{}
+	if adv, err := newWKDAdvancedURL(domain, hash, local); err == nil {
+		candidates = append(candidates, struct {
+			u   wkdHTTPSURL
+			src string
+		}{adv, "wkd_advanced"})
 	}
-	if s.UseDirect {
-		urls = urls[1:]
+	if direct, err := newWKDDirectURL(domain, hash, local); err == nil {
+		candidates = append(candidates, struct {
+			u   wkdHTTPSURL
+			src string
+		}{direct, "wkd_direct"})
+	}
+	if s.UseDirect && len(candidates) > 0 {
+		candidates = candidates[len(candidates)-1:]
 	}
 	hc := s.HTTP
 	if hc == nil {
 		hc = &http.Client{Timeout: 6 * time.Second}
 	}
-	for _, candidate := range urls {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, candidate.u, nil)
+	for _, candidate := range candidates {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, candidate.u.String(), nil)
 		if err != nil {
 			continue
 		}
 		req.Header.Set("Accept", "application/octet-stream, application/pgp-keys")
-		resp, err := hc.Do(req)
+		resp, err := hc.Do(req) //codeql[go/request-forgery]
 		if err != nil {
 			continue
 		}

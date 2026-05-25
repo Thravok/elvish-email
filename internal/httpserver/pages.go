@@ -735,7 +735,7 @@ func (s *Server) handleAuthLogout(w http.ResponseWriter, r *http.Request) {
 	}
 	s.clearBrowserSession(w, r)
 	next := safeRedirectPath(r.FormValue("next"))
-	http.Redirect(w, r, next, http.StatusSeeOther)
+	http.Redirect(w, r, next, http.StatusSeeOther) //codeql[go/unvalidated-url-redirection]
 }
 
 // serveAuthHTML serves /login and /register (static/auth/*.html).
