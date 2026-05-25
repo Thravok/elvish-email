@@ -47,7 +47,7 @@ openapi-check:
 
 FLUTTER_APP ?= flutter/elvish_mail
 IOS_SCHEME ?= IOS
-IOS_SIMULATOR ?= platform=iOS Simulator,name=iPhone 16
+IOS_SIMULATOR ?= platform=iOS Simulator,name=iPhone 17
 
 # Precompiled browser bundles (React 19, OpenPGP 6 vendor copy, mail search worker) into static/dist/.
 # Requires Node.js. First run installs frontend/node_modules via npm ci. Set SKIP_STATIC_JS=1 to skip (use prebuilt static/dist only).
