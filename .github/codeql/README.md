@@ -1,42 +1,69 @@
-# CodeQL (advanced setup)
+# CodeQL setup (ELVish monorepo)
 
-This repository uses **advanced** CodeQL via [.github/workflows/codeql-analysis.yml](../workflows/codeql-analysis.yml), not GitHub’s **default setup**.
+## How this repo is configured
 
-## Why
+| Piece | Location | Role |
+|-------|----------|------|
+| **Mode** | Advanced (workflow file) | Full control; must not enable **default setup** in GitHub settings |
+| **Workflow** | [`.github/workflows/codeql-analysis.yml`](../workflows/codeql-analysis.yml) | Three analyses per run |
+| **Server + web** | [codeql-config.yml](codeql-config.yml) | Go + JS/TS; ignores `flutter/`, `IOS/`, `e2e/` |
+| **Flutter Android** | [codeql-config-flutter.yml](codeql-config-flutter.yml) | `java-kotlin` on `flutter/elvish_mail/android` only (no Dart extractor) |
 
-- **Go** — manual build (`CGO_ENABLED=0 go build ./...`) so the extractor sees compiled packages.
-- **JavaScript/TypeScript** — mail UI under `static/` and `frontend/`; server paths scoped in [codeql-config.yml](codeql-config.yml).
-- **Flutter Android** — separate job builds `flutter/elvish_mail` and scans Kotlin/Java under `android/` (no Dart extractor); see [codeql-config-flutter.yml](codeql-config-flutter.yml).
-
-## Conflict with default setup
-
-If **CodeQL default setup** is enabled in repository settings, `github/codeql-action/analyze` fails on upload with:
-
-```text
-CodeQL analyses from advanced configurations cannot be processed when the default setup is enabled
-```
-
-Use **one** mode only. For this repo, keep advanced setup and turn off default setup.
-
-### Go job (`Analyze (go)`)
-
-Run `actions/setup-go` **before** `codeql-action/init`. If Go is installed after init, manual `go build` is not traced and finalize fails with “no source code seen during build”.
-
-### Flutter Android job (`Analyze (flutter-android)`)
-
-Keep `android.enableJetifier=false` in `flutter/elvish_mail/android/gradle.properties` (Jetifier OOMs on Flutter engine JARs in CI). The workflow sets `GRADLE_OPTS` to 4 GB heap and builds a single ABI (`android-arm64`) to reduce Gradle memory use.
-
-### Fix (repository settings)
-
-1. **Settings** → **Advanced Security** → **Code scanning** → **CodeQL analysis**.
-2. If you see **Switch to advanced**, default setup is on — choose **Disable CodeQL** (or switch to advanced and ensure default is not active).
-3. Re-run the failed **CodeQL** workflow.
-
-### Fix (CLI)
+GitHub may also show a **dynamic** workflow (`dynamic/github-code-scanning/codeql`) from the Code Scanning product. That is separate from this file. **Default setup API state** must stay `not-configured` or SARIF uploads from this workflow are rejected.
 
 ```bash
-gh api -X PATCH /repos/OWNER/REPO/code-scanning/default-setup -f state=not-configured
-gh api /repos/OWNER/REPO/code-scanning/default-setup   # state should be "not-configured"
+gh api /repos/Thravok/elvish-email/code-scanning/default-setup
+# "state": "not-configured"
 ```
 
-Do **not** re-enable default setup at org scale on this repo unless you remove or disable `codeql-analysis.yml` first.
+## Jobs (one workflow, three checks)
+
+```text
+checkout → [toolchain] → codeql-action/init → [manual build] → codeql-action/analyze
+```
+
+| Check name | Language | build-mode | Build step |
+|------------|----------|------------|------------|
+| `Analyze (go)` | `go` | `manual` | `setup-go` **before** `init`, then `CGO_ENABLED=0 go build -v ./...` |
+| `Analyze (javascript-typescript)` | `javascript-typescript` | `none` | None (interpreted) |
+| `Analyze (flutter-android)` | `java-kotlin` | `manual` | `flutter build apk --debug --target-platform android-arm64` |
+
+Each job sets `category: /language:…` so GitHub accepts multiple SARIF uploads per commit ([docs](https://docs.github.com/en/code-security/code-scanning/reference/code-scanning/workflow-configuration-options#analysis-category)).
+
+## Common failures
+
+### “default setup is enabled” on upload
+
+Disable default setup: **Settings → Code security → CodeQL analysis → Disable CodeQL**, or:
+
+```bash
+gh api -X PATCH /repos/Thravok/elvish-email/code-scanning/default-setup -f state=not-configured
+```
+
+### Go: “no source code seen during build”
+
+`actions/setup-go` must run **before** `codeql-action/init`. Do not reorder those steps.
+
+### Flutter: Gradle `Java heap space` / JetifyTransform
+
+Keep `android.enableJetifier=false` in `flutter/elvish_mail/android/gradle.properties`. CI sets `GRADLE_OPTS` to 4 GB and builds a single ABI.
+
+### PR shows red CodeQL but `main` is green
+
+The PR branch must include the workflow fixes from `main` (rebase or merge `main`, then push). Re-running an old failed workflow on a stale branch will still fail.
+
+```bash
+gh pr update-branch 3 --repo Thravok/elvish-email   # merge main into PR branch
+```
+
+### Not analyzed
+
+- **Dart** (`flutter/elvish_mail/lib/`) — unsupported by CodeQL
+- **Swift** (`IOS/`) — not in workflow; needs a `macos-latest` job if desired
+- **GitHub Actions** — optional; add `languages: actions` to the matrix if you want workflow scanning
+
+## References
+
+- [About CodeQL](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning-with-codeql)
+- [Advanced setup](https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/configuring-advanced-setup-for-code-scanning)
+- [Compiled languages / build modes](https://docs.github.com/en/code-security/code-scanning/reference/code-scanning/codeql/codeql-build-options-and-steps-for-compiled-languages)

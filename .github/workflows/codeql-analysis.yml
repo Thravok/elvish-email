@@ -1,5 +1,4 @@
-# Advanced CodeQL only — do not enable "default setup" on GitHub for this repo
-# (SARIF upload fails if both are active). See .github/codeql/README.md.
+# Advanced CodeQL (see .github/codeql/README.md). Do not enable default setup in repo settings.
 name: CodeQL
 
 on:
@@ -8,12 +7,17 @@ on:
   pull_request:
     branches: [main]
   schedule:
-  - cron: "31 13 * * 4"
+    - cron: "31 13 * * 4"
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       actions: read
       contents: read
@@ -23,38 +27,40 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - language: go
-          build-mode: manual
-        - language: javascript-typescript
-          build-mode: none
+          - language: go
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-    # Go must be on PATH before init so CodeQL's manual build tracer wraps the compiler.
-    - name: Set up Go
-      if: matrix.language == 'go'
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: go.mod
-        cache: true
+      # Toolchain before init so manual Go builds are traced (compiled languages).
+      - name: Set up Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
-        config-file: ./.github/codeql/codeql-config.yml
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          config-file: ./.github/codeql/codeql-config.yml
 
-    - name: Build Go
-      if: matrix.language == 'go'
-      run: CGO_ENABLED=0 go build -v ./...
+      - name: Build Go
+        if: matrix.language == 'go'
+        run: CGO_ENABLED=0 go build -v ./...
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: /language:${{ matrix.language }}
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}
 
   analyze-flutter-android:
     name: Analyze (flutter-android)
@@ -69,45 +75,47 @@ jobs:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: "17"
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        channel: stable
-        cache: true
-        cache-key: flutter-elvish-mail
-        pub-cache-key: flutter-elvish-mail-pub
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          cache-key: flutter-elvish-mail
+          pub-cache-key: flutter-elvish-mail-pub
 
-    - name: Prepare Flutter Android project
-      working-directory: flutter/elvish_mail
-      run: |
-        flutter pub get
-        if [ ! -x android/gradlew ]; then
-          flutter create . --platforms=android --project-name elvish_mail --org org.elvish
+      - name: Prepare Flutter Android project
+        working-directory: flutter/elvish_mail
+        run: |
           flutter pub get
-        fi
-        yes | flutter doctor --android-licenses || true
+          if [ ! -x android/gradlew ]; then
+            flutter create . --platforms=android --project-name elvish_mail --org org.elvish
+            flutter pub get
+          fi
+          yes | flutter doctor --android-licenses || true
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: java-kotlin
-        build-mode: manual
-        config-file: ./.github/codeql/codeql-config-flutter.yml
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          config-file: ./.github/codeql/codeql-config-flutter.yml
 
-    - name: Build Flutter Android (debug)
-      working-directory: flutter/elvish_mail
-      run: flutter build apk --debug --target-platform android-arm64
+      - name: Build Flutter Android (debug)
+        working-directory: flutter/elvish_mail
+        run: flutter build apk --debug --target-platform android-arm64
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: /language:flutter-android
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:flutter-android
