@@ -123,7 +123,7 @@ function SecTelemetry() {
     return (
       <>
         <AT.H num="07" title="TELEMETRY" sub="anonymous operational rollups · admin only" />
-        <div className="adm-explain">Your account is not an admin. Set <code className="mono">ELVISH_ADMIN_EMAILS</code> or promote the first registered user.</div>
+        <div className="adm-explain">Your account is not an admin. Promote your user in the Users section (first registrant is admin by default).</div>
       </>
     );
   }

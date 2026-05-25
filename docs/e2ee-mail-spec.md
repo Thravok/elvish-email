@@ -212,26 +212,18 @@ BLOB_S3_ACCESS_KEY=elvish-dev
 BLOB_S3_SECRET_KEY=elvish-dev-secret
 BLOB_S3_FORCE_PATH_STYLE=true
 
-# SMTP
-ELVISH_MAIL_DOMAIN=elvish.email
+# SMTP (listen addresses stay in env; platform mail domain in admin → Platform)
 ELVISH_HOSTNAME=mx.elvish.email
 ELVISH_SMTP_ADDR=:25
 ELVISH_SMTP_SUBMISSION_ADDR=:587
 ELVISH_SMTP_ALLOW_PLAIN_AUTH=false   # only enable if a TLS terminator handles AUTH
-ELVISH_SMTP_RATE_LIMIT_PER_HOUR=100    # per connecting IP on inbound MX + submission (Valkey; 451 when exceeded)
+# smtp_rate_limit_per_hour, platform_mail_domain, public_base_url → admin → Platform
 
-# DKIM (optional; outbound SMTP mail is domain-signed if all three are set)
-# Selector/domain are normalized to lowercase at runtime before status checks and worker delivery.
-ELVISH_DKIM_DOMAIN=elvish.email
-ELVISH_DKIM_SELECTOR=mail
+# DKIM PEM path (selector/domain in admin → Testing → DKIM config)
 ELVISH_DKIM_KEY_PATH=/var/lib/elvish/dkim.pem
 
 # Plaintext-relay key (legacy internal notifications only).
-# User-authored plaintext relay is disabled in the browser mail surface.
 ELVISH_RELAY_KEY_PATH=/var/lib/elvish/relay.asc
-
-# Public base URL used when minting `/m/{token}` URLs into recipient notices.
-ELVISH_PUBLIC_BASE_URL=https://elvish.email
 ```
 
 ## 6. Validation

@@ -139,8 +139,17 @@ const ADMIN_SECTION_DEFS = [
     icon: "performance"
   },
   {
-    id: "auth-captcha",
+    id: "platform",
     num: "09",
+    label: "Platform",
+    description: "Public URLs, mail domain, CORS, registration, paid tier, and performance tuning.",
+    key: "SecPlatform",
+    icon: "site",
+    searchKeywords: ["platform", "cors", "cookie", "registration", "paid", "public url", "mail domain"]
+  },
+  {
+    id: "auth-captcha",
+    num: "10",
     label: "Cap · Login CAPTCHA",
     description: "Self-hosted Cap (trycap.dev): widget URL, secret, and /siteverify for /login and /register.",
     key: "SecAuthCaptcha",
@@ -149,7 +158,7 @@ const ADMIN_SECTION_DEFS = [
   },
   {
     id: "content",
-    num: "10",
+    num: "11",
     label: "Content",
     description: "Nav, hero, tools, blog, and OpenPGP signing for the public site.",
     key: "SecContentHub",
@@ -158,7 +167,7 @@ const ADMIN_SECTION_DEFS = [
   },
   {
     id: "uptime",
-    num: "11",
+    num: "12",
     label: "Uptime",
     description: "Configure probe intervals, endpoints, and run history for site monitoring.",
     key: "SecUptime",

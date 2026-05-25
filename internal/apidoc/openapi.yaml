@@ -530,7 +530,7 @@ paths:
               schema:
                 type: object
           description: Response (JSON or error body; see handler and docs/e2ee-mail-spec.md for mail).
-      summary: Delete user (admin)
+      summary: Delete user (admin; full purge)
     get:
       operationId: get_api_admin_users_userId
       parameters:
@@ -547,6 +547,22 @@ paths:
                 type: object
           description: Response (JSON or error body; see handler and docs/e2ee-mail-spec.md for mail).
       summary: Get user (admin)
+    patch:
+      operationId: patch_api_admin_users_userId
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Response (JSON or error body; see handler and docs/e2ee-mail-spec.md for mail).
+      summary: Patch user (admin; is_admin)
   /api/admin/users/{userId}/disable:
     post:
       operationId: post_api_admin_users_userId_disable
@@ -564,6 +580,23 @@ paths:
                 type: object
           description: Response (JSON or error body; see handler and docs/e2ee-mail-spec.md for mail).
       summary: Disable user (admin)
+  /api/admin/users/{userId}/enable:
+    post:
+      operationId: post_api_admin_users_userId_enable
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Response (JSON or error body; see handler and docs/e2ee-mail-spec.md for mail).
+      summary: Re-enable user (admin; SRP accounts only)
   /api/auth/2fa:
     get:
       operationId: get_api_auth_2fa

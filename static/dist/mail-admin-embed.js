@@ -137,7 +137,7 @@
     }).join("\n");
     return s;
   }
-  function Button({
+  function Button2({
     variant = "secondary",
     size = "md",
     disabled,
@@ -222,7 +222,7 @@
           type: "button"
         },
         /* @__PURE__ */ react_global_default.createElement(Icon, { name: "x" })
-      )), /* @__PURE__ */ react_global_default.createElement("div", { className: "elvish-modal-body settings-modal-body" }, /* @__PURE__ */ react_global_default.createElement("p", { style: { margin: 0, fontSize: 13, lineHeight: 1.6 } }, message), /* @__PURE__ */ react_global_default.createElement("div", { className: "elvish-modal-actions settings-modal-actions" }, /* @__PURE__ */ react_global_default.createElement(Button, { variant: "secondary", onClick: onClose, disabled: loading }, "Cancel"), /* @__PURE__ */ react_global_default.createElement(Button, { variant: confirmVariant, onClick: onConfirm, loading }, confirmLabel))))
+      )), /* @__PURE__ */ react_global_default.createElement("div", { className: "elvish-modal-body settings-modal-body" }, /* @__PURE__ */ react_global_default.createElement("p", { style: { margin: 0, fontSize: 13, lineHeight: 1.6 } }, message), /* @__PURE__ */ react_global_default.createElement("div", { className: "elvish-modal-actions settings-modal-actions" }, /* @__PURE__ */ react_global_default.createElement(Button2, { variant: "secondary", onClick: onClose, disabled: loading }, "Cancel"), /* @__PURE__ */ react_global_default.createElement(Button2, { variant: confirmVariant, onClick: onConfirm, loading }, confirmLabel))))
     );
   }
   function FormRow({ children, className }) {
@@ -331,7 +331,7 @@
     emptySearchTitle = "No results",
     emptySearchDescription = "Try a different search term"
   }) {
-    const resolvedFooterActions = footerActions !== void 0 ? footerActions : onSave ? /* @__PURE__ */ react_global_default.createElement(Button, { variant: "primary", onClick: onSave, disabled: saveDisabled }, "Save Changes") : void 0;
+    const resolvedFooterActions = footerActions !== void 0 ? footerActions : onSave ? /* @__PURE__ */ react_global_default.createElement(Button2, { variant: "primary", onClick: onSave, disabled: saveDisabled }, "Save Changes") : void 0;
     return /* @__PURE__ */ react_global_default.createElement(SettingsShell, { className: shellClassName, wideLayout }, /* @__PURE__ */ react_global_default.createElement(
       Nav,
       {
@@ -1393,7 +1393,7 @@
         Repeater,
         Card,
         H,
-        Button,
+        Button: Button2,
         Alert,
         Badge,
         EmptyState,
@@ -2497,12 +2497,12 @@ ${(post.openpgp_sig || "").trim() ? `
       return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A4.H, { num: "11", title: "UPTIME", sub: "HTTP checks \xB7 logs \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, /* @__PURE__ */ React.createElement("a", { href: "/login" }, "Log in"), " to manage uptime."));
     }
     if (!me.is_admin) {
-      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A4.H, { num: "11", title: "UPTIME", sub: "HTTP checks \xB7 logs \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Your account is not an admin. Set ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "ELVISH_ADMIN_EMAILS"), " or promote the first registered user."));
+      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(A4.H, { num: "11", title: "UPTIME", sub: "HTTP checks \xB7 logs \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Your account is not an admin. Promote your user in the Users section (first registrant is admin by default)."));
     }
     const latest = data && data.latest;
     const agg = data && data.aggregate;
     const runs = data && data.runs || [];
-    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-uptime-panel" }, /* @__PURE__ */ React.createElement(A4.H, { num: "11", title: "UPTIME", sub: "in-process probes \xB7 SQL logs \xB7 public /api/uptime.json" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Monitoring is ", /* @__PURE__ */ React.createElement("strong", null, "on by default"), " (5m). Interval, probe base URL, and ", /* @__PURE__ */ React.createElement("strong", null, "other HTTP checks"), " below persist in CockroachDB/Postgres when enabled. Static rows live in ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "content/uptime.json"), "; per-tool monitors live under ", /* @__PURE__ */ React.createElement("strong", null, "TOOLS"), ". Use ", /* @__PURE__ */ React.createElement("strong", null, "other checks"), " for extra hosts (CDN, Vaultwarden, APIs) that are not a home tool card."), data && data.note && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, data.note), err && /* @__PURE__ */ React.createElement("div", { className: "auth-status err", style: { marginBottom: 12 } }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "auth-status ok", style: { marginBottom: 12 } }, msg), /* @__PURE__ */ React.createElement(A4.Card, { title: "SETTINGS", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm primary", disabled: saving || !data?.persist, onClick: save }, saving ? "\u2026" : "\u25B8 save") }, !data?.persist && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, "Save disabled until the database pool is configured."), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Enabled", hint: "Turn all HTTP checks off without restarting the server." }, /* @__PURE__ */ React.createElement(A4.Toggle, { checked: form.enabled, onChange: (v) => setForm((f) => ({ ...f, enabled: v })), label: form.enabled ? "ON" : "OFF" })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Interval", req: true, hint: "Go duration, e.g. 5m, 10m, 1h (minimum 10s enforced server-side)." }, /* @__PURE__ */ React.createElement(A4.Input, { value: form.interval, onChange: (v) => setForm((f) => ({ ...f, interval: v })) })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Probe base URL", hint: "Leave empty to use ELVISH_UPTIME_BASE_URL / listen address fallback." }, /* @__PURE__ */ React.createElement(A4.Input, { value: form.base_url, onChange: (v) => setForm((f) => ({ ...f, base_url: v })), placeholder: "https://your-public-host" })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Include tools from home", hint: "Adds GET/HEAD per tool: default open_href rules else /{slug}/; skipped when a tool has an enabled uptime monitor (that check runs separately). Hidden tools omitted." }, /* @__PURE__ */ React.createElement(A4.Toggle, { checked: form.include_tools_from_home, onChange: (v) => setForm((f) => ({ ...f, include_tools_from_home: v })), label: form.include_tools_from_home ? "YES" : "NO" })), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "ftk", style: { marginBottom: 6 } }, "// OTHER MONITORING"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 11, lineHeight: 1.5, margin: "0 0 10px" } }, "Arbitrary HTTP targets (HEAD or GET). Each row needs a stable ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "id"), " (shows on ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "/status/"), ") and a full URL or a path under the probe base above. Saved with ", /* @__PURE__ */ React.createElement("strong", null, "\u25B8 save"), "."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm primary", disabled: !data?.persist, onClick: addEndpoint }, "+ add check")), form.endpoints.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "dim", style: { marginTop: 10, fontSize: 11 } }, "No extra checks \u2014 optional."), form.endpoints.map((ep, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "split-3", style: { marginTop: 12, alignItems: "flex-end" } }, /* @__PURE__ */ React.createElement(A4.FRow, { label: "ID", req: true, hint: "Probe key, e.g. cdn_edge or vault_health." }, /* @__PURE__ */ React.createElement(A4.Input, { value: ep.id, onChange: (v) => setEp(i, { id: v }) })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "URL or path", req: true, hint: "https://\u2026 or /path under probe base." }, /* @__PURE__ */ React.createElement(A4.Input, { value: ep.url, onChange: (v) => setEp(i, { url: v }) })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Method" }, /* @__PURE__ */ React.createElement(A4.Seg, { value: (ep.method || "HEAD").toUpperCase(), onChange: (v) => setEp(i, { method: v }), options: [{ value: "HEAD", label: "HEAD" }, { value: "GET", label: "GET" }] })), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm danger", onClick: () => delEp(i) }, "remove")))), /* @__PURE__ */ React.createElement(A4.Card, { title: "LIVE SNAPSHOT", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm", onClick: load }, "refresh") }, !latest && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No probe completed yet."), latest && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "checked_at"), " \xB7 ", String(latest.checked_at || "")), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "monthly (UTC)"), latest.stats_period_utc ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, " \xB7 ", latest.stats_period_utc) : null, " ", "\xB7 ", latest.overall_uptime_pct != null ? latest.overall_uptime_pct.toFixed(2) : "\u2014", "%", " ", "(", latest.overall_ok || 0, " ok / ", (latest.overall_ok || 0) + (latest.overall_fail || 0), " total)"), /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table", style: { width: "100%", marginTop: 12, borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "id"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "url"), /* @__PURE__ */ React.createElement("th", null, "ok"), /* @__PURE__ */ React.createElement("th", null, "ms"), /* @__PURE__ */ React.createElement("th", null, "status"))), /* @__PURE__ */ React.createElement("tbody", null, (latest.targets || []).map((t) => /* @__PURE__ */ React.createElement("tr", { key: t.id + t.url }, /* @__PURE__ */ React.createElement("td", { style: { fontFamily: "var(--mono)" } }, t.id), /* @__PURE__ */ React.createElement("td", { className: "dim", style: { maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, t.url), /* @__PURE__ */ React.createElement("td", null, t.ok ? "\u25CF" : "\u25CB"), /* @__PURE__ */ React.createElement("td", null, t.latency_ms), /* @__PURE__ */ React.createElement("td", null, t.status_code, t.error ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, " \xB7 ", t.error) : null))))))), /* @__PURE__ */ React.createElement(A4.Card, { title: "THIS MONTH (UTC) \xB7 AGGREGATE" }, !agg && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No aggregate yet (first successful probe with Mongo will create it)."), agg && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12 } }, agg.period_ym && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "period_ym"), " \xB7 ", agg.period_ym), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "started_at"), " \xB7 ", agg.started_at || "\u2014"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "updated_at"), " \xB7 ", agg.updated_at || "\u2014"), /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table", style: { width: "100%", marginTop: 12, borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "target"), /* @__PURE__ */ React.createElement("th", null, "ok"), /* @__PURE__ */ React.createElement("th", null, "fail"), /* @__PURE__ */ React.createElement("th", null, "%"))), /* @__PURE__ */ React.createElement("tbody", null, Object.entries(agg.targets || {}).map(([k, v]) => {
+    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-uptime-panel" }, /* @__PURE__ */ React.createElement(A4.H, { num: "11", title: "UPTIME", sub: "in-process probes \xB7 SQL logs \xB7 public /api/uptime.json" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Monitoring is ", /* @__PURE__ */ React.createElement("strong", null, "on by default"), " (5m). Interval, probe base URL, and ", /* @__PURE__ */ React.createElement("strong", null, "other HTTP checks"), " below persist in CockroachDB/Postgres when enabled. Static rows live in ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "content/uptime.json"), "; per-tool monitors live under ", /* @__PURE__ */ React.createElement("strong", null, "TOOLS"), ". Use ", /* @__PURE__ */ React.createElement("strong", null, "other checks"), " for extra hosts (CDN, Vaultwarden, APIs) that are not a home tool card."), data && data.note && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, data.note), err && /* @__PURE__ */ React.createElement("div", { className: "auth-status err", style: { marginBottom: 12 } }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "auth-status ok", style: { marginBottom: 12 } }, msg), /* @__PURE__ */ React.createElement(A4.Card, { title: "SETTINGS", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm primary", disabled: saving || !data?.persist, onClick: save }, saving ? "\u2026" : "\u25B8 save") }, !data?.persist && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, "Save disabled until the database pool is configured."), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Enabled", hint: "Turn all HTTP checks off without restarting the server." }, /* @__PURE__ */ React.createElement(A4.Toggle, { checked: form.enabled, onChange: (v) => setForm((f) => ({ ...f, enabled: v })), label: form.enabled ? "ON" : "OFF" })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Interval", req: true, hint: "Go duration, e.g. 5m, 10m, 1h (minimum 10s enforced server-side)." }, /* @__PURE__ */ React.createElement(A4.Input, { value: form.interval, onChange: (v) => setForm((f) => ({ ...f, interval: v })) })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Probe base URL", hint: "Leave empty to use Platform public URL or listen address fallback." }, /* @__PURE__ */ React.createElement(A4.Input, { value: form.base_url, onChange: (v) => setForm((f) => ({ ...f, base_url: v })), placeholder: "https://your-public-host" })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Include tools from home", hint: "Adds GET/HEAD per tool: default open_href rules else /{slug}/; skipped when a tool has an enabled uptime monitor (that check runs separately). Hidden tools omitted." }, /* @__PURE__ */ React.createElement(A4.Toggle, { checked: form.include_tools_from_home, onChange: (v) => setForm((f) => ({ ...f, include_tools_from_home: v })), label: form.include_tools_from_home ? "YES" : "NO" })), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "ftk", style: { marginBottom: 6 } }, "// OTHER MONITORING"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 11, lineHeight: 1.5, margin: "0 0 10px" } }, "Arbitrary HTTP targets (HEAD or GET). Each row needs a stable ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "id"), " (shows on ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "/status/"), ") and a full URL or a path under the probe base above. Saved with ", /* @__PURE__ */ React.createElement("strong", null, "\u25B8 save"), "."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm primary", disabled: !data?.persist, onClick: addEndpoint }, "+ add check")), form.endpoints.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "dim", style: { marginTop: 10, fontSize: 11 } }, "No extra checks \u2014 optional."), form.endpoints.map((ep, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "split-3", style: { marginTop: 12, alignItems: "flex-end" } }, /* @__PURE__ */ React.createElement(A4.FRow, { label: "ID", req: true, hint: "Probe key, e.g. cdn_edge or vault_health." }, /* @__PURE__ */ React.createElement(A4.Input, { value: ep.id, onChange: (v) => setEp(i, { id: v }) })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "URL or path", req: true, hint: "https://\u2026 or /path under probe base." }, /* @__PURE__ */ React.createElement(A4.Input, { value: ep.url, onChange: (v) => setEp(i, { url: v }) })), /* @__PURE__ */ React.createElement(A4.FRow, { label: "Method" }, /* @__PURE__ */ React.createElement(A4.Seg, { value: (ep.method || "HEAD").toUpperCase(), onChange: (v) => setEp(i, { method: v }), options: [{ value: "HEAD", label: "HEAD" }, { value: "GET", label: "GET" }] })), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm danger", onClick: () => delEp(i) }, "remove")))), /* @__PURE__ */ React.createElement(A4.Card, { title: "LIVE SNAPSHOT", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm", onClick: load }, "refresh") }, !latest && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No probe completed yet."), latest && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "checked_at"), " \xB7 ", String(latest.checked_at || "")), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "monthly (UTC)"), latest.stats_period_utc ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, " \xB7 ", latest.stats_period_utc) : null, " ", "\xB7 ", latest.overall_uptime_pct != null ? latest.overall_uptime_pct.toFixed(2) : "\u2014", "%", " ", "(", latest.overall_ok || 0, " ok / ", (latest.overall_ok || 0) + (latest.overall_fail || 0), " total)"), /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table", style: { width: "100%", marginTop: 12, borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "id"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "url"), /* @__PURE__ */ React.createElement("th", null, "ok"), /* @__PURE__ */ React.createElement("th", null, "ms"), /* @__PURE__ */ React.createElement("th", null, "status"))), /* @__PURE__ */ React.createElement("tbody", null, (latest.targets || []).map((t) => /* @__PURE__ */ React.createElement("tr", { key: t.id + t.url }, /* @__PURE__ */ React.createElement("td", { style: { fontFamily: "var(--mono)" } }, t.id), /* @__PURE__ */ React.createElement("td", { className: "dim", style: { maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, t.url), /* @__PURE__ */ React.createElement("td", null, t.ok ? "\u25CF" : "\u25CB"), /* @__PURE__ */ React.createElement("td", null, t.latency_ms), /* @__PURE__ */ React.createElement("td", null, t.status_code, t.error ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, " \xB7 ", t.error) : null))))))), /* @__PURE__ */ React.createElement(A4.Card, { title: "THIS MONTH (UTC) \xB7 AGGREGATE" }, !agg && /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No aggregate yet (first successful probe with Mongo will create it)."), agg && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12 } }, agg.period_ym && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "period_ym"), " \xB7 ", agg.period_ym), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "started_at"), " \xB7 ", agg.started_at || "\u2014"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "updated_at"), " \xB7 ", agg.updated_at || "\u2014"), /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table", style: { width: "100%", marginTop: 12, borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "target"), /* @__PURE__ */ React.createElement("th", null, "ok"), /* @__PURE__ */ React.createElement("th", null, "fail"), /* @__PURE__ */ React.createElement("th", null, "%"))), /* @__PURE__ */ React.createElement("tbody", null, Object.entries(agg.targets || {}).map(([k, v]) => {
       const t = v || {};
       const n = (t.ok || 0) + (t.fail || 0);
       const pct = n ? (100 * (t.ok || 0) / n).toFixed(2) : "\u2014";
@@ -2658,7 +2658,7 @@ ${(post.openpgp_sig || "").trim() ? `
       return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(AT.H, { num: "07", title: "TELEMETRY", sub: "anonymous operational rollups \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, /* @__PURE__ */ React.createElement("a", { href: "/login" }, "Log in"), " to manage telemetry."));
     }
     if (!me.is_admin) {
-      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(AT.H, { num: "07", title: "TELEMETRY", sub: "anonymous operational rollups \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Your account is not an admin. Set ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "ELVISH_ADMIN_EMAILS"), " or promote the first registered user."));
+      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(AT.H, { num: "07", title: "TELEMETRY", sub: "anonymous operational rollups \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Your account is not an admin. Promote your user in the Users section (first registrant is admin by default)."));
     }
     const summary = data && data.summary || [];
     const recent = data && data.recent || [];
@@ -2674,6 +2674,151 @@ ${(post.openpgp_sig || "").trim() ? `
       AT = window.adm;
       ({ useState: useS_t, useEffect: useE_t } = React);
       window.SecTelemetry = SecTelemetry;
+    }
+  });
+
+  // ../static/admin/admin-platform.jsx
+  function SecPlatform() {
+    const [data, setData] = useS_plat(null);
+    const [form, setForm] = useS_plat(null);
+    const [loading, setLoading] = useS_plat(true);
+    const [saving, setSaving] = useS_plat(false);
+    const [msg, setMsg] = useS_plat("");
+    const [err, setErr] = useS_plat("");
+    const load = useC_plat(async () => {
+      setLoading(true);
+      setErr("");
+      try {
+        const res = await fetch("/api/admin/operator-settings", { credentials: "include" });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error || res.statusText);
+        setData(j);
+        const st = j.settings || {};
+        setForm({
+          public_base_url: st.public_base_url || "",
+          platform_mail_domain: st.platform_mail_domain || "",
+          web_origins: st.web_origins || "",
+          cookie_domain: st.cookie_domain || "",
+          registration_closed: !!st.registration_closed,
+          paid_features_enabled: !!st.paid_features_enabled,
+          trust_forwarded_for: !!st.trust_forwarded_for,
+          content_cache_sec: st.content_cache_sec != null ? st.content_cache_sec : 10,
+          smtp_rate_limit_per_hour: st.smtp_rate_limit_per_hour != null ? st.smtp_rate_limit_per_hour : 100
+        });
+      } catch (e) {
+        setErr(String(e.message || e));
+      } finally {
+        setLoading(false);
+      }
+    }, []);
+    useE_plat(() => {
+      load();
+    }, [load]);
+    const save = async () => {
+      if (!form || !data?.persist) return;
+      setSaving(true);
+      setMsg("");
+      setErr("");
+      try {
+        const res = await fetch("/api/admin/operator-settings", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form)
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error || res.statusText);
+        setMsg("Platform settings saved.");
+        await load();
+      } catch (e) {
+        setErr(String(e.message || e));
+      } finally {
+        setSaving(false);
+      }
+    };
+    if (loading) {
+      return /* @__PURE__ */ React.createElement("div", { className: "adm-page", "data-testid": "admin-platform-panel" }, /* @__PURE__ */ React.createElement(AP.H, { num: "12", title: "PLATFORM", sub: "URLs \xB7 auth policy \xB7 mail domain" }), /* @__PURE__ */ React.createElement("div", { className: "dim" }, "Loading\u2026"));
+    }
+    if (!data?.persist) {
+      return /* @__PURE__ */ React.createElement("div", { className: "adm-page", "data-testid": "admin-platform-panel" }, /* @__PURE__ */ React.createElement(AP.H, { num: "12", title: "PLATFORM", sub: "requires database" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Connect CockroachDB/Postgres to persist platform settings."));
+    }
+    return /* @__PURE__ */ React.createElement("div", { className: "adm-page", "data-testid": "admin-platform-panel" }, /* @__PURE__ */ React.createElement(AP.H, { num: "12", title: "PLATFORM", sub: "URLs \xB7 CORS \xB7 registration \xB7 paid tier" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Product configuration formerly spread across environment variables. Changes apply within ~15s on each API process (in-process cache). OIDC issuer still requires process restart when the public base URL changes."), err && /* @__PURE__ */ React.createElement("div", { className: "adm-err" }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "adm-ok" }, msg), form && /* @__PURE__ */ React.createElement("div", { className: "adm-form-grid" }, /* @__PURE__ */ React.createElement(AP.FRow, { label: "Public base URL", hint: "Protected links, OIDC default issuer, uptime fallback." }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "adm-inp mono",
+        value: form.public_base_url,
+        onChange: (e) => setForm({ ...form, public_base_url: e.target.value }),
+        placeholder: "https://api.example.com"
+      }
+    )), /* @__PURE__ */ React.createElement(AP.FRow, { label: "Platform mail domain", hint: "Default @domain for signup and MX guidance." }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "adm-inp mono",
+        value: form.platform_mail_domain,
+        onChange: (e) => setForm({ ...form, platform_mail_domain: e.target.value }),
+        placeholder: "elvish.email"
+      }
+    )), /* @__PURE__ */ React.createElement(AP.FRow, { label: "CORS web origins", hint: "Comma-separated browser origins for credentialed /api/* calls." }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "adm-inp mono",
+        value: form.web_origins,
+        onChange: (e) => setForm({ ...form, web_origins: e.target.value }),
+        placeholder: "https://app.example.com"
+      }
+    )), /* @__PURE__ */ React.createElement(AP.FRow, { label: "Cookie domain", hint: "Optional Domain= for split-origin sessions (e.g. .example.com)." }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "adm-inp mono",
+        value: form.cookie_domain,
+        onChange: (e) => setForm({ ...form, cookie_domain: e.target.value })
+      }
+    )), /* @__PURE__ */ React.createElement(AP.FRow, { label: "Registration closed", hint: "When on, blocks new signups after the first user exists." }, /* @__PURE__ */ React.createElement("label", null, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "checkbox",
+        checked: form.registration_closed,
+        onChange: (e) => setForm({ ...form, registration_closed: e.target.checked })
+      }
+    ), " ", "Close registration")), /* @__PURE__ */ React.createElement(AP.FRow, { label: "Paid features", hint: "Enables custom domains and SMTP submission for non-admin users." }, /* @__PURE__ */ React.createElement("label", null, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "checkbox",
+        checked: form.paid_features_enabled,
+        onChange: (e) => setForm({ ...form, paid_features_enabled: e.target.checked })
+      }
+    ), " ", "Paid tier enabled")), /* @__PURE__ */ React.createElement(AP.FRow, { label: "Trust X-Forwarded-For", hint: "Only enable behind a trusted reverse proxy." }, /* @__PURE__ */ React.createElement("label", null, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "checkbox",
+        checked: form.trust_forwarded_for,
+        onChange: (e) => setForm({ ...form, trust_forwarded_for: e.target.checked })
+      }
+    ), " ", "Use forwarded client IP for rate limits")), /* @__PURE__ */ React.createElement(AP.FRow, { label: "Content cache (seconds)", hint: "In-process TTL for home.json / posts; 0 disables." }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        className: "adm-inp",
+        min: 0,
+        value: form.content_cache_sec,
+        onChange: (e) => setForm({ ...form, content_cache_sec: parseInt(e.target.value, 10) || 0 })
+      }
+    )), /* @__PURE__ */ React.createElement(AP.FRow, { label: "SMTP rate limit / hour", hint: "Per connecting IP on MX and submission." }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        className: "adm-inp",
+        min: 1,
+        value: form.smtp_rate_limit_per_hour,
+        onChange: (e) => setForm({ ...form, smtp_rate_limit_per_hour: parseInt(e.target.value, 10) || 100 })
+      }
+    )), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 16 } }, /* @__PURE__ */ React.createElement(Button, { variant: "primary", disabled: saving, onClick: save }, saving ? "Saving\u2026" : "Save platform settings"))));
+  }
+  var useS_plat, useE_plat, useC_plat;
+  var init_admin_platform = __esm({
+    "../static/admin/admin-platform.jsx"() {
+      ({ useState: useS_plat, useEffect: useE_plat, useCallback: useC_plat } = React);
+      window.SecPlatform = SecPlatform;
     }
   });
 
@@ -2967,12 +3112,12 @@ ${(post.openpgp_sig || "").trim() ? `
     const failureTrend = useM_p(() => buildFailureTrend(recent), [recent]);
     const latencyBuckets = useM_p(() => buildLatencyBuckets(latencySummary), [latencySummary]);
     if (!me) {
-      return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-performance-panel" }, /* @__PURE__ */ React.createElement(AP.H, { num: "08", title: "PERFORMANCE", sub: "privacy-safe dashboard \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, /* @__PURE__ */ React.createElement("a", { href: "/login" }, "Log in"), " to inspect performance."));
+      return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-performance-panel" }, /* @__PURE__ */ React.createElement(AP2.H, { num: "08", title: "PERFORMANCE", sub: "privacy-safe dashboard \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, /* @__PURE__ */ React.createElement("a", { href: "/login" }, "Log in"), " to inspect performance."));
     }
     if (!me.is_admin) {
-      return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-performance-panel" }, /* @__PURE__ */ React.createElement(AP.H, { num: "08", title: "PERFORMANCE", sub: "privacy-safe dashboard \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Your account is not an admin. Set ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "ELVISH_ADMIN_EMAILS"), " or promote the first registered user."));
+      return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-performance-panel" }, /* @__PURE__ */ React.createElement(AP2.H, { num: "08", title: "PERFORMANCE", sub: "privacy-safe dashboard \xB7 admin only" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "Your account is not an admin. Promote your user in the Users section (first registrant is admin by default)."));
     }
-    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-performance-panel" }, /* @__PURE__ */ React.createElement(AP.H, { num: "08", title: "PERFORMANCE", sub: "aggregate-only \xB7 manual export \xB7 no identifiers" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "This dashboard extends anonymous telemetry with bounded latency buckets and browser beacons. It keeps the same privacy contract: no user IDs, emails, IPs, raw URLs, domains, message IDs, search text, or free-form labels. Export is manual and bounded."), data && data.note && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, data.note), err && /* @__PURE__ */ React.createElement("div", { className: "auth-status err", style: { marginBottom: 12 } }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "auth-status ok", style: { marginBottom: 12 } }, msg), /* @__PURE__ */ React.createElement(AP.Card, { title: "FILTERS", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm", onClick: load }, loading ? "\u2026" : "refresh") }, /* @__PURE__ */ React.createElement("div", { className: "perf-filter-grid" }, /* @__PURE__ */ React.createElement(AP.FRow, { label: "Window" }, /* @__PURE__ */ React.createElement(AP.Seg, { value: days, onChange: setDays, options: PERF_WINDOWS })), /* @__PURE__ */ React.createElement(AP.FRow, { label: "Surface" }, /* @__PURE__ */ React.createElement(AP.Seg, { value: scope, onChange: setScope, options: PERF_SCOPES })))), /* @__PURE__ */ React.createElement("div", { className: "perf-kpis" }, /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "events"), /* @__PURE__ */ React.createElement("strong", null, perfNum(overview.totalCount))), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "failure rate"), /* @__PURE__ */ React.createElement("strong", null, overview.totalCount ? perfPct(overview.failureCount / overview.totalCount) : "0.0%")), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "avg latency"), /* @__PURE__ */ React.createElement("strong", null, perfMS(overview.avgMS))), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "max latency"), /* @__PURE__ */ React.createElement("strong", null, perfMS(overview.maxMS))), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "slow 2s+"), /* @__PURE__ */ React.createElement("strong", null, perfNum(overview.slowCount))), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "uptime"), /* @__PURE__ */ React.createElement("strong", null, uptime && uptime.live ? Number(uptime.overall_uptime_pct || 0).toFixed(2) + "%" : "\u2014"))), /* @__PURE__ */ React.createElement("div", { className: "perf-grid" }, /* @__PURE__ */ React.createElement(AP.Card, { title: "LATENCY TREND" }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { "data-testid": "admin-performance-panel" }, /* @__PURE__ */ React.createElement(AP2.H, { num: "08", title: "PERFORMANCE", sub: "aggregate-only \xB7 manual export \xB7 no identifiers" }), /* @__PURE__ */ React.createElement("div", { className: "adm-explain" }, "This dashboard extends anonymous telemetry with bounded latency buckets and browser beacons. It keeps the same privacy contract: no user IDs, emails, IPs, raw URLs, domains, message IDs, search text, or free-form labels. Export is manual and bounded."), data && data.note && /* @__PURE__ */ React.createElement("div", { className: "readonly-note", style: { marginBottom: 12 } }, data.note), err && /* @__PURE__ */ React.createElement("div", { className: "auth-status err", style: { marginBottom: 12 } }, err), msg && /* @__PURE__ */ React.createElement("div", { className: "auth-status ok", style: { marginBottom: 12 } }, msg), /* @__PURE__ */ React.createElement(AP2.Card, { title: "FILTERS", right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm", onClick: load }, loading ? "\u2026" : "refresh") }, /* @__PURE__ */ React.createElement("div", { className: "perf-filter-grid" }, /* @__PURE__ */ React.createElement(AP2.FRow, { label: "Window" }, /* @__PURE__ */ React.createElement(AP2.Seg, { value: days, onChange: setDays, options: PERF_WINDOWS })), /* @__PURE__ */ React.createElement(AP2.FRow, { label: "Surface" }, /* @__PURE__ */ React.createElement(AP2.Seg, { value: scope, onChange: setScope, options: PERF_SCOPES })))), /* @__PURE__ */ React.createElement("div", { className: "perf-kpis" }, /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "events"), /* @__PURE__ */ React.createElement("strong", null, perfNum(overview.totalCount))), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "failure rate"), /* @__PURE__ */ React.createElement("strong", null, overview.totalCount ? perfPct(overview.failureCount / overview.totalCount) : "0.0%")), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "avg latency"), /* @__PURE__ */ React.createElement("strong", null, perfMS(overview.avgMS))), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "max latency"), /* @__PURE__ */ React.createElement("strong", null, perfMS(overview.maxMS))), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "slow 2s+"), /* @__PURE__ */ React.createElement("strong", null, perfNum(overview.slowCount))), /* @__PURE__ */ React.createElement("div", { className: "stat" }, /* @__PURE__ */ React.createElement("span", null, "uptime"), /* @__PURE__ */ React.createElement("strong", null, uptime && uptime.live ? Number(uptime.overall_uptime_pct || 0).toFixed(2) + "%" : "\u2014"))), /* @__PURE__ */ React.createElement("div", { className: "perf-grid" }, /* @__PURE__ */ React.createElement(AP2.Card, { title: "LATENCY TREND" }, /* @__PURE__ */ React.createElement(
       PerfLineChart,
       {
         title: "hourly average latency",
@@ -2982,27 +3127,27 @@ ${(post.openpgp_sig || "").trim() ? `
           { id: "backend", label: "backend", color: "var(--ok)" }
         ]
       }
-    )), /* @__PURE__ */ React.createElement(AP.Card, { title: "FAILURE TREND" }, /* @__PURE__ */ React.createElement(
+    )), /* @__PURE__ */ React.createElement(AP2.Card, { title: "FAILURE TREND" }, /* @__PURE__ */ React.createElement(
       PerfLineChart,
       {
         title: "hourly failure rate",
         points: failureTrend,
         keys: [{ id: "failureRate", label: "failure rate", color: "var(--warn)" }]
       }
-    )), /* @__PURE__ */ React.createElement(AP.Card, { title: "LATENCY BUCKETS" }, /* @__PURE__ */ React.createElement(PerfBarChart, { rows: latencyBuckets })), /* @__PURE__ */ React.createElement(
-      AP.Card,
+    )), /* @__PURE__ */ React.createElement(AP2.Card, { title: "LATENCY BUCKETS" }, /* @__PURE__ */ React.createElement(PerfBarChart, { rows: latencyBuckets })), /* @__PURE__ */ React.createElement(
+      AP2.Card,
       {
         title: "QUEUE / EXPORT",
         right: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-sm primary", disabled: exporting || !(data && data.persist), onClick: downloadExport }, exporting ? "\u2026" : "download json")
       },
       /* @__PURE__ */ React.createElement("div", { className: "perf-queue" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "pending"), /* @__PURE__ */ React.createElement("strong", null, perfNum(queue.pending))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "sending"), /* @__PURE__ */ React.createElement("strong", null, perfNum(queue.sending))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "sent"), /* @__PURE__ */ React.createElement("strong", null, perfNum(queue.sent))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "failed"), /* @__PURE__ */ React.createElement("strong", null, perfNum(queue.failed)))),
       /* @__PURE__ */ React.createElement("div", { className: "dim", style: { marginTop: 12, fontSize: 11 } }, "Export includes only aggregate KPIs, hourly rollups, latency buckets, hotspot summaries, queue totals, and safe runtime context. Admin-only diagnostics like raw probe URLs stay out of the bundle.")
-    )), /* @__PURE__ */ React.createElement(AP.Card, { title: "HOTSPOTS" }, hotspots.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No hotspots yet.") : /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table perf-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "metric"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "area"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "operation"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "transport"), /* @__PURE__ */ React.createElement("th", null, "count"), /* @__PURE__ */ React.createElement("th", null, "failure"), /* @__PURE__ */ React.createElement("th", null, "avg ms"), /* @__PURE__ */ React.createElement("th", null, "max ms"))), /* @__PURE__ */ React.createElement("tbody", null, hotspots.map((row, idx) => /* @__PURE__ */ React.createElement("tr", { key: `${row.metric_name || row.metricName}-${row.feature_area || row.featureArea}-${idx}` }, /* @__PURE__ */ React.createElement("td", { className: "mono" }, row.metric_name || row.metricName), /* @__PURE__ */ React.createElement("td", null, row.feature_area || row.featureArea), /* @__PURE__ */ React.createElement("td", null, row.status_class || row.statusClass), /* @__PURE__ */ React.createElement("td", null, row.transport), /* @__PURE__ */ React.createElement("td", null, perfNum(row.count)), /* @__PURE__ */ React.createElement("td", null, perfPct(row.failure_rate || row.failureRate || 0)), /* @__PURE__ */ React.createElement("td", null, perfMS(row.avg_ms || row.avgMS)), /* @__PURE__ */ React.createElement("td", null, perfMS(row.max_ms || row.maxMS))))))), /* @__PURE__ */ React.createElement(AP.Card, { title: "RAW HOURLY ROLLUPS" }, recent.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No rollups for this filter.") : /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table perf-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "bucket"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "metric"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "area"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "result"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "operation"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "transport"), /* @__PURE__ */ React.createElement("th", null, "count"), /* @__PURE__ */ React.createElement("th", null, "avg ms"), /* @__PURE__ */ React.createElement("th", null, "max ms"))), /* @__PURE__ */ React.createElement("tbody", null, recent.slice(0, 80).map((row, idx) => /* @__PURE__ */ React.createElement("tr", { key: `${row.bucket_start}-${row.metric_name}-${idx}` }, /* @__PURE__ */ React.createElement("td", { className: "dim" }, row.bucket_start), /* @__PURE__ */ React.createElement("td", { className: "mono" }, row.metric_name), /* @__PURE__ */ React.createElement("td", null, row.feature_area), /* @__PURE__ */ React.createElement("td", null, row.result), /* @__PURE__ */ React.createElement("td", null, row.status_class), /* @__PURE__ */ React.createElement("td", null, row.transport), /* @__PURE__ */ React.createElement("td", null, perfNum(row.count)), /* @__PURE__ */ React.createElement("td", null, row.count ? perfMS(Number(row.sum_ms || 0) / Number(row.count || 1)) : "0 ms"), /* @__PURE__ */ React.createElement("td", null, perfMS(row.max_ms))))))));
+    )), /* @__PURE__ */ React.createElement(AP2.Card, { title: "HOTSPOTS" }, hotspots.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No hotspots yet.") : /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table perf-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "metric"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "area"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "operation"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "transport"), /* @__PURE__ */ React.createElement("th", null, "count"), /* @__PURE__ */ React.createElement("th", null, "failure"), /* @__PURE__ */ React.createElement("th", null, "avg ms"), /* @__PURE__ */ React.createElement("th", null, "max ms"))), /* @__PURE__ */ React.createElement("tbody", null, hotspots.map((row, idx) => /* @__PURE__ */ React.createElement("tr", { key: `${row.metric_name || row.metricName}-${row.feature_area || row.featureArea}-${idx}` }, /* @__PURE__ */ React.createElement("td", { className: "mono" }, row.metric_name || row.metricName), /* @__PURE__ */ React.createElement("td", null, row.feature_area || row.featureArea), /* @__PURE__ */ React.createElement("td", null, row.status_class || row.statusClass), /* @__PURE__ */ React.createElement("td", null, row.transport), /* @__PURE__ */ React.createElement("td", null, perfNum(row.count)), /* @__PURE__ */ React.createElement("td", null, perfPct(row.failure_rate || row.failureRate || 0)), /* @__PURE__ */ React.createElement("td", null, perfMS(row.avg_ms || row.avgMS)), /* @__PURE__ */ React.createElement("td", null, perfMS(row.max_ms || row.maxMS))))))), /* @__PURE__ */ React.createElement(AP2.Card, { title: "RAW HOURLY ROLLUPS" }, recent.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "dim" }, "No rollups for this filter.") : /* @__PURE__ */ React.createElement("table", { className: "adm-mini-table perf-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { align: "left" }, "bucket"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "metric"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "area"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "result"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "operation"), /* @__PURE__ */ React.createElement("th", { align: "left" }, "transport"), /* @__PURE__ */ React.createElement("th", null, "count"), /* @__PURE__ */ React.createElement("th", null, "avg ms"), /* @__PURE__ */ React.createElement("th", null, "max ms"))), /* @__PURE__ */ React.createElement("tbody", null, recent.slice(0, 80).map((row, idx) => /* @__PURE__ */ React.createElement("tr", { key: `${row.bucket_start}-${row.metric_name}-${idx}` }, /* @__PURE__ */ React.createElement("td", { className: "dim" }, row.bucket_start), /* @__PURE__ */ React.createElement("td", { className: "mono" }, row.metric_name), /* @__PURE__ */ React.createElement("td", null, row.feature_area), /* @__PURE__ */ React.createElement("td", null, row.result), /* @__PURE__ */ React.createElement("td", null, row.status_class), /* @__PURE__ */ React.createElement("td", null, row.transport), /* @__PURE__ */ React.createElement("td", null, perfNum(row.count)), /* @__PURE__ */ React.createElement("td", null, row.count ? perfMS(Number(row.sum_ms || 0) / Number(row.count || 1)) : "0 ms"), /* @__PURE__ */ React.createElement("td", null, perfMS(row.max_ms))))))));
   }
-  var AP, useS_p, useE_p, useM_p, PERF_WINDOWS, PERF_SCOPES;
+  var AP2, useS_p, useE_p, useM_p, PERF_WINDOWS, PERF_SCOPES;
   var init_admin_performance = __esm({
     "../static/admin/admin-performance.jsx"() {
-      AP = window.adm;
+      AP2 = window.adm;
       ({ useState: useS_p, useEffect: useE_p, useMemo: useM_p } = React);
       PERF_WINDOWS = [
         { value: "1", label: "24H" },
@@ -4641,7 +4786,7 @@ ${(post.openpgp_sig || "").trim() ? `
           variant: dirty ? "unsaved" : "synced",
           text: dirty ? "Unsaved changes in working copy." : "Everything is in sync."
         },
-        footerActions: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Button, { variant: "primary", size: "sm", disabled: !dirty, onClick: requestSave }, "Save changes"), /* @__PURE__ */ React.createElement(Button, { variant: "secondary", size: "sm", onClick: () => setDialog("reset") }, "Reset copy")),
+        footerActions: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Button2, { variant: "primary", size: "sm", disabled: !dirty, onClick: requestSave }, "Save changes"), /* @__PURE__ */ React.createElement(Button2, { variant: "secondary", size: "sm", onClick: () => setDialog("reset") }, "Reset copy")),
         footer: /* @__PURE__ */ React.createElement("div", { className: "adm-side-foot-links" }, /* @__PURE__ */ React.createElement("a", { href: "/login" }, "login"), /* @__PURE__ */ React.createElement("span", { className: "adm-side-foot-dot" }, " \xB7 "), /* @__PURE__ */ React.createElement("a", { href: "/register" }, "register")),
         mainClassName: "admin-settings-main",
         mainContentRef: mainRef,
@@ -4837,8 +4982,17 @@ ${(post.openpgp_sig || "").trim() ? `
           icon: "performance"
         },
         {
-          id: "auth-captcha",
+          id: "platform",
           num: "09",
+          label: "Platform",
+          description: "Public URLs, mail domain, CORS, registration, paid tier, and performance tuning.",
+          key: "SecPlatform",
+          icon: "site",
+          searchKeywords: ["platform", "cors", "cookie", "registration", "paid", "public url", "mail domain"]
+        },
+        {
+          id: "auth-captcha",
+          num: "10",
           label: "Cap \xB7 Login CAPTCHA",
           description: "Self-hosted Cap (trycap.dev): widget URL, secret, and /siteverify for /login and /register.",
           key: "SecAuthCaptcha",
@@ -4847,7 +5001,7 @@ ${(post.openpgp_sig || "").trim() ? `
         },
         {
           id: "content",
-          num: "10",
+          num: "11",
           label: "Content",
           description: "Nav, hero, tools, blog, and OpenPGP signing for the public site.",
           key: "SecContentHub",
@@ -4856,7 +5010,7 @@ ${(post.openpgp_sig || "").trim() ? `
         },
         {
           id: "uptime",
-          num: "11",
+          num: "12",
           label: "Uptime",
           description: "Configure probe intervals, endpoints, and run history for site monitoring.",
           key: "SecUptime",
@@ -4935,6 +5089,7 @@ ${(post.openpgp_sig || "").trim() ? `
       init_admin_content_hub();
       init_admin_uptime();
       init_admin_telemetry();
+      init_admin_platform();
       init_admin_auth_captcha();
       init_admin_performance();
       init_admin_email_sections();

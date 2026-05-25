@@ -61,15 +61,13 @@ func TestDKIMSettingsForRoot_Defaults(t *testing.T) {
 	}
 }
 
-func TestDKIMSettingsForRoot_EnvWins(t *testing.T) {
-	t.Setenv("ELVISH_DKIM_SELECTOR", "smtp")
-	t.Setenv("ELVISH_DKIM_DOMAIN", "mx.example")
+func TestDKIMSettingsForRoot_KeyPathEnv(t *testing.T) {
 	t.Setenv("ELVISH_DKIM_KEY_PATH", "/custom/dkim.pem")
 	selector, domain, path, explicit := dkimSettingsForRoot(".", "mail.example")
 	if !explicit {
-		t.Fatal("expected explicit config")
+		t.Fatal("expected explicit key path")
 	}
-	if selector != "smtp" || domain != "mx.example" || path != "/custom/dkim.pem" {
+	if selector != "mail" || domain != "mail.example" || path != "/custom/dkim.pem" {
 		t.Fatalf("unexpected dkim settings: %q %q %q", selector, domain, path)
 	}
 }

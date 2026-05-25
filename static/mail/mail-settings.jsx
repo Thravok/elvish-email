@@ -244,7 +244,7 @@ function AccountSection({ user }) {
         <Alert type="info" title={paid ? 'Paid API tier' : 'Free tier'}>
           {paid
             ? 'Paid API features are enabled for this deployment (or your account is admin).'
-            : "You're on the free tier. Operator can set ELVISH_PAID_FEATURES for SMTP submission and custom domains."}
+            : "You're on the free tier. Operator can enable paid features in Admin → Platform."}
         </Alert>
         <div className="settings-subscription-features">
           <div className="settings-feature">
@@ -2465,7 +2465,7 @@ function CustomDomainsSection() {
 
       {!paid ? (
         <Alert type="info" title="Paid Feature">
-          Enable paid API features (operator sets <code className="mono">ELVISH_PAID_FEATURES=true</code>) or grant admin for testing.
+          Enable paid features in Admin → Platform, or grant admin for testing.
         </Alert>
       ) : (
         <Alert type="info" title="DNS Workflow">
@@ -3155,7 +3155,7 @@ function SMTPSubmissionSection({ onGoToIdentities }) {
 
       {!paid ? (
         <Alert type="info" title="Paid feature">
-          SMTP submission requires paid API access (operator env <code className="mono">ELVISH_PAID_FEATURES</code>).
+          SMTP submission requires paid API access (enable in Admin → Platform).
         </Alert>
       ) : null}
 

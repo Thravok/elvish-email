@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"context"
 	"errors"
 	"strings"
 )
@@ -19,10 +20,16 @@ func effectiveMailDomainString(configured string) string {
 	return defaultSignupMailDomain
 }
 
-// EffectiveMailDomain returns the configured mail domain or defaultSignupMailDomain.
+// EffectiveMailDomain returns the platform mail domain from operator settings, server wiring, or defaultSignupMailDomain.
 func (s *Server) EffectiveMailDomain() string {
 	if s == nil {
 		return defaultSignupMailDomain
+	}
+	if s.operator != nil {
+		st, err := s.operator.Settings(context.Background())
+		if err == nil && st != nil && strings.TrimSpace(st.PlatformMailDomain) != "" {
+			return effectiveMailDomainString(st.PlatformMailDomain)
+		}
 	}
 	return effectiveMailDomainString(s.mailDomain)
 }

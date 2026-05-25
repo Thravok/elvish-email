@@ -1,15 +1,18 @@
 package httpserver
 
 import (
-	"os"
-	"strings"
+	"context"
 
 	"elvish/internal/models"
 )
 
-func (s *Server) paidFeaturesEnabled(u *models.User) bool {
+func (s *Server) paidFeaturesEnabled(ctx context.Context, u *models.User) bool {
 	if u != nil && u.IsAdmin {
 		return true
 	}
-	return strings.TrimSpace(os.Getenv("ELVISH_PAID_FEATURES")) == "true"
+	st, err := s.loadPlatformSettings(ctx)
+	if err != nil || st == nil {
+		return false
+	}
+	return st.PaidFeaturesEnabled
 }

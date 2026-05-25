@@ -10,11 +10,15 @@ import (
 // secretFileUnderDir joins dir and a sanitized basename; domain-derived names must pass basename checks first.
 func secretFileUnderDir(dir, base string) (string, error) {
 	dir = filepath.Clean(strings.TrimSpace(dir))
-	base = filepath.Base(strings.TrimSpace(base))
+	raw := strings.TrimSpace(base)
+	if raw == "" || raw == "." || strings.Contains(raw, "..") || strings.ContainsRune(raw, filepath.Separator) {
+		return "", errors.New("invalid secret basename")
+	}
+	base = filepath.Base(raw)
 	if dir == "" || dir == "." {
 		return "", errors.New("secret directory required")
 	}
-	if base == "" || base == "." || strings.Contains(base, "..") {
+	if base == "" || base == "." {
 		return "", errors.New("invalid secret basename")
 	}
 	full := filepath.Join(dir, base)

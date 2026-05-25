@@ -27,7 +27,7 @@ func (s *Server) handleCustomDomainsAPI(w http.ResponseWriter, r *http.Request, 
 	if !ok {
 		return
 	}
-	if !s.paidFeaturesEnabled(u) {
+	if !s.paidFeaturesEnabled(r.Context(), u) {
 		s.writeErr(w, http.StatusPaymentRequired, "paid subscription required")
 		return
 	}

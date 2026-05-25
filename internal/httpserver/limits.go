@@ -24,7 +24,7 @@ func (s *Server) rateLimitOK(w http.ResponseWriter, r *http.Request, name string
 	if s.rateLimit == nil {
 		return true
 	}
-	id := clientIPForRateLimit(r, s.trustForwardedFor)
+	id := clientIPForRateLimit(r, s.trustForwardedForRequest(r))
 	ok, err := s.rateLimit.Allow(r.Context(), name, id, max, window)
 	if err != nil {
 		s.log.Warn("ratelimit", "name", name, "err", err)

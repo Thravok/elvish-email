@@ -101,7 +101,7 @@ Run **`elvishserver`** behind your reverse proxy (TLS, HTTP/2, etc.) with env fo
 
 **Caching:** HTML references `/page.css` and `/site.js` with `?v=` from `content/home.json` `hash_short` (fallback: `version`). The service worker (`static/sw.js`) is served with injected version lines. Bump `hash_short` when you change CSS/JS.
 
-**elvishserver:** Responses use `Cache-Control` aligned with [`static/_headers`](static/_headers) where applicable. HTML uses `private` cache directives when a `elvish_session` cookie is present so shared caches do not serve personalized nav. `/api/*` uses `no-store`. Text responses may be gzip-compressed when `Accept-Encoding: gzip` is sent (skipped for `Range` requests). In-process caching of parsed `home.json` and blog posts is controlled with **`ELVISH_CONTENT_CACHE_SEC`** (default `10`; set `0` to disable). Cache entries are dropped after successful admin post upsert, migrate, or PGP key upload.
+**elvishserver:** Responses use `Cache-Control` aligned with [`static/_headers`](static/_headers) where applicable. HTML uses `private` cache directives when a `elvish_session` cookie is present so shared caches do not serve personalized nav. `/api/*` uses `no-store`. Text responses may be gzip-compressed when `Accept-Encoding: gzip` is sent (skipped for `Range` requests). In-process caching of parsed `home.json` and blog posts is controlled in **admin → Platform** (`content_cache_sec`, default `10`; `0` disables). Cache entries are dropped after successful admin post upsert, migrate, or PGP key upload.
 
 **Verify caching (local):** With `make dev`, `make dev-once`, or `go run ./cmd/elvishserver -addr :8765 -root .` (with env set), run (use `curl -sD - -o /dev/null` for HTML so the request is GET; `curl -I` sends HEAD and the server returns 405 for `/`):
 
@@ -115,28 +115,47 @@ curl -sI http://127.0.0.1:8765/api/auth/me | grep -i cache-control
 
 ## Environment
 
+**Product settings** (public URL, mail domain, CORS, registration, paid tier, DKIM selector/domain, uptime probes, captcha, telemetry) are configured in the **admin panel** at `/mail?view=admin` — see [ADR 0016](docs/adr/0016-operator-settings-in-sql.md). Legacy `ELVISH_*` product env vars are imported once on first boot when the database row is empty, then ignored.
+
+### Bootstrap (required for production)
+
 | Variable | Purpose |
 |----------|---------|
-| `COCKROACH_DSN` | Postgres or Cockroach connection string (e.g. `postgres://root@127.0.0.1:26257/defaultdb?sslmode=disable`) |
-| `VALKEY_ADDR` | Valkey/Redis address `host:port` |
+| `COCKROACH_DSN` | Postgres or Cockroach connection string |
+| `VALKEY_ADDR` | Valkey/Redis `host:port` |
 | `VALKEY_PASSWORD` | Optional |
 | `VALKEY_DB` | Numeric DB index (default `0`) |
-| `COOKIE_SECURE` | `1` or `true` to set `Secure` on session cookies |
-| `ELVISH_MFA_ENCRYPTION_KEY` | Hex or base64 AES key (16/24/32 bytes after decode) used to encrypt server-readable MFA secrets such as TOTP seeds |
-| `ELVISH_AUTO_GEN_MFA_KEY` | `1`/`true` to auto-generate and persist a local-development MFA key at startup when `ELVISH_MFA_ENCRYPTION_KEY` is unset |
-| `ELVISH_MFA_ENCRYPTION_KEY_PATH` | Optional path for the auto-generated local-development MFA key file (default `<root>/data/mfa.key`) |
-| `ELVISH_DISABLE_REGISTRATION` | `1` or `true` to reject `POST /api/auth/register` when at least one user already exists (first-user bootstrap still allowed) |
-| `ELVISH_TRUST_FORWARDED_FOR` | `1` or `true` to use `X-Real-IP` / `X-Forwarded-For` for rate limits (enable only behind a trusted reverse proxy that strips client-spoofed headers) |
-| `ELVISH_CONTENT_CACHE_SEC` | In-process TTL for parsed site config and posts in `elvishserver` (default `10`; `0` disables) |
-| `ELVISH_ALLOW_EMPTY_DB` | `1` or `true` to allow startup **without** `COCKROACH_DSN` / `VALKEY_ADDR` (static-only; not for production) |
-| `ELVISH_COMPONENT` | Deployment role: `api`, `mta`, `all` (comma-separated; default `all`). See [ADR 0015](docs/adr/0015-multi-service-deployment.md). |
-| `ELVISH_HTTP_ENABLED` | `0`/`false` disables the HTTP listener (default off for `mta`-only). |
-| `ELVISH_BACKGROUND_JOBS` | `1`/`true` runs retention/account-deletion/uptime sweepers (default on for `api`/`all`; set on one API replica when scaled). |
-| `ELVISH_WEB_ORIGINS` | Comma-separated browser origins allowed for credentialed CORS to `/api/*` (e.g. `https://app.example.com`). |
-| `ELVISH_COOKIE_DOMAIN` | Optional cookie `Domain` for split-origin deploys (e.g. `.example.com`). |
-| `ELVISH_API_PUBLIC_URL` | Public API base URL injected into frontend static shells (e.g. `https://api.example.com`). |
-| `SKIP_AUTO_DB_UP` | Set to `1` with **`make dev`** / **`make dev-once`** to skip the automatic `make db-up` preflight |
-| `SKIP_MAIL_BACKENDS` | Set to `1` with **`make dev`** / **`make dev-once`** to skip injecting default `SCYLLA_*` / `BLOB_S3_*` (use when Docker mail backends are stopped; mail routes return 503 unless you export those vars yourself) |
+| `COOKIE_SECURE` | `1` or `true` for `Secure` session cookies |
+| `ELVISH_COMPONENT` | `api`, `mta`, `all` — see [ADR 0015](docs/adr/0015-multi-service-deployment.md) |
+| `ELVISH_HTTP_ENABLED` | `0`/`false` disables HTTP (default off for `mta`-only) |
+| `ELVISH_BACKGROUND_JOBS` | `1`/`true` for retention/deletion/uptime sweepers (one API replica when scaled) |
+| `ELVISH_ALLOW_EMPTY_DB` | `1`/`true` for static-only demos without DB |
+
+### Secrets and paths
+
+| Variable | Purpose |
+|----------|---------|
+| `ELVISH_MFA_ENCRYPTION_KEY` | AES key for server-readable MFA secrets |
+| `ELVISH_AUTO_GEN_MFA_KEY` | Dev: auto-generate MFA key at `<root>/data/mfa.key` |
+| `ELVISH_MFA_ENCRYPTION_KEY_PATH` | Optional path for auto-generated MFA key |
+| `ELVISH_RELAY_KEY_PATH` | Mode C relay OpenPGP key (default `<root>/data/relay.asc` auto-gen) |
+| `ELVISH_DKIM_KEY_PATH` | DKIM RSA PEM path (default `<root>/data/dkim.pem`; selector/domain in admin) |
+| `ELVISH_OIDC_*` | Optional “Login with Elvish” issuer — see [ADR 0013](docs/adr/0013-login-with-elvish-oidc-issuer.md) |
+| `ELVISH_ADDRESS_RESERVATION_KEY` | HMAC for deleted-address tombstones |
+
+### Frontend container
+
+| Variable | Purpose |
+|----------|---------|
+| `ELVISH_API_PUBLIC_URL` | Injected into `static/shared/api-config.js` on the nginx frontend tier |
+
+### Development helpers
+
+| Variable | Purpose |
+|----------|---------|
+| `SKIP_AUTO_DB_UP` | Skip `make db-up` in **`make dev`** / **`make dev-once`** |
+| `SKIP_MAIL_BACKENDS` | Skip default `SCYLLA_*` / `BLOB_S3_*` injection in dev |
+| `ELVISH_INTEGRATION_DB` | Enable Docker-backed integration tests |
 
 ### E2EE mail subsystem
 
@@ -167,17 +186,10 @@ When a logged-in user opens `/mail`, the unlock modal (`static/mail/unlock-modal
 | `BLOB_S3_ACCESS_KEY` | Access key for SigV4 signing |
 | `BLOB_S3_SECRET_KEY` | Secret key for SigV4 signing |
 | `BLOB_S3_FORCE_PATH_STYLE` | `1`/`true` for path-style addressing (required for local MinIO and many S3-compatible stores) |
-| `ELVISH_MAIL_DOMAIN` | Default domain accepted by the inbound MX (e.g. `elvish.email`) |
-| `ELVISH_HOSTNAME` | EHLO/HELO greeting and `Received:` host (e.g. `mx.elvish.email`) |
-| `ELVISH_SMTP_ADDR` | Listen address for inbound MX (port 25); empty disables it |
-| `ELVISH_SMTP_SUBMISSION_ADDR` | Listen address for AUTH submission (port 587); empty disables it |
-| `ELVISH_SMTP_ALLOW_PLAIN_AUTH` | `1`/`true` to allow `AUTH PLAIN` without TLS (only for local/dev) |
-| `ELVISH_DKIM_DOMAIN` | DKIM `d=` (e.g. `elvish.email`) — outbound mail is signed when domain+selector+key are all set |
-| `ELVISH_DKIM_SELECTOR` | DKIM `s=` (e.g. `mail`) |
-| `ELVISH_DKIM_KEY_PATH` | Path to PEM-encoded RSA private key used for `rsa-sha256` signatures |
-| `ELVISH_RELAY_KEY_PATH` | Path to ASCII-armored OpenPGP keypair used to wrap plaintext-relay outbox payloads at rest (Mode C). Generate manually with `go run ./cmd/elvishrelay genkey -out /var/lib/elvish/relay.asc` if desired. When unset, `elvishserver` now auto-generates a relay key at `<root>/data/relay.asc` on first run so plaintext-relay features, admin system mail, and protected-link recipient notifications work locally by default. |
-| `ELVISH_PUBLIC_BASE_URL` | Public base URL used when composing `/m/{token}` URLs in protected-link notification emails (e.g. `https://elvish.email`). |
-| `ELVISH_KEYSERVER_PROTON` | `1`/`true` (default) to query Proton's keyserver for `*.proton.me` / `*.protonmail.*` lookups |
-| `ELVISH_KEYSERVER_HKPS` | Comma-separated HKPS pool (default `https://keys.openpgp.org,https://keyserver.ubuntu.com`) |
-| `ELVISH_INTEGRATION_DB` | `1`/`true` to enable integration tests that spin up Cockroach in Docker (`make test-integration`) |
-| `ELVISH_INTEGRATION_MAIL` | `1`/`true` to enable mail-stack integration tests (Cockroach + Scylla + MinIO via Docker; `make test-mail-e2e`) |
+| `ELVISH_HOSTNAME` | EHLO/HELO hostname (defaults to `mx.{platform_mail_domain}` from admin) |
+| `ELVISH_SMTP_ADDR` | Inbound MX listen address (port 25); empty disables |
+| `ELVISH_SMTP_SUBMISSION_ADDR` | Submission listen address (port 587); empty disables |
+| `ELVISH_SMTP_ALLOW_PLAIN_AUTH` | `1`/`true` for AUTH PLAIN without TLS (dev only) |
+| `ELVISH_SMTP_TLS_CERT_PATH` / `ELVISH_SMTP_TLS_KEY_PATH` | Optional SMTP TLS |
+| `ELVISH_DKIM_KEY_PATH` | DKIM PEM path (selector/domain in admin **Testing → DKIM**) |
+| `ELVISH_RELAY_KEY_PATH` | Mode C relay key (auto-generated at `<root>/data/relay.asc` when unset) |

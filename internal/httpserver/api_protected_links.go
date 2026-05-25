@@ -176,7 +176,7 @@ func (s *Server) routeProtectedLinksAuthored(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *Server) protectedLinkURL(r *http.Request, token string) string {
-	base := s.publicBaseURL
+	base := s.resolvedPublicBaseURL(r.Context())
 	if base == "" {
 		scheme := "http"
 		if r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") {

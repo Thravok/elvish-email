@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -34,10 +33,8 @@ func (s *Server) adminProbeBaseURL(ctx context.Context) string {
 			return strings.TrimRight(b, "/")
 		}
 	}
-	for _, k := range []string{"ELVISH_UPTIME_BASE_URL", "ELVISH_PUBLIC_BASE_URL"} {
-		if b := strings.TrimSpace(os.Getenv(k)); b != "" {
-			return strings.TrimRight(b, "/")
-		}
+	if b := s.resolvedPublicBaseURL(ctx); b != "" {
+		return b
 	}
 	return ""
 }
@@ -51,12 +48,12 @@ func (s *Server) apiAdminUptimeTestProbe(w http.ResponseWriter, r *http.Request)
 		s.writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
-	ctx := r.Context()
 	var body adminUptimeProbeTestBody
 	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&body); err != nil {
 		s.writeErr(w, http.StatusBadRequest, "invalid json")
 		return
 	}
+	ctx := r.Context()
 	slug := strings.TrimSpace(body.Slug)
 	if slug == "" {
 		s.writeErr(w, http.StatusBadRequest, "slug required")
@@ -67,7 +64,7 @@ func (s *Server) apiAdminUptimeTestProbe(w http.ResponseWriter, r *http.Request)
 		base = s.adminProbeBaseURL(ctx)
 	}
 	if base == "" {
-		s.writeErr(w, http.StatusBadRequest, "probe base URL missing — set Uptime base URL, home base_url, or pass base_url in the request")
+		s.writeErr(w, http.StatusBadRequest, "probe base URL missing — set Uptime base URL, Platform public URL, or pass base_url in the request")
 		return
 	}
 	hc := &http.Client{Timeout: 18 * time.Second}

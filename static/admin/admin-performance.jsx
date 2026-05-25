@@ -304,7 +304,7 @@ function SecPerformance() {
     return (
       <div data-testid="admin-performance-panel">
         <AP.H num="08" title="PERFORMANCE" sub="privacy-safe dashboard · admin only" />
-        <div className="adm-explain">Your account is not an admin. Set <code className="mono">ELVISH_ADMIN_EMAILS</code> or promote the first registered user.</div>
+        <div className="adm-explain">Your account is not an admin. Promote your user in the Users section (first registrant is admin by default).</div>
       </div>
     );
   }

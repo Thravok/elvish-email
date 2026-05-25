@@ -22,6 +22,7 @@ import (
 	"elvish/internal/mailmeta"
 	"elvish/internal/mailworker"
 	"elvish/internal/oauthoidc"
+	"elvish/internal/operatorconfig"
 	"elvish/internal/ratelimit"
 	"elvish/internal/relaykey"
 	"elvish/internal/render"
@@ -70,6 +71,7 @@ type Server struct {
 	uptimeLocal       map[string]struct{ OK, Fail int64 }
 	rateLimit         *ratelimit.Limiter
 	oidcIssuer        *oauthoidc.Issuer
+	operator          *operatorconfig.Service
 	trustForwardedFor bool
 	authMu            sync.Mutex
 	authChallenges    map[string]*srpChallenge
@@ -227,13 +229,10 @@ func New(opts Options, bundle *db.Bundle) (*Server, error) {
 		sessions:          sess,
 		eng:               eng,
 		cookieSecure:      opts.CookieSecure,
-		cookieDomain:      loadCookieDomain(),
-		webOrigins:        loadWebOrigins(),
 		telemetry:         telemetry.New(st),
 		toolCalls:         tc,
 		uptimeSnap:        up,
 		rateLimit:         rl,
-		trustForwardedFor: envTruthy("ELVISH_TRUST_FORWARDED_FOR"),
 		authChallenges:    map[string]*srpChallenge{},
 	}, nil
 }
@@ -273,7 +272,7 @@ func (s *Server) writeBytes(w http.ResponseWriter, context string, p []byte) {
 // Handler returns the root http.Handler.
 func (s *Server) Handler() http.Handler {
 	var h http.Handler = http.HandlerFunc(s.serveHTTP)
-	h = CORSMiddleware(s.webOrigins, h)
+	h = s.corsMiddleware(h)
 	return SecureHeaders(GzipHandler(h))
 }
 

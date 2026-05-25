@@ -23,6 +23,7 @@ import "../../static/admin/admin-sections-2.jsx";
 import "../../static/admin/admin-content-hub.jsx";
 import "../../static/admin/admin-uptime.jsx";
 import "../../static/admin/admin-telemetry.jsx";
+import "../../static/admin/admin-platform.jsx";
 import "../../static/admin/admin-auth-captcha.jsx";
 import "../../static/admin/admin-performance.jsx";
 import "../../static/admin/admin-email-sections.jsx";

@@ -9,8 +9,8 @@ import (
 func TestRejectHeaderInjection(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		in    string
-		want  error
+		in   string
+		want error
 	}{
 		{"safe subject", nil},
 		{"foo\r\nBcc: evil@x.com", ErrHeaderInjection},

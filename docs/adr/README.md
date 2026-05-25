@@ -19,3 +19,4 @@ Numbered decisions for ELVish mail, storage, and operational choices. When addin
 | [0013](0013-login-with-elvish-oidc-issuer.md) | “Login with Elvish” OIDC issuer (Tailscale + registered clients) | Accepted (2026-05) | Minimal RS256 issuer + WebFinger + Valkey codes; no inbound social OIDC; MFA gate when enabled. |
 | [0014](0014-inbound-mail-authentication.md) | Inbound mail authentication (SPF, DKIM, DMARC) | Proposed (Phase 2) | Verify sender auth on MX receive; store results for UI; optional quarantine/reject. |
 | [0015](0015-multi-service-deployment.md) | Multi-service deployment (API, frontend, mail-mta) | Accepted (2026-05) | One binary with `ELVISH_COMPONENT`; Coolify splits HTTP, static, and SMTP tiers. |
+| [0016](0016-operator-settings-in-sql.md) | Operator settings in SQL | Accepted (2026-05) | Product config in admin Platform section; env for bootstrap/secrets only. |

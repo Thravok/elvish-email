@@ -8,11 +8,11 @@ import (
 func TestNormalizeMessageExpiry(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name      string
-		ttl       int64
-		maxReads  int64
-		wantNil   bool
-		wantErr   bool
+		name     string
+		ttl      int64
+		maxReads int64
+		wantNil  bool
+		wantErr  bool
 	}{
 		{name: "none", ttl: 0, maxReads: 0, wantNil: true},
 		{name: "ttl only", ttl: 3600, maxReads: 0},

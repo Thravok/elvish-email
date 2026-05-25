@@ -12,6 +12,6 @@ func (s *Server) apiBillingStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	u, _ := s.userFromRequest(r)
 	s.writeJSON(w, http.StatusOK, map[string]any{
-		"paid": s.paidFeaturesEnabled(u),
+		"paid": s.paidFeaturesEnabled(r.Context(), u),
 	})
 }

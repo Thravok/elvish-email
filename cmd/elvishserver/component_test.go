@@ -9,11 +9,11 @@ func TestParseDeploymentComponents(t *testing.T) {
 	t.Setenv("ELVISH_BACKGROUND_JOBS", "")
 
 	tests := []struct {
-		component string
-		wantHTTP  bool
-		wantSMTP  bool
+		component  string
+		wantHTTP   bool
+		wantSMTP   bool
 		wantWorker bool
-		wantBG    bool
+		wantBG     bool
 	}{
 		{component: "", wantHTTP: true, wantSMTP: true, wantWorker: true, wantBG: true},
 		{component: "all", wantHTTP: true, wantSMTP: true, wantWorker: true, wantBG: true},

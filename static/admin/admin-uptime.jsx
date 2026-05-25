@@ -107,7 +107,7 @@ function SecUptime() {
     return (
       <>
         <A.H num="11" title="UPTIME" sub="HTTP checks · logs · admin only" />
-        <div className="adm-explain">Your account is not an admin. Set <code className="mono">ELVISH_ADMIN_EMAILS</code> or promote the first registered user.</div>
+        <div className="adm-explain">Your account is not an admin. Promote your user in the Users section (first registrant is admin by default).</div>
       </>
     );
   }
@@ -135,7 +135,7 @@ function SecUptime() {
         <A.FRow label="Interval" req hint="Go duration, e.g. 5m, 10m, 1h (minimum 10s enforced server-side).">
           <A.Input value={form.interval} onChange={(v) => setForm((f) => ({ ...f, interval: v }))} />
         </A.FRow>
-        <A.FRow label="Probe base URL" hint="Leave empty to use ELVISH_UPTIME_BASE_URL / listen address fallback.">
+        <A.FRow label="Probe base URL" hint="Leave empty to use Platform public URL or listen address fallback.">
           <A.Input value={form.base_url} onChange={(v) => setForm((f) => ({ ...f, base_url: v }))} placeholder="https://your-public-host" />
         </A.FRow>
         <A.FRow label="Include tools from home" hint={"Adds GET/HEAD per tool: default open_href rules else " + "/{slug}/" + "; skipped when a tool has an enabled uptime monitor (that check runs separately). Hidden tools omitted."}>

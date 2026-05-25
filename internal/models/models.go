@@ -15,8 +15,11 @@ const (
 	TelemetrySettingsID   = "default"
 	AdminMailSettingsID   = "default"
 	AuthCaptchaSettingsID = "default"
+	OperatorSettingsID    = "default"
 
 	DefaultTelemetryRetentionDays = 30
+	DefaultContentCacheSec        = 10
+	DefaultSMTPRateLimitPerHour   = 100
 	DefaultAdminDKIMSelector      = "mail"
 	TelemetryExportSchemaVersion  = "telemetry_export_v1"
 	PerformanceExportSchemaV1     = "performance_export_v1"
@@ -97,6 +100,30 @@ type AuthCaptchaSettingsDoc struct {
 func DefaultAuthCaptchaSettings() *AuthCaptchaSettingsDoc {
 	return &AuthCaptchaSettingsDoc{
 		ID: AuthCaptchaSettingsID,
+	}
+}
+
+// OperatorSettingsDoc is the singleton platform configuration (URLs, auth policy, mail domain).
+type OperatorSettingsDoc struct {
+	ID                    string    `json:"id"`
+	PublicBaseURL         string    `json:"public_base_url,omitempty"`
+	PlatformMailDomain    string    `json:"platform_mail_domain,omitempty"`
+	WebOrigins            string    `json:"web_origins,omitempty"`
+	CookieDomain          string    `json:"cookie_domain,omitempty"`
+	RegistrationClosed    bool      `json:"registration_closed"`
+	PaidFeaturesEnabled   bool      `json:"paid_features_enabled"`
+	TrustForwardedFor     bool      `json:"trust_forwarded_for"`
+	ContentCacheSec       int       `json:"content_cache_sec"`
+	SMTPRateLimitPerHour  int       `json:"smtp_rate_limit_per_hour"`
+	UpdatedAt             time.Time `json:"updated_at,omitempty"`
+}
+
+// DefaultOperatorSettings returns empty URLs and safe numeric defaults.
+func DefaultOperatorSettings() *OperatorSettingsDoc {
+	return &OperatorSettingsDoc{
+		ID:                   OperatorSettingsID,
+		ContentCacheSec:      DefaultContentCacheSec,
+		SMTPRateLimitPerHour: DefaultSMTPRateLimitPerHour,
 	}
 }
 

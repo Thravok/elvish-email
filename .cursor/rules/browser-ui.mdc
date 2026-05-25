@@ -1,0 +1,76 @@
+---
+description: Browser mail UI, admin panel, and frontend build patterns
+globs:
+  - static/**/*.jsx
+  - static/**/*.js
+  - static/**/*.css
+  - frontend/**/*
+---
+
+# Browser UI
+
+Browser clients live under `static/` (JSX/JS sources) and `frontend/` (esbuild pipeline). Bundles commit to `static/dist/`.
+
+## Build
+
+```bash
+make static-js      # npm ci + esbuild → static/dist/*.js
+make build          # includes static-js unless SKIP_STATIC_JS=1
+```
+
+Regenerate bundles after editing `static/mail/`, `static/admin/`, `static/auth/`, or `frontend/`. CI verifies `static/dist/` matches sources.
+
+## Architecture
+
+| Layer | Location |
+|-------|----------|
+| Mail app shell | `static/mail/mail-app.jsx`, `static/mail/index.html` |
+| Compose (PGP + protected link) | `static/mail/compose.jsx` |
+| Client-side filters | `static/mail/mail-filter-engine.js`, `static/mail/mail-filter-ledger.js` |
+| Local body search | `static/mail/search/` (IndexedDB worker per ADR 0008) |
+| Settings | `static/mail/mail-settings.jsx` |
+| Admin embed | `static/admin/` → lazy `static/dist/mail-admin-embed.js` |
+| Auth (SRP, keygen) | `static/auth/` |
+| Shared components | `static/shared/` |
+| Protected link viewer | `static/protected/` |
+
+## Security controls
+
+These apply regardless of React vs vanilla:
+
+| Control | Where |
+|---------|-------|
+| Server authorization | `internal/httpserver/` — handlers must not trust client-only flags |
+| CSP / page headers | `internal/httpserver/secure_page_headers.go`; tests in `secure_surfaces_test.go` |
+| MIME / HTML safety | Mail read/compose — no raw HTML from untrusted mail without sandbox + sanitizer |
+| Dependency pinning | `frontend/package.json`; refresh SRI on vendor bumps |
+
+## Key unlock flow
+
+The unlock modal (`static/mail/unlock-modal.jsx`) handles all key states:
+1. Ordinary unlock — derive KEK, unwrap account key
+2. Missing account — generate account + identity, bootstrap via API
+3. Missing identity — mint default identity for user's email
+
+Key order is always **account first, identity second** so identity privkeys can be PGP-wrapped to the account pubkey.
+
+## Normative sources for mobile parity
+
+When mobile implements a feature, these browser files are the spec:
+
+- Compose: `static/mail/compose.jsx`
+- Reply drafts: `buildReplyComposeDraft` in `static/mail/mail-app.jsx`
+- Filters: `static/mail/mail-filter-engine.js`
+- Settings: `static/mail/mail-settings.jsx` (`SETTINGS_SECTIONS`)
+
+## Migration target (ADR 0012)
+
+The recorded migration order is: **auth → thin TS → admin shell → mail last**. Target stack is templ + vanilla JS + TypeScript, moving away from React where practical. New features may use either approach; large refactors should move toward the target.
+
+## Do not
+
+- Use `dangerouslySetInnerHTML` on untrusted mail content without sanitizer
+- Import React from CDN — use vendored builds in `static/vendor/`
+- Skip `make static-js` before committing UI changes
+- Add new browser capabilities without updating [client-parity-roadmap.md](docs/client-parity-roadmap.md)
+- Add new API routes that expose plaintext mail body search (ADR 0008)

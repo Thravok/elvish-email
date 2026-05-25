@@ -1,25 +1,19 @@
 package httpserver
 
 import (
-	"os"
-	"strconv"
-	"strings"
+	"context"
 	"time"
 
 	"elvish/internal/config"
 )
 
-// contentCacheTTL returns the in-process cache lifetime for loadHome/loadPosts.
-// ELVISH_CONTENT_CACHE_SEC unset defaults to 10 seconds; 0 or negative disables caching.
 func (s *Server) contentCacheTTL() time.Duration {
-	v := strings.TrimSpace(os.Getenv("ELVISH_CONTENT_CACHE_SEC"))
-	if v == "" {
+	ctx := context.Background()
+	st, err := s.loadPlatformSettings(ctx)
+	if err != nil || st == nil {
 		return 10 * time.Second
 	}
-	sec, err := strconv.Atoi(v)
-	if err != nil {
-		return 10 * time.Second
-	}
+	sec := st.ContentCacheSec
 	if sec <= 0 {
 		return 0
 	}

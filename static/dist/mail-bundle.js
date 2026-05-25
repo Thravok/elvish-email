@@ -16530,10 +16530,57 @@ ${body || ""}`;
     }
     return { headers, totalHeaders, knownHeaders };
   }
+  function collapseDisplayWhitespace(s) {
+    let out = "";
+    let lastSpace = false;
+    for (let i = 0; i < s.length; i += 1) {
+      const c = s[i];
+      if (c === " " || c === "	" || c === "\n" || c === "\r") {
+        if (!lastSpace) {
+          out += " ";
+          lastSpace = true;
+        }
+        continue;
+      }
+      out += c;
+      lastSpace = false;
+    }
+    let start = 0;
+    let end = out.length;
+    while (start < end && out[start] === " ") start += 1;
+    while (end > start && out[end - 1] === " ") end -= 1;
+    return out.slice(start, end);
+  }
   function htmlToDisplayText(html2) {
     const s = String(html2 || "").trim();
     if (!s) return "";
-    return s.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ").replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const purify2 = typeof globalThis !== "undefined" && globalThis.DOMPurify;
+    if (purify2 && typeof purify2.sanitize === "function") {
+      return collapseDisplayWhitespace(
+        purify2.sanitize(s, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+      );
+    }
+    return stripHtmlTagsToText(s);
+  }
+  function stripHtmlTagsToText(s) {
+    let out = "";
+    let inTag = false;
+    for (let i = 0; i < s.length; i += 1) {
+      const c = s[i];
+      if (c === "<") {
+        inTag = true;
+        continue;
+      }
+      if (c === ">" && inTag) {
+        inTag = false;
+        out += " ";
+        continue;
+      }
+      if (!inTag) {
+        out += c;
+      }
+    }
+    return collapseDisplayWhitespace(out);
   }
   function splitMultipartBody(body, boundary) {
     const marker = `--${boundary}`;

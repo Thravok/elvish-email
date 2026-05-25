@@ -26,7 +26,9 @@ import (
 	"elvish/internal/mailpipe"
 	"elvish/internal/mailworker"
 	"elvish/internal/migrate"
+	"elvish/internal/models"
 	"elvish/internal/oauthoidc"
+	"elvish/internal/operatorconfig"
 	"elvish/internal/ratelimit"
 	"elvish/internal/relaykey"
 	"elvish/internal/scyllastore"
@@ -34,24 +36,9 @@ import (
 	"elvish/internal/store"
 )
 
-func uptimeDisabled() bool {
-	v := strings.TrimSpace(strings.ToLower(os.Getenv("ELVISH_UPTIME_DISABLED")))
-	return v == "1" || v == "true" || v == "yes"
-}
-
 func envTruthyMain(key string) bool {
 	v := strings.TrimSpace(strings.ToLower(os.Getenv(key)))
 	return v == "1" || v == "true" || v == "yes"
-}
-
-func uptimeProbeBase(addr string) string {
-	if b := strings.TrimSpace(os.Getenv("ELVISH_UPTIME_BASE_URL")); b != "" {
-		return strings.TrimRight(b, "/")
-	}
-	if b := strings.TrimSpace(os.Getenv("ELVISH_PUBLIC_BASE_URL")); b != "" {
-		return strings.TrimRight(b, "/")
-	}
-	return strings.TrimRight(httpserver.ProbeBaseFromAddr(addr), "/")
 }
 
 func openScyllaWithRetry(ctx context.Context, cfg db.Config, strictDB bool, logger *slog.Logger) (*scyllastore.Store, error) {
@@ -186,6 +173,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	opSvc := operatorconfig.New(sqlStore, logger)
+	if sqlStore != nil {
+		if err := opSvc.MaybeMigrateFromEnv(ctx); err != nil {
+			logger.Warn("operator settings env migration", "err", err)
+		}
+	}
+	srv.WithOperatorConfig(opSvc)
+
 	if *migrateOnly {
 		if bundle == nil || bundle.Pool() == nil {
 			logger.Error("migrate requires COCKROACH_DSN")
@@ -212,10 +207,19 @@ func main() {
 		"background_jobs", components.BackgroundJobs,
 	)
 
-	mailDomain := strings.TrimSpace(os.Getenv("ELVISH_MAIL_DOMAIN"))
+	mailDomain := ""
+	publicBase := ""
+	smtpRateLimit := int64(models.DefaultSMTPRateLimitPerHour)
+	if plat, perr := opSvc.Settings(ctx); perr == nil && plat != nil {
+		mailDomain = plat.PlatformMailDomain
+		publicBase = plat.PublicBaseURL
+		if plat.SMTPRateLimitPerHour > 0 {
+			smtpRateLimit = plat.SMTPRateLimitPerHour
+		}
+	}
 	hostName := strings.TrimSpace(os.Getenv("ELVISH_HOSTNAME"))
-	if hostName == "" {
-		hostName = mailDomain
+	if hostName == "" && mailDomain != "" {
+		hostName = "mx." + mailDomain
 	}
 
 	var (
@@ -270,11 +274,10 @@ func main() {
 	}
 	srv.WithMail(mm, scy, blb, res, mailDomain)
 	srv.WithSMTPHostname(hostName)
-	baseEnv := strings.TrimSpace(os.Getenv("ELVISH_PUBLIC_BASE_URL"))
-	if baseEnv != "" {
-		srv.WithPublicBaseURL(baseEnv)
+	if publicBase != "" {
+		srv.WithPublicBaseURL(publicBase)
 	}
-	oidcIss, err := oauthoidc.LoadIssuerFromEnv(strings.TrimRight(baseEnv, "/"))
+	oidcIss, err := oauthoidc.LoadIssuerFromEnv(publicBase)
 	if err != nil {
 		logger.Error("oauth oidc issuer config", "err", err)
 		os.Exit(1)
@@ -375,7 +378,7 @@ func main() {
 		}
 		if components.SMTP {
 			if sa := strings.TrimSpace(os.Getenv("ELVISH_SMTP_ADDR")); sa != "" && mailDomain != "" {
-				be := newSMTPBackend(pipe, logger, false, stForAuth, mm, srv.Telemetry(), smtpRL)
+				be := newSMTPBackend(pipe, logger, false, stForAuth, mm, srv.Telemetry(), smtpRL, smtpRateLimit)
 				s, serr := smtpserver.New(smtpserver.Config{
 					Addr: sa, Hostname: hostName, Mode: smtpserver.ModeMX, Logger: logger, TLSConfig: smtpTLSConfig,
 				}, be)
@@ -393,7 +396,7 @@ func main() {
 				logger.Warn("ELVISH_SMTP_ADDR set but ELVISH_MAIL_DOMAIN empty; inbound SMTP disabled")
 			}
 			if ss := strings.TrimSpace(os.Getenv("ELVISH_SMTP_SUBMISSION_ADDR")); ss != "" {
-				be := newSMTPBackend(pipe, logger, true, stForAuth, mm, srv.Telemetry(), smtpRL)
+				be := newSMTPBackend(pipe, logger, true, stForAuth, mm, srv.Telemetry(), smtpRL, smtpRateLimit)
 				s, serr := smtpserver.New(smtpserver.Config{
 					Addr: ss, Hostname: hostName, Mode: smtpserver.ModeSubmission, Logger: logger,
 					TLSConfig: smtpTLSConfig, AllowPlainAuth: envTruthyMain("ELVISH_SMTP_ALLOW_PLAIN_AUTH"),
@@ -416,16 +419,13 @@ func main() {
 
 	var backgroundWg sync.WaitGroup
 	if components.BackgroundJobs {
-		if !uptimeDisabled() {
-			if base := uptimeProbeBase(*addr); base != "" {
-				backgroundWg.Add(1)
-				go func() {
-					defer backgroundWg.Done()
-					srv.RunUptimeLoop(rootCtx, base)
-				}()
-				logger.Info("uptime background", "base", base)
-			}
-		}
+		uptimeFallback := strings.TrimRight(httpserver.ProbeBaseFromAddr(*addr), "/")
+		backgroundWg.Add(1)
+		go func() {
+			defer backgroundWg.Done()
+			srv.RunUptimeLoop(rootCtx, uptimeFallback)
+		}()
+		logger.Info("uptime background", "fallback_base", uptimeFallback)
 		backgroundWg.Add(1)
 		go func() {
 			defer backgroundWg.Done()

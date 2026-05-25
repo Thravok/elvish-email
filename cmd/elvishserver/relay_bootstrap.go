@@ -22,10 +22,8 @@ func dkimSettingsForRoot(root, mailDomain string) (selector, domain, path string
 	if root == "" {
 		root = "."
 	}
-	selector = strings.TrimSpace(os.Getenv("ELVISH_DKIM_SELECTOR"))
-	domain = strings.TrimSpace(os.Getenv("ELVISH_DKIM_DOMAIN"))
 	path = strings.TrimSpace(os.Getenv("ELVISH_DKIM_KEY_PATH"))
-	explicit = selector != "" || domain != "" || path != ""
+	explicit = path != ""
 	if selector == "" {
 		selector = "mail"
 	}

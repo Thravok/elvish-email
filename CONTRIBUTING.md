@@ -4,7 +4,7 @@ Thank you for helping improve this project. This file is the short path for **lo
 
 Pull requests and focused issues are welcome. Please keep changes aligned with existing docs and ADRs for mail, storage, and privacy. **Security-sensitive reports** should not go through public issues; use [SECURITY.md](SECURITY.md) instead. **Conduct:** follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-Continuous integration runs on **GitLab CI** via [.gitlab-ci.yml](.gitlab-ci.yml) (`gofmt`, `go vet`, `golangci-lint`, repo guard scripts, `go test` / `go test -race`, release build of `elvishserver`, and optional stages defined there). Issue and merge request description templates live under [.gitlab/issue_templates/](.gitlab/issue_templates/) and [.gitlab/merge_request_templates/](.gitlab/merge_request_templates/).
+Continuous integration runs on **GitLab CI** via [.gitlab-ci.yml](.gitlab-ci.yml) (`gofmt`, `go vet`, `golangci-lint`, [`scripts/lint-invariants.sh`](scripts/lint-invariants.sh), OpenAPI check, `lint-static-js` bundle freshness, `go test` / `go test -race`, Flutter client tests, release build of `elvishserver`, and optional stages defined there). **GitHub Actions** runs CodeQL, iOS, and Android workflows — see [docs/repo-layout.md](docs/repo-layout.md#ci-map). Issue and merge request description templates live under [.gitlab/issue_templates/](.gitlab/issue_templates/) and [.gitlab/merge_request_templates/](.gitlab/merge_request_templates/).
 
 **Dependency updates (Renovate, free):** [Renovate](https://docs.renovatebot.com/) is the usual Dependabot-like option on GitLab. This repo includes [renovate.json](renovate.json) plus a scheduled **child pipeline** ([.gitlab/ci/renovate-child.gitlab-ci.yml](.gitlab/ci/renovate-child.gitlab-ci.yml)) so Renovate does not run the full CI graph. To enable it: **Settings → Access tokens** (or a bot user) → create a **project access token** with scopes **`api`** and **`write_repository`**; add it as a masked CI variable **`RENOVATE_TOKEN`**. **Build → Pipeline schedules** → new schedule on the default branch → add variable **`RENOVATE_SCHEDULE`** = **`true`**. Optionally set **`RENOVATE_EXTRA_ARGS`** (e.g. `--dry-run`) while testing. For GitLab.com you can instead install the hosted **Mend Renovate** GitLab app if you prefer not to use a long-lived token in CI.
 
@@ -68,6 +68,10 @@ React vs vanilla does **not** replace these controls. When changing mail, auth, 
 - **Go:** follow [.cursor/rules/go-guidelines.mdc](.cursor/rules/go-guidelines.mdc) (errors, structure, tests, HTTP boundaries).
 - **Security:** do not log secrets, passwords, session tokens, or raw mail bodies. Prefer generic client messages for auth failures. Validate sizes and shapes at HTTP boundaries.
 - **Design alignment:** mail and privacy trade-offs are documented in [docs/](docs/) and ADRs; large behavior changes should update the relevant ADR or spec.
+
+## Repository layout
+
+See [docs/repo-layout.md](docs/repo-layout.md) for the full top-level tree, `cmd/` inventory, `internal/` package groups, CI map, and what is (not) committed (`static/dist/`, `node_modules`, `/public/`, `/data/`).
 
 ## Where to change what
 

@@ -150,7 +150,7 @@ func (s *Server) issueLoginSession(w http.ResponseWriter, ctx context.Context, u
 	if err != nil {
 		return err
 	}
-	http.SetCookie(w, s.newSessionCookie(sessionCookie, tok, int((14*24*time.Hour).Seconds())))
+	http.SetCookie(w, s.newSessionCookie(ctx, sessionCookie, tok, int((14*24*time.Hour).Seconds())))
 	return nil
 }
 
@@ -175,7 +175,7 @@ func sameActivityDay(a, b time.Time) bool {
 }
 
 func (s *Server) requestOrigin(r *http.Request) string {
-	if base := strings.TrimSpace(s.publicBaseURL); base != "" {
+	if base := s.resolvedPublicBaseURL(r.Context()); base != "" {
 		return strings.TrimRight(base, "/")
 	}
 	scheme := "http"

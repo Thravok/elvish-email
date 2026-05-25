@@ -8,6 +8,12 @@ alwaysApply: false
 
 Follow [Effective Go](https://go.dev/doc/effective_go) and [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments). Use `gofmt` / `goimports`. Treat `golangci-lint` warnings as errors; avoid `//nolint` without a comment explaining why.
 
+## ELVish-specific patterns
+
+For mail packages (`internal/mail*`, `internal/scyllastore`, `internal/blobstore`), also follow **[mail-subsystem.mdc](.cursor/rules/mail-subsystem.mdc)** — the four-store architecture and security invariants apply.
+
+For SMTP code (`internal/smtp*`, `internal/dkim`), see **[smtp-dkim.mdc](.cursor/rules/smtp-dkim.mdc)**.
+
 **Naming:** `camelCase` unexported, `PascalCase` exported. Acronyms: `userID`, `httpClient`, `URLPath`. Packages: lowercase single word (`store`, not `stores` or `data_store`). Receivers: 1–2 letters from type (`s *Server`). Avoid named returns except in very short functions where they document clearly.
 
 ## Errors
@@ -72,3 +78,12 @@ if err != nil {
     return fmt.Errorf("read body: %w", err)
 }
 ```
+
+## Security (mail and auth code)
+
+- Never log secrets, private keys, plaintext mail bodies, or session tokens
+- Use generic messages for auth failures ("Invalid credentials")
+- Validate sizes and shapes at HTTP boundaries (`http.MaxBytesReader`)
+- Time-constant comparisons for tokens and proofs
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full "Browser UI security" and conventions sections.

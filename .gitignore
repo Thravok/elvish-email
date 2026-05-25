@@ -32,9 +32,17 @@ content/blog/signing.key
 .env.local
 .env.*.local
 
+# Node (browser bundles — lockfile committed, install with npm ci)
+frontend/node_modules/
+
+# Playwright / local test output (root)
+/test-results/
+
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/extensions.json
 
 # Xcode — never commit per-machine UI state or account-derived paths (xcuserdata)
 **/xcuserdata/

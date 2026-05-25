@@ -15,9 +15,9 @@ func newWKDAdvancedURL(domain, hash, local string) (wkdHTTPSURL, error) {
 		return "", err
 	}
 	u := &url.URL{
-		Scheme: "https",
-		Host:   "openpgpkey." + domain,
-		Path:   fmt.Sprintf("/.well-known/openpgpkey/%s/hu/%s", domain, hash),
+		Scheme:   "https",
+		Host:     "openpgpkey." + domain,
+		Path:     fmt.Sprintf("/.well-known/openpgpkey/%s/hu/%s", domain, hash),
 		RawQuery: url.Values{"l": {local}}.Encode(),
 	}
 	return wkdHTTPSURL(u.String()), nil

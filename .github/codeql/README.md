@@ -1,5 +1,7 @@
 # CodeQL setup (ELVish monorepo)
 
+GitHub remote for this tree is typically **`Thravok/elvish-email`** (local clone folder name may differ, e.g. `ElvishMono`). Replace `OWNER/REPO` in `gh` examples if your fork uses another slug.
+
 ## How this repo is configured
 
 | Piece | Location | Role |
@@ -13,8 +15,8 @@
 GitHub may also show a **dynamic** workflow (`dynamic/github-code-scanning/codeql`) from the Code Scanning product. That is separate from this file. **Default setup API state** must stay `not-configured` or SARIF uploads from this workflow are rejected.
 
 ```bash
-gh api /repos/Thravok/elvish-email/code-scanning/default-setup
-# "state": "not-configured"
+gh api /repos/OWNER/REPO/code-scanning/default-setup
+# e.g. Thravok/elvish-email — expect "state": "not-configured"
 ```
 
 ## Jobs (one workflow, three checks)
@@ -38,7 +40,7 @@ Each job sets `category: /language:…` so GitHub accepts multiple SARIF uploads
 Disable default setup: **Settings → Code security → CodeQL analysis → Disable CodeQL**, or:
 
 ```bash
-gh api -X PATCH /repos/Thravok/elvish-email/code-scanning/default-setup -f state=not-configured
+gh api -X PATCH /repos/OWNER/REPO/code-scanning/default-setup -f state=not-configured
 ```
 
 ### Go: “no source code seen during build”
@@ -60,7 +62,7 @@ Keep `android.enableJetifier=false` in `flutter/elvish_mail/android/gradle.prope
 The PR branch must include the workflow fixes from `main` (rebase or merge `main`, then push). Re-running an old failed workflow on a stale branch will still fail.
 
 ```bash
-gh pr update-branch 3 --repo Thravok/elvish-email   # merge main into PR branch
+gh pr update-branch 3 --repo OWNER/REPO   # merge main into PR branch
 ```
 
 ### Not analyzed

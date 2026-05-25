@@ -1,0 +1,58 @@
+---
+description: When and how to create or update Architecture Decision Records
+globs:
+  - docs/adr/*.md
+  - docs/e2ee-mail-spec.md
+  - docs/architecture.md
+---
+
+# ADR workflow
+
+Architecture Decision Records live in [docs/adr/](docs/adr/). They capture rationale for mail, storage, privacy, and operational choices.
+
+## When to create an ADR
+
+Create a new ADR when proposing changes that:
+- Alter trust boundaries or threat model assumptions
+- Add or remove a data store
+- Change key derivation, encryption, or signing algorithms
+- Modify the keyserver resolution chain
+- Add new send modes or ingest paths
+- Change consent model or metadata exposure
+
+## When to update existing ADRs
+
+Update the relevant ADR when:
+- Implementing a proposed ADR (change status to Accepted)
+- Superseding an ADR with a new approach
+- Clarifying ambiguous sections based on implementation experience
+
+## Creating a new ADR
+
+1. Use the next sequential ID: `docs/adr/NNNN-short-title.md`
+2. Include sections: **Context**, **Decision**, **Consequences**, **Status**
+3. Add a row to `docs/adr/README.md`
+4. Reference from `docs/e2ee-mail-spec.md` if it affects the mail product
+
+## Current ADRs (0001–0015)
+
+| Key ADRs | Topic |
+|----------|-------|
+| 0005 | Account/identity key hierarchy |
+| 0006 | Own SMTP stack |
+| 0007 | Four-store mail architecture |
+| 0008 | Local-only body search |
+| 0009 | Protected-link send mode |
+
+## Hierarchy of authority
+
+1. **Code** — actual implementation is ground truth
+2. **e2ee-mail-spec.md** — product spec stitching ADRs together
+3. **ADRs** — rationale for specific decisions
+4. **Skiff whitepaper** — background context only; repo takes precedence
+
+## Do not
+
+- Make trust-boundary changes without an ADR or spec update
+- Reference ADR numbers that don't exist
+- Leave ADRs in "Proposed" status after implementation ships

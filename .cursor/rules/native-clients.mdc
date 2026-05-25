@@ -1,0 +1,54 @@
+---
+description: iOS (Swift) and Flutter (Android) mail client development patterns
+globs:
+  - IOS/**/*.swift
+  - IOS/**/*.xcodeproj
+  - flutter/elvish_mail/**/*.dart
+---
+
+# Native clients
+
+ELVish has two mobile clients: **iOS** (`IOS/`) and **Android** (`flutter/elvish_mail/`). Both use the same `/api/` endpoints and session cookies as the browser.
+
+## Normative source
+
+The **browser implementation is the spec**. When implementing mobile features, match behavior from these web files:
+
+| Area | Normative source |
+|------|------------------|
+| Compose (PGP + protected link) | `static/mail/compose.jsx` |
+| Reply / Reply-all | `buildReplyComposeDraft` in `static/mail/mail-app.jsx` |
+| Client-side filters | `static/mail/mail-filter-engine.js` |
+| Key unlock | `static/auth/unlock.js`, `static/mail/unlock-modal.jsx` |
+
+## Feature tiers (see [client-parity-roadmap.md](docs/client-parity-roadmap.md))
+
+- **Tier 1** (mobile core): Auth, vault unlock, inbox read, triage, compose, reply, client filters
+- **Tier 2**: Minimal settings UI
+- **Tier 3** (web-only): Signup, full settings, admin, local search, attachments, HTML compose
+
+## Crypto alignment
+
+Both clients must match the browser's OpenPGP implementation:
+- Same ECC curve (Curve25519) for identity keys
+- Same KDF parameters for account key derivation
+- Same SRP-6a parameters (see `cmd/srpvector` for test vectors)
+
+Use the secure storage APIs (iOS Keychain, Android Keystore) for persisted key material.
+
+## Development
+
+```bash
+make test-flutter    # analyze + unit tests
+make test-ios        # macOS only; xcodebuild test
+make check-clients   # both (iOS only on macOS)
+```
+
+Test against `http://127.0.0.1:8765` (iOS simulator) or `http://10.0.2.2:8765` (Android emulator).
+
+## Do not
+
+- Implement features beyond the current tier without updating the parity roadmap
+- Diverge from browser crypto parameters without an ADR
+- Enable push notification handlers before backend support exists (entitlement stub only)
+- Add new Xcode capabilities without a matrix row in client-parity-roadmap.md

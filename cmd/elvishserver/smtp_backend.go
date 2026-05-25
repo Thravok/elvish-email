@@ -5,8 +5,6 @@ import (
 	"errors"
 	"log/slog"
 	"net"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -41,7 +39,10 @@ type smtpBackend struct {
 	smtpRateLimitPerHour int64
 }
 
-func newSMTPBackend(pipe *mailpipe.Pipe, logger *slog.Logger, submission bool, st *store.Store, meta *mailmeta.Store, tel *telemetry.Service, rl *ratelimit.Limiter) *smtpBackend {
+func newSMTPBackend(pipe *mailpipe.Pipe, logger *slog.Logger, submission bool, st *store.Store, meta *mailmeta.Store, tel *telemetry.Service, rl *ratelimit.Limiter, ratePerHour int64) *smtpBackend {
+	if ratePerHour <= 0 {
+		ratePerHour = 100
+	}
 	return &smtpBackend{
 		pipe:                 pipe,
 		logger:               logger,
@@ -50,20 +51,8 @@ func newSMTPBackend(pipe *mailpipe.Pipe, logger *slog.Logger, submission bool, s
 		meta:                 meta,
 		telemetry:            tel,
 		rateLimit:            rl,
-		smtpRateLimitPerHour: smtpRateLimitPerHourFromEnv(),
+		smtpRateLimitPerHour: ratePerHour,
 	}
-}
-
-func smtpRateLimitPerHourFromEnv() int64 {
-	v := strings.TrimSpace(os.Getenv("ELVISH_SMTP_RATE_LIMIT_PER_HOUR"))
-	if v == "" {
-		return 100
-	}
-	n, err := strconv.ParseInt(v, 10, 64)
-	if err != nil || n <= 0 {
-		return 100
-	}
-	return n
 }
 
 func peerIPString(peer net.Addr) string {

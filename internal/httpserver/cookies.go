@@ -1,16 +1,23 @@
 package httpserver
 
 import (
+	"context"
 	"net/http"
-	"os"
 	"strings"
 )
 
-func loadCookieDomain() string {
-	return strings.TrimSpace(os.Getenv("ELVISH_COOKIE_DOMAIN"))
+func (s *Server) cookieDomainForRequest(ctx context.Context) string {
+	if s.operator != nil {
+		if st, err := s.loadPlatformSettings(ctx); err == nil && st != nil {
+			if dom := strings.TrimSpace(st.CookieDomain); dom != "" {
+				return dom
+			}
+		}
+	}
+	return strings.TrimSpace(s.cookieDomain)
 }
 
-func (s *Server) newSessionCookie(name, value string, maxAge int) *http.Cookie {
+func (s *Server) newSessionCookie(ctx context.Context, name, value string, maxAge int) *http.Cookie {
 	c := &http.Cookie{
 		Name:     name,
 		Value:    value,
@@ -20,7 +27,7 @@ func (s *Server) newSessionCookie(name, value string, maxAge int) *http.Cookie {
 		SameSite: http.SameSiteLaxMode,
 		Secure:   s.cookieSecure,
 	}
-	if dom := strings.TrimSpace(s.cookieDomain); dom != "" {
+	if dom := s.cookieDomainForRequest(ctx); dom != "" {
 		c.Domain = dom
 	}
 	return c

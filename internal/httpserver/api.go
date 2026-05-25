@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,45 +27,19 @@ import (
 
 const sessionCookie = "elvish_session"
 
-var adminEmailCfg struct {
-	once sync.Once
-	set  map[string]struct{}
-}
-
-func registrationDisallowed(ctx context.Context, st *store.Store) bool {
-	if !envTruthy("ELVISH_DISABLE_REGISTRATION") {
+func (s *Server) registrationDisallowed(ctx context.Context) bool {
+	st, err := s.loadPlatformSettings(ctx)
+	if err != nil || st == nil || !st.RegistrationClosed {
 		return false
 	}
-	if st == nil {
+	if s.store == nil {
 		return true
 	}
-	n, err := st.CountUsers(ctx)
+	n, err := s.store.CountUsers(ctx)
 	if err != nil {
 		return true
 	}
 	return n > 0
-}
-
-func adminEmailConfigured(email string) bool {
-	email = strings.TrimSpace(strings.ToLower(email))
-	if email == "" {
-		return false
-	}
-	adminEmailCfg.once.Do(func() {
-		adminEmailCfg.set = make(map[string]struct{})
-		raw := os.Getenv("ELVISH_ADMIN_EMAILS")
-		for _, p := range strings.Split(raw, ",") {
-			k := strings.TrimSpace(strings.ToLower(p))
-			if k != "" {
-				adminEmailCfg.set[k] = struct{}{}
-			}
-		}
-	})
-	if len(adminEmailCfg.set) == 0 {
-		return false
-	}
-	_, ok := adminEmailCfg.set[email]
-	return ok
 }
 
 func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
@@ -166,6 +139,10 @@ func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
 		s.apiAdminAuthCaptchaGet(w, r)
 	case p == "admin/auth-captcha" && r.Method == http.MethodPost:
 		s.apiAdminAuthCaptchaPost(w, r)
+	case p == "admin/operator-settings" && r.Method == http.MethodGet:
+		s.apiAdminOperatorSettingsGet(w, r)
+	case p == "admin/operator-settings" && r.Method == http.MethodPost:
+		s.apiAdminOperatorSettingsPost(w, r)
 	case p == "admin/performance" && r.Method == http.MethodGet:
 		s.apiAdminPerformanceGet(w, r)
 	case p == "admin/performance/export" && r.Method == http.MethodPost:
@@ -339,7 +316,7 @@ func (s *Server) apiRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	if registrationDisallowed(ctx, s.store) {
+	if s.registrationDisallowed(ctx) {
 		s.writeErr(w, http.StatusForbidden, "registration is disabled")
 		return
 	}
@@ -373,7 +350,7 @@ func (s *Server) apiRegister(w http.ResponseWriter, r *http.Request) {
 		s.writeErr(w, http.StatusConflict, "username is reserved after account deletion")
 		return
 	}
-	isAdmin := adminEmailConfigured(email)
+	isAdmin := false
 	if n, err := s.store.CountUsers(ctx); err == nil && n == 0 {
 		isAdmin = true
 	}
@@ -497,7 +474,7 @@ func (s *Server) issueSession(w http.ResponseWriter, ctx context.Context, u *mod
 	if err != nil {
 		return err
 	}
-	http.SetCookie(w, s.newSessionCookie(sessionCookie, tok, int((14*24*time.Hour).Seconds())))
+	http.SetCookie(w, s.newSessionCookie(ctx, sessionCookie, tok, int((14*24*time.Hour).Seconds())))
 	return nil
 }
 
@@ -520,7 +497,7 @@ func (s *Server) clearBrowserSession(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	http.SetCookie(w, s.newSessionCookie(sessionCookie, "", -1))
+	http.SetCookie(w, s.newSessionCookie(r.Context(), sessionCookie, "", -1))
 }
 
 func (s *Server) apiMe(w http.ResponseWriter, r *http.Request) {
