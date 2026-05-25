@@ -57,7 +57,11 @@ Use the **FAB** (edit icon) on the mail screen when keys are unlocked.
 | **PGP Direct** | One **To** address; local delivery vs outbox matches iOS/web (`compose.jsx`). |
 | **Protected link** | Password + TTL + optional email notify; copy/share the returned URL. |
 
-Limitations: single **To** for PGP; plain-text body only; no attachments. See [IOS/README.md](../../IOS/README.md) for the same manual QA checklist against `make dev`.
+**Tier 1 limits:** PGP encrypts one **To**; Cc/Bcc are header-only; plain-text body; no attachments. **Reply** / **Reply all** on message detail. Swipe triage and client filters match iOS.
+
+From the repository root: `make test-flutter`.
+
+Feature matrix and QA: [docs/client-parity-roadmap.md](../../docs/client-parity-roadmap.md). Manual checks against `make dev`: [IOS/README.md](../../IOS/README.md#manual-qa-make-dev).
 
 ## Crypto tests
 

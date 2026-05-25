@@ -138,6 +138,27 @@ test-unit:
       when: never
     - if: $CI_COMMIT_BRANCH
 
+# Flutter Android mail client (see docs/client-parity-roadmap.md)
+test-flutter:
+  image: ghcr.io/cirruslabs/flutter:stable
+  stage: test
+  cache:
+    key: flutter-pub-${CI_COMMIT_REF_SLUG}
+    paths:
+      - flutter/elvish_mail/.dart_tool/
+      - flutter/elvish_mail/.pub-cache/
+  variables:
+    PUB_CACHE: $CI_PROJECT_DIR/flutter/elvish_mail/.pub-cache
+  script:
+    - cd flutter/elvish_mail
+    - flutter pub get
+    - flutter analyze --no-fatal-infos
+    - flutter test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
 # Race Condition Tests
 test-race:
   image: golang:1.25-bookworm

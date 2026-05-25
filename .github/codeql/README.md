@@ -69,6 +69,20 @@ gh pr update-branch 3 --repo Thravok/elvish-email   # merge main into PR branch
 - **Swift** (`IOS/`) — not in workflow; needs a `macos-latest` job if desired
 - **GitHub Actions** — optional; add `languages: actions` to the matrix if you want workflow scanning
 
+## Local analysis (Makefile)
+
+From the repo root (requires CodeQL CLI on `PATH`, e.g. `brew install codeql`):
+
+```bash
+make codeql-go          # Go — mirrors CI Analyze (go) + elvish/go-models
+make codeql-js          # JavaScript/TypeScript under codeql-config paths-ignore rules
+make codeql-all         # both
+make codeql-summary-go  # short text summary after codeql-go
+make codeql-clean       # delete .codeql/
+```
+
+Outputs live under `.codeql/` (gitignored): databases in `.codeql/databases/`, SARIF in `.codeql/results/`.
+
 ## References
 
 - [About CodeQL](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning-with-codeql)

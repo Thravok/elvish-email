@@ -6,13 +6,11 @@ on:
     branches: [main]
     paths:
       - "IOS/**"
-      - "IOSTests/**"
       - ".github/workflows/ios.yml"
   pull_request:
     branches: [main]
     paths:
       - "IOS/**"
-      - "IOSTests/**"
       - ".github/workflows/ios.yml"
 
 concurrency:
@@ -28,12 +26,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolve iOS Simulator destination
+        id: sim
+        working-directory: IOS
+        run: |
+          set -euo pipefail
+          for name in "iPhone 17" "iPhone 16" "iPhone 15"; do
+            if xcrun simctl list devices available | grep -q "${name} ("; then
+              echo "destination=platform=iOS Simulator,name=${name}" >> "$GITHUB_OUTPUT"
+              echo "Using simulator: ${name}"
+              exit 0
+            fi
+          done
+          echo "destination=platform=iOS Simulator,name=iPhone 17" >> "$GITHUB_OUTPUT"
+          echo "Using fallback simulator name (runner may differ)"
+
+      - name: Build for testing
+        working-directory: IOS
+        run: |
+          set -euo pipefail
+          xcodebuild build-for-testing \
+            -project IOS.xcodeproj \
+            -scheme IOS \
+            -destination "${{ steps.sim.outputs.destination }}" \
+            CODE_SIGNING_ALLOWED=NO
+
       - name: Run unit tests
         working-directory: IOS
         run: |
           set -euo pipefail
-          xcodebuild test \
+          xcodebuild test-without-building \
             -project IOS.xcodeproj \
             -scheme IOS \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "${{ steps.sim.outputs.destination }}" \
             CODE_SIGNING_ALLOWED=NO

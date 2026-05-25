@@ -315,16 +315,104 @@ class ProtectedLinkCreateResponse {
   }
 }
 
+class MailFilterConditionDto {
+  MailFilterConditionDto({
+    required this.type,
+    required this.op,
+    this.value,
+  });
+
+  final String type;
+  final String op;
+  final String? value;
+
+  factory MailFilterConditionDto.fromJson(Map<String, dynamic> j) {
+    return MailFilterConditionDto(
+      type: j['type'] as String? ?? '',
+      op: j['operator'] as String? ?? j['op'] as String? ?? 'contains',
+      value: j['value'] as String?,
+    );
+  }
+}
+
+class MailFilterActionDto {
+  MailFilterActionDto({required this.type, this.value});
+
+  final String type;
+  final String? value;
+
+  factory MailFilterActionDto.fromJson(Map<String, dynamic> j) {
+    return MailFilterActionDto(
+      type: j['type'] as String? ?? '',
+      value: j['value'] as String?,
+    );
+  }
+}
+
+class MailFilterRuleDto {
+  MailFilterRuleDto({
+    required this.id,
+    required this.name,
+    this.enabled,
+    this.priority,
+    required this.conditions,
+    required this.actions,
+    this.createdAt,
+  });
+
+  final String id;
+  final String name;
+  final bool? enabled;
+  final int? priority;
+  final List<MailFilterConditionDto> conditions;
+  final List<MailFilterActionDto> actions;
+  final String? createdAt;
+
+  factory MailFilterRuleDto.fromJson(Map<String, dynamic> j) {
+    final conds = <MailFilterConditionDto>[];
+    final rawC = j['conditions'];
+    if (rawC is List) {
+      for (final e in rawC) {
+        if (e is Map<String, dynamic>) {
+          conds.add(MailFilterConditionDto.fromJson(e));
+        }
+      }
+    }
+    final acts = <MailFilterActionDto>[];
+    final rawA = j['actions'];
+    if (rawA is List) {
+      for (final e in rawA) {
+        if (e is Map<String, dynamic>) {
+          acts.add(MailFilterActionDto.fromJson(e));
+        }
+      }
+    }
+    return MailFilterRuleDto(
+      id: j['id'] as String? ?? '',
+      name: j['name'] as String? ?? '',
+      enabled: j['enabled'] as bool?,
+      priority: (j['priority'] as num?)?.toInt(),
+      conditions: conds,
+      actions: acts,
+      createdAt: j['created_at'] as String?,
+    );
+  }
+}
+
 class MailFiltersListResponse {
   MailFiltersListResponse({required this.filters});
 
-  final List<dynamic> filters;
+  final List<MailFilterRuleDto> filters;
 
   factory MailFiltersListResponse.fromJson(Map<String, dynamic> j) {
     final raw = j['filters'];
-    final list = <dynamic>[];
+    final list = <MailFilterRuleDto>[];
     if (raw is List) {
-      list.addAll(raw);
+      for (final e in raw) {
+        if (e is Map<String, dynamic>) {
+          list.add(MailFilterRuleDto.fromJson(e));
+        }
+      }
     }
     return MailFiltersListResponse(filters: list);
   }

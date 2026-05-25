@@ -26,6 +26,14 @@ enum MailComposeMime {
         return s
     }
 
+    private static func sanitizeAddressList(_ addrs: [String], label: String) throws -> [String] {
+        var out: [String] = []
+        for addr in addrs where !addr.isEmpty {
+            out.append(try rejectHeaderInjection(addr, label: label))
+        }
+        return out
+    }
+
     static func splitAddressList(_ value: String) -> [String] {
         let raw = value.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\n", with: " ").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !raw.isEmpty else { return [] }
@@ -96,15 +104,16 @@ enum MailComposeMime {
     ) throws -> Data {
         let safeFrom = try rejectHeaderInjection(from.isEmpty ? "anonymous" : from, label: "From")
         let safeSubject = try rejectHeaderInjection(subject.isEmpty ? "(no subject)" : subject, label: "Subject")
-        let ccJoin = cc.filter { !$0.isEmpty }.map { try rejectHeaderInjection($0, label: "Cc") }.joined(separator: ", ")
-        let bccJoin = bcc.filter { !$0.isEmpty }.map { try rejectHeaderInjection($0, label: "Bcc") }.joined(separator: ", ")
+        let safeTo = try sanitizeAddressList(to, label: "To")
+        let ccJoin = try sanitizeAddressList(cc, label: "Cc").joined(separator: ", ")
+        let bccJoin = try sanitizeAddressList(bcc, label: "Bcc").joined(separator: ", ")
         let irt = try rejectHeaderInjection(inReplyTo.trimmingCharacters(in: .whitespacesAndNewlines), label: "In-Reply-To")
         let refs = try rejectHeaderInjection(references.trimmingCharacters(in: .whitespacesAndNewlines), label: "References")
 
         var lines: [String] = []
         lines.append("Date: \(rfc822Date())")
         lines.append("From: \(safeFrom)")
-        lines.append("To: \(to.map { try rejectHeaderInjection($0, label: "To") }.joined(separator: ", "))")
+        lines.append("To: \(safeTo.joined(separator: ", "))")
         if !ccJoin.isEmpty { lines.append("Cc: \(ccJoin)") }
         if !bccJoin.isEmpty { lines.append("Bcc: \(bccJoin)") }
         lines.append("Subject: \(safeSubject)")

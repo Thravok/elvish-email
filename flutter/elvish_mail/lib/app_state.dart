@@ -7,6 +7,8 @@ import 'api/mail_dtos.dart';
 import 'api/compose_service.dart';
 import 'api/mail_service.dart';
 import 'keyvault/elvish_key_vault.dart';
+import 'mail/mail_filter_engine.dart';
+import 'mail/mail_filter_ledger.dart';
 
 /// App-wide session + mailbox state (Swift `AppModel` analogue).
 class ElvishAppState extends ChangeNotifier {
@@ -32,6 +34,7 @@ class ElvishAppState extends ChangeNotifier {
   String selectedMailboxFolder = 'inbox';
   List<MailInboxRow> inboxRows = [];
   bool mailKeysUnlocked = false;
+  List<MailFilterRuleDto> mailFilters = [];
   List<IdentityRowDto> get mailIdentities => keyVault.identityRows;
 
   ComposeService get composeService => ComposeService(mail: mail, vault: keyVault);
@@ -64,10 +67,12 @@ class ElvishAppState extends ChangeNotifier {
         _syncVaultFlag();
         currentUser = sessionUser;
         await refreshFolders();
+        await loadMailFilters();
         await refreshMailbox();
       } else {
         currentUser = null;
         keyVault.zero();
+        mailFilters = [];
         _syncVaultFlag();
       }
     } catch (e) {
@@ -104,6 +109,12 @@ class ElvishAppState extends ChangeNotifier {
     }
   }
 
+  void cancelMfa() {
+    mfaChallenge = null;
+    _pendingVaultPassword = null;
+    notifyListeners();
+  }
+
   Future<void> submitMfa(String code, {required bool useRecovery}) async {
     final ch = mfaChallenge;
     if (ch == null) {
@@ -113,9 +124,12 @@ class ElvishAppState extends ChangeNotifier {
     lastError = null;
     notifyListeners();
     try {
-      final user = useRecovery
-          ? await auth.completeMfaRecovery(challengeId: ch.challengeId, code: code.trim())
-          : await auth.completeMfaTotp(challengeId: ch.challengeId, code: code.trim());
+      final AuthUserDto user;
+      if (useRecovery) {
+        user = await auth.completeMfaRecovery(challengeId: ch.challengeId, code: code);
+      } else {
+        user = await auth.completeMfaTotp(challengeId: ch.challengeId, code: code);
+      }
       mfaChallenge = null;
       currentUser = user;
       await _unlockMailKeysAndRefresh(sessionEmail: user.email);
@@ -127,25 +141,20 @@ class ElvishAppState extends ChangeNotifier {
     }
   }
 
-  void cancelMfa() {
-    mfaChallenge = null;
-    _pendingVaultPassword = null;
-    notifyListeners();
-  }
-
   Future<void> logout() async {
     isBusy = true;
-    lastError = null;
     notifyListeners();
     try {
-      final email = currentUser?.email;
+      final sessionEmail = currentUser?.email;
       await auth.logout();
-      if (email != null) {
-        await keyVault.deletePersistedAccount(email);
+      if (sessionEmail != null) {
+        await keyVault.deletePersistedAccount(sessionEmail);
+        await MailFilterLedger.clear(sessionEmail);
       }
       currentUser = null;
       inboxRows = [];
       mailFolders = [];
+      mailFilters = [];
       selectedMailboxFolder = 'inbox';
       mfaChallenge = null;
       _pendingVaultPassword = null;
@@ -157,6 +166,12 @@ class ElvishAppState extends ChangeNotifier {
       isBusy = false;
       notifyListeners();
     }
+  }
+
+  Future<void> refreshMailData() async {
+    await refreshFolders();
+    await loadMailFilters();
+    await refreshMailbox();
   }
 
   Future<void> refreshFolders() async {
@@ -176,7 +191,28 @@ class ElvishAppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadMailFilters() async {
+    try {
+      final res = await mail.listFilters();
+      mailFilters = res.filters;
+    } catch (_) {
+      mailFilters = [];
+    }
+  }
+
   Future<void> refreshMailbox() async {
+    try {
+      final r = await mail.messages(folder: selectedMailboxFolder);
+      inboxRows = _buildInboxRows(r.messages);
+      await _applyInboxClientFiltersIfNeeded();
+    } catch (e) {
+      inboxRows = [];
+      lastError = '$e';
+    }
+    notifyListeners();
+  }
+
+  Future<void> _refreshMailboxWithoutFilterPass() async {
     try {
       final r = await mail.messages(folder: selectedMailboxFolder);
       inboxRows = _buildInboxRows(r.messages);
@@ -187,10 +223,80 @@ class ElvishAppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _applyInboxClientFiltersIfNeeded() async {
+    final email = currentUser?.email;
+    if (selectedMailboxFolder != 'inbox' || !mailKeysUnlocked || email == null) {
+      return;
+    }
+    final rules = MailFilterEngine.normalizeRules(mailFilters);
+    final rulesHash = MailFilterEngine.stableRulesHash(rules);
+    await MailFilterLedger.syncRulesHash(rulesHash, email);
+    final idSet = inboxRows.map((r) => r.id).toSet();
+    await MailFilterLedger.pruneMissing(idSet, email);
+
+    var didAny = false;
+    for (final row in inboxRows) {
+      final ctx = MailFilterEngine.buildContext(row);
+      final hit = MailFilterEngine.pickFirstMatchingRule(rules, ctx);
+      if (hit == null) {
+        continue;
+      }
+      final acts = MailFilterEngine.filterSupportedActions(hit.actions);
+      if (acts.isEmpty) {
+        continue;
+      }
+      final fp = MailFilterEngine.actionFingerprint(hit.actions);
+      if (await MailFilterLedger.alreadyApplied(
+        messageId: row.id,
+        ruleId: hit.id,
+        actionFingerprint: fp,
+        rulesHash: rulesHash,
+        sessionEmail: email,
+      )) {
+        continue;
+      }
+      try {
+        await MailFilterEngine.applyActions(
+          messageId: row.id,
+          actions: hit.actions,
+          mail: mail,
+        );
+        await MailFilterLedger.record(
+          messageId: row.id,
+          ruleId: hit.id,
+          actionFingerprint: fp,
+          rulesHash: rulesHash,
+          sessionEmail: email,
+        );
+        didAny = true;
+      } catch (_) {
+        break;
+      }
+    }
+    if (didAny) {
+      await refreshFolders();
+      await _refreshMailboxWithoutFilterPass();
+    }
+  }
+
   Future<void> selectFolder(String folder) async {
     selectedMailboxFolder = folder.toLowerCase().trim();
     notifyListeners();
     await refreshMailbox();
+  }
+
+  Future<void> moveMessage(String id, String folder) async {
+    isBusy = true;
+    notifyListeners();
+    try {
+      await mail.moveMessage(id: id, folder: folder);
+      await refreshMailData();
+    } catch (e) {
+      lastError = '$e';
+    } finally {
+      isBusy = false;
+      notifyListeners();
+    }
   }
 
   Future<void> markMessageRead(String id) async {
@@ -198,6 +304,16 @@ class ElvishAppState extends ChangeNotifier {
       await mail.setMessageRead(id: id, read: true);
       await refreshMailbox();
     } catch (_) {}
+  }
+
+  Future<void> markMessageUnread(String id) async {
+    try {
+      await mail.setMessageRead(id: id, read: false);
+      await refreshMailbox();
+    } catch (e) {
+      lastError = '$e';
+      notifyListeners();
+    }
   }
 
   Future<String> loadDecryptedBody(String messageId) async {
@@ -210,6 +326,7 @@ class ElvishAppState extends ChangeNotifier {
     _pendingVaultPassword = null;
     await refreshFolders();
     if (pw == null) {
+      await loadMailFilters();
       await refreshMailbox();
       _syncVaultFlag();
       return;
@@ -220,6 +337,7 @@ class ElvishAppState extends ChangeNotifier {
       lastError = '$e';
     }
     _syncVaultFlag();
+    await loadMailFilters();
     await refreshMailbox();
   }
 

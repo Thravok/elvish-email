@@ -37,13 +37,17 @@ define DEV_AUTO_DB_UP
 	fi;
 endef
 
-.PHONY: openapi openapi-check
+.PHONY: openapi openapi-check codeql codeql-go codeql-js codeql-all codeql-summary codeql-clean codeql-install-hint codeql-build
 openapi:
 	go run ./cmd/apiroutes -write
 
 openapi-check:
 	go run ./cmd/apiroutes -check
-.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e vuln bench-smoke check dev-api dev-mta compose-up
+.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e test-flutter test-ios check-clients vuln bench-smoke check dev-api dev-mta compose-up
+
+FLUTTER_APP ?= flutter/elvish_mail
+IOS_SCHEME ?= IOS
+IOS_SIMULATOR ?= platform=iOS Simulator,name=iPhone 16
 
 # Precompiled browser bundles (React 19, OpenPGP 6 vendor copy, mail search worker) into static/dist/.
 # Requires Node.js. First run installs frontend/node_modules via npm ci. Set SKIP_STATIC_JS=1 to skip (use prebuilt static/dist only).
@@ -263,6 +267,19 @@ test-e2e:
 test-race:
 	go test -race ./...
 
+# Flutter Android mail client (see docs/client-parity-roadmap.md).
+test-flutter:
+	@command -v flutter >/dev/null 2>&1 || { printf '%s\n' "flutter required — https://docs.flutter.dev/get-started/install"; exit 1; }
+	cd $(FLUTTER_APP) && flutter pub get && flutter analyze --no-fatal-infos && flutter test
+
+# iOS mail client (macOS + Xcode only).
+test-ios:
+	@command -v xcodebuild >/dev/null 2>&1 || { printf '%s\n' "xcodebuild required (macOS + Xcode)"; exit 1; }
+	cd IOS && xcodebuild test -project IOS.xcodeproj -scheme $(IOS_SCHEME) -destination '$(IOS_SIMULATOR)' CODE_SIGNING_ALLOWED=NO
+
+check-clients: test-flutter
+	@if [ "$$(uname -s)" = "Darwin" ]; then $(MAKE) test-ios; else printf '%s\n' "[check-clients] skipping test-ios (not macOS)"; fi
+
 vuln:
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
@@ -270,3 +287,79 @@ bench-smoke:
 	go test -bench=. -benchtime=1x ./...
 
 check: fmt vet lint static-js openapi-check test-race vuln
+
+# --- CodeQL (local; mirrors .github/workflows/codeql-analysis.yml server job) ---
+# Install CLI once: brew install codeql  (or https://github.com/github/codeql-action/releases)
+CODEQL ?= codeql
+CODEQL_DIR ?= .codeql
+CODEQL_CONFIG ?= .github/codeql/codeql-config.yml
+CODEQL_MODEL_PACK ?= $(abspath .github/codeql/elvish-go-models)
+CODEQL_GO_DB ?= $(CODEQL_DIR)/databases/go
+CODEQL_JS_DB ?= $(CODEQL_DIR)/databases/javascript
+CODEQL_GO_SARIF ?= $(CODEQL_DIR)/results/go.sarif
+CODEQL_JS_SARIF ?= $(CODEQL_DIR)/results/javascript.sarif
+
+codeql-install-hint:
+	@printf '%s\n' \
+		"CodeQL CLI not found. Install one of:" \
+		"  brew install codeql" \
+		"  https://github.com/github/codeql-action/releases (download the codeql-bundle archive)" \
+		"" \
+		"Then run: make codeql-go   (or make codeql-all for Go + JS)"
+
+codeql-check:
+	@command -v $(CODEQL) >/dev/null 2>&1 || { $(MAKE) -s codeql-install-hint; exit 1; }
+	@grep -qE '^[[:space:]]*-[[:space:]]*local:' $(CODEQL_CONFIG) && { \
+		printf '%s\n' "Remove 'local:' packs from $(CODEQL_CONFIG) (see .github/codeql/README.md)"; exit 1; \
+	} || true
+	@$(CODEQL) version | head -1
+
+# Traced by `codeql database create --command` (must be a single executable; not "VAR=1 go ...").
+codeql-build:
+	CGO_ENABLED=0 go build -v ./...
+
+# Default local scan: Go only (matches most server alerts; fastest iteration).
+codeql: codeql-go
+
+codeql-all: codeql-go codeql-js
+
+codeql-go: codeql-check
+	@mkdir -p $(CODEQL_DIR)/databases $(CODEQL_DIR)/results
+	@printf '%s\n' "[codeql] creating Go database (traces: make codeql-build) ..."
+	$(CODEQL) database create $(CODEQL_GO_DB) --overwrite \
+		--language=go \
+		--source-root="$(CURDIR)" \
+		--codescanning-config="$(CURDIR)/$(CODEQL_CONFIG)" \
+		--command='make codeql-build'
+	@printf '%s\n' "[codeql] analyzing Go (elvish/go-models MaD pack) ..."
+	$(CODEQL) database analyze $(CODEQL_GO_DB) \
+		--format=sarif-latest \
+		--output="$(CODEQL_GO_SARIF)" \
+		--codescanning-config="$(CURDIR)/$(CODEQL_CONFIG)" \
+		--additional-packs="$(CODEQL_MODEL_PACK)" \
+		--model-packs=elvish/go-models
+	@printf '%s\n' "[codeql] Go SARIF: $(CODEQL_GO_SARIF)" \
+		"       summary: make codeql-summary-go"
+
+codeql-js: codeql-check
+	@mkdir -p $(CODEQL_DIR)/databases $(CODEQL_DIR)/results
+	@printf '%s\n' "[codeql] creating JavaScript/TypeScript database (no build) ..."
+	$(CODEQL) database create $(CODEQL_JS_DB) --overwrite \
+		--language=javascript \
+		--source-root="$(CURDIR)" \
+		--codescanning-config="$(CURDIR)/$(CODEQL_CONFIG)"
+	@printf '%s\n' "[codeql] analyzing JavaScript/TypeScript ..."
+	$(CODEQL) database analyze $(CODEQL_JS_DB) \
+		--format=sarif-latest \
+		--output="$(CODEQL_JS_SARIF)" \
+		--codescanning-config="$(CURDIR)/$(CODEQL_CONFIG)"
+	@printf '%s\n' "[codeql] JS SARIF: $(CODEQL_JS_SARIF)"
+
+codeql-summary-go: codeql-check
+	@test -d "$(CODEQL_GO_DB)" || { printf '%s\n' "missing $(CODEQL_GO_DB) — run make codeql-go first"; exit 1; }
+	@$(CODEQL) database interpret-results "$(CODEQL_GO_DB)" --format=text --max-path-problems=30
+
+codeql-summary: codeql-summary-go
+
+codeql-clean:
+	rm -rf "$(CODEQL_DIR)"

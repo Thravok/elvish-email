@@ -1,0 +1,2 @@
+// Shared Xcode settings. Optional per-machine overrides in Local.xcconfig (gitignored).
+#include? "Local.xcconfig"

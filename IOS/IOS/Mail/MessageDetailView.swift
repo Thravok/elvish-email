@@ -8,6 +8,8 @@ struct MessageDetailView: View {
     @State private var presented: MailPresentedMessage?
     @State private var loadError: String?
     @State private var isLoading = true
+    @State private var showCompose = false
+    @State private var composeDraft: ComposeDraft?
 
     var body: some View {
         Group {
@@ -48,6 +50,12 @@ struct MessageDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
 #endif
         .toolbar {
+            if model.mailKeysUnlocked {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button("Reply") { openCompose(replyAll: false) }
+                    Button("Reply All") { openCompose(replyAll: true) }
+                }
+            }
             if row.read == true {
 #if os(macOS)
                 ToolbarItem(placement: .automatic) {
@@ -56,13 +64,16 @@ struct MessageDetailView: View {
                     }
                 }
 #else
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem(placement: .secondaryAction) {
                     Button("Mark unread") {
                         Task { await model.markMessageUnread(id: row.id) }
                     }
                 }
 #endif
             }
+        }
+        .sheet(isPresented: $showCompose) {
+            ComposeView(model: model, initialDraft: composeDraft)
         }
         .task {
             if row.read != true {
@@ -162,6 +173,23 @@ struct MessageDetailView: View {
                 }
             }
         }
+    }
+
+    private func openCompose(replyAll: Bool) {
+        let src: ReplyMessageSource
+        if let p = presented {
+            src = ReplyMessageSource.fromPresented(p, row: row)
+        } else {
+            src = ReplyMessageSource.fromInboxRow(row)
+        }
+        let account = model.currentUser?.email ?? ""
+        composeDraft = MailReplyDraft.buildReplyComposeDraft(
+            message: src,
+            identities: model.mailIdentities,
+            accountEmail: account,
+            replyAll: replyAll
+        )
+        showCompose = true
     }
 
     private func loadBody() async {

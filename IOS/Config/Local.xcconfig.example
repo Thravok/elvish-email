@@ -1,0 +1,3 @@
+// Copy to Local.xcconfig (same directory) for device signing on your Mac.
+// Do not commit Local.xcconfig.
+DEVELOPMENT_TEAM = YOUR_TEAM_ID

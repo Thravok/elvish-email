@@ -319,10 +319,10 @@ final class ElvishKeyVault {
 
     private func armorMessage(_ encrypted: Data) throws -> String {
         let armored = Armor.armored(encrypted, as: .message)
-        guard let s = String(data: armored, encoding: .utf8), !s.isEmpty else {
+        guard !armored.isEmpty else {
             throw KeyVaultError.openPGP("armor encoding failed")
         }
-        return s
+        return armored
     }
 
     private func fingerprintHexFull(for key: Key) throws -> String {

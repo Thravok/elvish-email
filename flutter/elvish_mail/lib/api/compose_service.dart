@@ -36,6 +36,8 @@ class ComposeService {
     required bool localDelivery,
     List<String> cc = const [],
     List<String> bcc = const [],
+    String inReplyTo = '',
+    String references = '',
   }) async {
     if (!vault.isUnlocked) {
       throw KeyVaultError.vaultLocked;
@@ -47,6 +49,8 @@ class ComposeService {
       cc: cc.map(MailComposeMime.canonicalEmailToken).where((e) => e.isNotEmpty).toList(),
       bcc: bcc.map(MailComposeMime.canonicalEmailToken).where((e) => e.isNotEmpty).toList(),
       subject: subject,
+      inReplyTo: inReplyTo,
+      references: references,
     );
     final rfc822 = MailComposeMime.buildRfc5322(
       from: from,
@@ -55,6 +59,8 @@ class ComposeService {
       body: body,
       cc: cc,
       bcc: bcc,
+      inReplyTo: inReplyTo,
+      references: references,
     );
     final armoredBody = vault.encryptAndSignBinary(
       armoredRecipientPub: recipientArmored,
@@ -102,6 +108,8 @@ class ComposeService {
       cc: cc,
       subject: subject,
       armoredCiphertext: armoredBody,
+      inReplyTo: inReplyTo,
+      references: references,
     );
     final res = await mail.postOutbox(
       payloadCiphertextB64: base64Encode(outboundMime),

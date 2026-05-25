@@ -3,6 +3,7 @@ import SwiftUI
 /// Compose sheet: PGP direct + protected link (parity with `static/mail/compose.jsx`).
 struct ComposeView: View {
     @Bindable var model: AppModel
+    var initialDraft: ComposeDraft?
     @Environment(\.dismiss) private var dismiss
 
     enum SendMode: String, CaseIterable {
@@ -29,6 +30,8 @@ struct ComposeView: View {
     @State private var linkResultURL: String?
     @State private var sendError: String = ""
     @State private var sending = false
+    @State private var inReplyTo: String = ""
+    @State private var references: String = ""
 
     var body: some View {
         NavigationStack {
@@ -162,6 +165,18 @@ struct ComposeView: View {
         } else if from.isEmpty, let first = fromOptions.first {
             from = first
         }
+        if let d = initialDraft {
+            to = d.to
+            cc = d.cc
+            bcc = d.bcc
+            subject = d.subject
+            bodyText = d.body
+            inReplyTo = d.inReplyTo
+            references = d.references
+            if !to.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, mode == .pgp {
+                scheduleKeyLookup()
+            }
+        }
     }
 
     private func scheduleKeyLookup() {
@@ -248,7 +263,9 @@ struct ComposeView: View {
             senderFingerprint: senderFp,
             localDelivery: localDelivery,
             cc: ccList,
-            bcc: bccList
+            bcc: bccList,
+            inReplyTo: inReplyTo,
+            references: references
         )
         model.selectedMailboxFolder = "sent"
         await model.refreshMailData()

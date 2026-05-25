@@ -8,6 +8,7 @@
 
 - [ ] `make fmt` / `make vet` / `make lint` (or CI green)
 - [ ] Tests added or updated where appropriate
+- [ ] Updated [docs/client-parity-roadmap.md](docs/client-parity-roadmap.md) matrix if web / iOS / Android client behavior changed
 
 ## License
 

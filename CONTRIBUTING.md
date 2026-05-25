@@ -37,6 +37,16 @@ From the repository root:
 | `make openapi` | Regenerate `internal/apidoc/openapi.yaml` from `internal/httpserver/api.go` + `docs/openapi/supplemental.yaml`. |
 | `make openapi-check` | Fail if the committed OpenAPI spec is out of date (runs in `make check` / CI). |
 | `make check` | `fmt` + `vet` + `lint` + `static-js` + `openapi-check` + `test-race` + `govulncheck`. |
+| `make test-flutter` | `flutter analyze` + `flutter test` in [flutter/elvish_mail/](flutter/elvish_mail/). |
+| `make test-ios` | `xcodebuild test` for [IOS/](IOS/) (macOS + Xcode only). |
+| `make check-clients` | `test-flutter`; on macOS also `test-ios`. |
+| `make codeql` / `make codeql-go` | Local CodeQL for Go (same config + MaD pack as CI). Requires [CodeQL CLI](https://github.com/github/codeql-action/releases) (`brew install codeql`). Uses `make codeql-build` as the traced command. |
+| `make codeql-js` | Local CodeQL for `static/` and other JS/TS under server config paths. |
+| `make codeql-all` | Go + JavaScript databases. |
+| `make codeql-summary-go` | Text summary of Go findings after `make codeql-go`. |
+| `make codeql-clean` | Remove `.codeql/` artifacts. |
+
+**In Cursor / VS Code:** **Terminal → Run Task…** → **CodeQL: Go** (or **CodeQL: Go + summary**). Installs the [CodeQL extension](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-codeql) when prompted via `.vscode/extensions.json`.
 
 ## Browser mail UI (acceptance framing)
 
@@ -70,6 +80,7 @@ React vs vanilla does **not** replace these controls. When changing mail, auth, 
 | Mail pipeline / workers | `internal/mail/`, `internal/mailworker/`, `internal/mailops/`, `internal/mailstore/` |
 | SMTP (inbound/outbound) | `internal/smtp/`, `internal/smtpserver/`, `internal/smtpout/` |
 | Browser mail UI | `static/mail/`, [frontend/](frontend/) (esbuild: `mail-bundle.js`, lazy `mail-admin-embed.js` for embedded admin → `static/dist/`) |
-| iOS app | `IOS/` (see [IOS/README.md](IOS/README.md)) |
+| iOS app | `IOS/` (see [IOS/README.md](IOS/README.md), [docs/client-parity-roadmap.md](docs/client-parity-roadmap.md)) |
+| Android (Flutter) mail | `flutter/elvish_mail/` (see [flutter/elvish_mail/README.md](flutter/elvish_mail/README.md), [docs/client-parity-roadmap.md](docs/client-parity-roadmap.md)) |
 
 When in doubt, search for the route or env var in `internal/` and follow existing patterns.

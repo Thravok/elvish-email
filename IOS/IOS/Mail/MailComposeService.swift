@@ -22,7 +22,9 @@ struct MailComposeService {
         senderFingerprint: String,
         localDelivery: Bool,
         cc: [String] = [],
-        bcc: [String] = []
+        bcc: [String] = [],
+        inReplyTo: String = "",
+        references: String = ""
     ) async throws -> PgpSendResult {
         guard vault.isUnlocked else { throw KeyVaultError.vaultLocked }
         let recipients = [recipient]
@@ -31,7 +33,9 @@ struct MailComposeService {
             to: recipients,
             cc: cc.map { MailComposeMime.canonicalEmailToken($0) }.filter { !$0.isEmpty },
             bcc: bcc.map { MailComposeMime.canonicalEmailToken($0) }.filter { !$0.isEmpty },
-            subject: subject
+            subject: subject,
+            inReplyTo: inReplyTo,
+            references: references
         )
         let rfc822 = try MailComposeMime.buildRFC5322(
             from: from,
@@ -39,7 +43,9 @@ struct MailComposeService {
             subject: subject,
             body: body,
             cc: cc,
-            bcc: bcc
+            bcc: bcc,
+            inReplyTo: inReplyTo,
+            references: references
         )
         let armoredBody = try vault.encryptAndSignToRecipient(
             armoredRecipientPub: recipientArmored,
@@ -88,7 +94,9 @@ struct MailComposeService {
             to: recipients,
             cc: cc,
             subject: subject,
-            armoredCiphertext: armoredBody
+            armoredCiphertext: armoredBody,
+            inReplyTo: inReplyTo,
+            references: references
         )
         let res = try await mail.postOutbox(
             payloadCiphertextB64: outboundMIME.base64EncodedString(),

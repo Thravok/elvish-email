@@ -18,6 +18,9 @@
 *.out
 coverage.html
 
+# Local CodeQL databases and SARIF (make codeql-go)
+.codeql/
+
 # Minisign secret for blog posts (never commit; elvishsign keygen default name)
 content/blog/signing.key
 
@@ -35,6 +38,7 @@ content/blog/signing.key
 
 # Xcode — never commit per-machine UI state or account-derived paths (xcuserdata)
 **/xcuserdata/
+IOS/Config/Local.xcconfig
 *.xcuserstate
 *.swp
 *.swo

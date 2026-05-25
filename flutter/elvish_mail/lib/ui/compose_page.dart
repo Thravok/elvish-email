@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../api/mail_dtos.dart';
 import '../app_state.dart';
 import '../crypto/protected_link_crypto.dart';
+import '../mail/reply_draft.dart';
 import '../mime/mail_compose_mime.dart';
 
 enum ComposeSendMode { pgp, link }
 
 class ComposePage extends StatefulWidget {
-  const ComposePage({super.key, required this.model});
+  const ComposePage({super.key, required this.model, this.initialDraft});
 
   final ElvishAppState model;
+  final ComposeDraft? initialDraft;
 
   @override
   State<ComposePage> createState() => _ComposePageState();
@@ -37,6 +38,8 @@ class _ComposePageState extends State<ComposePage> {
   String? _linkResultUrl;
   String? _sendError;
   bool _sending = false;
+  String _inReplyTo = '';
+  String _references = '';
 
   @override
   void dispose() {
@@ -68,6 +71,19 @@ class _ComposePageState extends State<ComposePage> {
     super.initState();
     final def = widget.model.mailIdentities.where((e) => e.isDefault == true).map((e) => e.email).firstOrNull;
     _from = def ?? _fromOptions.firstOrNull ?? '';
+    final d = widget.initialDraft;
+    if (d != null) {
+      _to.text = d.to;
+      _cc.text = d.cc;
+      _bcc.text = d.bcc;
+      _subject.text = d.subject;
+      _body.text = d.body;
+      _inReplyTo = d.inReplyTo;
+      _references = d.references;
+      if (d.to.trim().isNotEmpty) {
+        Future<void>.delayed(Duration.zero, _lookupKey);
+      }
+    }
   }
 
   @override
@@ -346,6 +362,8 @@ class _ComposePageState extends State<ComposePage> {
       localDelivery: localDelivery,
       cc: MailComposeMime.splitAddressList(_cc.text),
       bcc: MailComposeMime.splitAddressList(_bcc.text),
+      inReplyTo: _inReplyTo,
+      references: _references,
     );
     widget.model.selectedMailboxFolder = 'sent';
     await widget.model.refreshMailbox();
