@@ -75,6 +75,10 @@ func TestIssuerRedirectTarget(t *testing.T) {
 	if _, err := iss.RedirectTarget("https://evil.example/callback"); err == nil {
 		t.Fatal("expected error for non-allowlisted redirect")
 	}
+	got := RedirectURLWithAuthCode(u, "code123", "state456")
+	if got == "" || !strings.Contains(got, "code=code123") || !strings.Contains(got, "state=state456") {
+		t.Fatalf("RedirectURLWithAuthCode = %q", got)
+	}
 }
 
 func TestMarshalJWKSJSON(t *testing.T) {

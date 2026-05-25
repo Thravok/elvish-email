@@ -45,6 +45,20 @@ func (i *Issuer) RedirectTarget(redirectURI string) (*url.URL, error) {
 	return u, nil
 }
 
+// RedirectURLWithAuthCode returns the allowlisted redirect URL with OAuth code and state query
+// parameters. target must come from Issuer.RedirectTarget.
+func RedirectURLWithAuthCode(target *url.URL, code, state string) string {
+	if target == nil {
+		return ""
+	}
+	redir := *target
+	qq := redir.Query()
+	qq.Set("code", code)
+	qq.Set("state", state)
+	redir.RawQuery = qq.Encode()
+	return redir.String()
+}
+
 // ClientSecretMatches compares the presented client secret in constant time.
 func (i *Issuer) ClientSecretMatches(secret string) bool {
 	if i == nil {

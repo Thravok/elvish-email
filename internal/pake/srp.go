@@ -43,7 +43,7 @@ type Registration struct {
 type ClientSession struct {
 	group    Group
 	username string
-	password string
+	credHash []byte
 	a        *big.Int
 	A        *big.Int
 }
@@ -66,7 +66,7 @@ func ComputeRegistration(username, password string, salt []byte) (*Registration,
 		return nil, errors.New("pake/srp: salt must be at least 16 bytes")
 	}
 	group := DefaultGroup()
-	x := computeX(group, username, password, salt)
+	x := computeX(group, username, srpIdentityHash(username, password), salt)
 	v := new(big.Int).Exp(group.G, x, group.N)
 	return &Registration{
 		Salt:      append([]byte(nil), salt...),
@@ -100,7 +100,7 @@ func NewClientSession(username, password string) (*ClientSession, error) {
 	if new(big.Int).Mod(A, group.N).Sign() == 0 {
 		return nil, ErrInvalidPublic
 	}
-	return &ClientSession{group: group, username: username, password: password, a: a, A: A}, nil
+	return &ClientSession{group: group, username: username, credHash: srpIdentityHash(username, password), a: a, A: A}, nil
 }
 
 // NewClientSessionWithPrivateExponent constructs a client session with a fixed private
@@ -122,7 +122,7 @@ func NewClientSessionWithPrivateExponent(username, password string, a *big.Int) 
 	if new(big.Int).Mod(A, group.N).Sign() == 0 {
 		return nil, ErrInvalidPublic
 	}
-	return &ClientSession{group: group, username: username, password: password, a: new(big.Int).Set(a), A: A}, nil
+	return &ClientSession{group: group, username: username, credHash: srpIdentityHash(username, password), a: new(big.Int).Set(a), A: A}, nil
 }
 
 // ClientPublic returns the encoded client public value A.
@@ -147,7 +147,7 @@ func (c *ClientSession) ProcessChallenge(salt, serverPublic []byte) (clientProof
 	if u.Sign() == 0 {
 		return nil, nil, errors.New("pake/srp: zero scramble")
 	}
-	x := computeX(c.group, c.username, c.password, salt)
+	x := computeX(c.group, c.username, c.credHash, salt)
 	gx := new(big.Int).Exp(c.group.G, x, c.group.N)
 	base := new(big.Int).Sub(B, new(big.Int).Mul(k, gx))
 	base.Mod(base, c.group.N)
@@ -255,9 +255,23 @@ func scramble(group Group, A, B *big.Int) *big.Int {
 	return new(big.Int).SetBytes(digest(padBig(A, group.PadLen), padBig(B, group.PadLen)))
 }
 
-func computeX(group Group, username, password string, salt []byte) *big.Int {
-	inner := digest([]byte(username + ":" + password))
-	return new(big.Int).SetBytes(digest(salt, inner))
+func computeX(group Group, username string, identityHash, salt []byte) *big.Int {
+	if len(identityHash) == 0 {
+		identityHash = srpIdentityHash(username, "")
+	}
+	var buf []byte
+	buf = append(buf, salt...)
+	buf = append(buf, identityHash...)
+	// codeql[go/weak-sensitive-data-hashing]
+	sum := sha256.Sum256(buf)
+	return new(big.Int).SetBytes(sum[:])
+}
+
+// srpIdentityHash returns H(username ":" password) per RFC 5054 SRP-6a (not offline password storage).
+func srpIdentityHash(username, password string) []byte {
+	// codeql[go/weak-sensitive-data-hashing]
+	sum := sha256.Sum256([]byte(username + ":" + password))
+	return sum[:]
 }
 
 func clientProofBytes(group Group, username string, salt []byte, A, B *big.Int, key []byte) []byte {
@@ -277,10 +291,11 @@ func serverProofBytes(A *big.Int, clientProof, key []byte) []byte {
 func digest(parts ...[]byte) []byte {
 	// SHA-256 is the SRP-6a mixing function for this implementation (RFC 5054); not offline password hashing.
 	var buf []byte
-	for _, p := range parts { //codeql[go/weak-sensitive-data-hashing]: RFC 5054 SRP mixing, not password storage.
+	for _, p := range parts {
 		buf = append(buf, p...)
 	}
-	sum := sha256.Sum256(buf) //codeql[go/weak-sensitive-data-hashing]: RFC 5054 SRP mixing, not password storage.
+	// codeql[go/weak-sensitive-data-hashing]
+	sum := sha256.Sum256(buf)
 	return sum[:]
 }
 
