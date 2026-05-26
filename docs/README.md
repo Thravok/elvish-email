@@ -8,7 +8,7 @@ For how to read this repository:
 
 - **Server binaries:** [`cmd/elvishapi`](../cmd/elvishapi/), [`cmd/elvishmta`](../cmd/elvishmta/), [`cmd/elvishworker`](../cmd/elvishworker/) — split deploy; `elvishapi` serves [`static/`](../static/) and `/api/*`. See [runbooks/split-deploy.md](runbooks/split-deploy.md).
 - **Go module path:** `elvish` (see [`go.mod`](../go.mod)). Application code lives under [`internal/`](../internal/).
-- **SQL migrations:** [`internal/db/migrations/`](../internal/db/migrations/) — applied by goose when `elvishserver` starts with a configured `COCKROACH_DSN`.
+- **SQL migrations:** [`internal/db/migrations/`](../internal/db/migrations/) — applied by goose when **`elvishapi`** starts with a configured `COCKROACH_DSN`.
 - **E2EE mail (browser):** [`static/mail/`](../static/mail/) — React/JSX mail app; local-only search worker in [`static/mail/search/`](../static/mail/search/README.md).
 - **Native iOS client:** [`IOS/`](../IOS/) — Xcode project and Swift sources.
 - **Flutter Android client:** [`flutter/elvish_mail/`](../flutter/elvish_mail/) — Flutter app (same JSON API as iOS); see [`flutter/elvish_mail/README.md`](../flutter/elvish_mail/README.md).

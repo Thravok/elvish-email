@@ -42,6 +42,9 @@ theme:
     - content.tabs.link
     - toc.follow
 
+hooks:
+  - hooks/repo_links.py
+
 plugins:
   - search
 

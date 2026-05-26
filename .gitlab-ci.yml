@@ -87,6 +87,19 @@ lint-static-js:
       when: never
     - if: $CI_COMMIT_BRANCH
 
+# MkDocs documentation site: staged guides + strict build (no broken internal links).
+lint-docs:
+  image: python:3.12-slim
+  stage: lint
+  script:
+    - pip install --no-cache-dir -r docs-site/requirements.txt
+    - python3 scripts/docs-stage.py
+    - cd docs-site && python3 -m mkdocs build --strict
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
 # Vulnerability scanning with govulncheck
 security-vuln:
   image: golang:1.25-bookworm
@@ -233,7 +246,7 @@ test-integration:
     # - if: $CI_COMMIT_BRANCH
 
 # E2E Tests (Playwright)
-# Disabled by default - requires running elvishserver
+# Disabled by default - requires running elvishapi
 test-e2e:
   image: mcr.microsoft.com/playwright:v1.49.1-jammy
   stage: test
@@ -246,11 +259,11 @@ test-e2e:
   script:
     - npm test
   variables:
-    BASE_URL: "http://elvishserver:8765"
+    BASE_URL: "http://elvishapi:8765"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
       when: never
-    - when: never  # Disabled - requires separate elvishserver instance
+    - when: never  # Disabled - requires separate elvishapi instance
     # - if: $CI_COMMIT_BRANCH
     #   exists:
     #     - e2e/package.json
@@ -280,8 +293,8 @@ build-binary:
       when: never
     - if: $CI_COMMIT_BRANCH
 
-# Docker Build - elvishserver (using Kaniko, no Docker daemon required)
-docker-build-elvishserver:
+# Docker Build - ELVish split binaries (using Kaniko, no Docker daemon required)
+docker-build-elvish:
   image:
     name: gcr.io/kaniko-project/executor:v1.23.2-debug
     entrypoint: [""]
@@ -335,7 +348,7 @@ renovate-child:
 #   extends: container_scanning
 #   stage: container-scan
 #   needs:
-#     - job: docker-build-elvishserver
+#     - job: docker-build-elvish
 #       artifacts: false
 #   variables:
 #     CS_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG

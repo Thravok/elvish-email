@@ -1,6 +1,6 @@
 # Repository layout
 
-Single-page map of the **ELVish** monorepo (Go module `elvish`). For architecture and data planes, see [architecture.md](architecture.md). For day-to-day commands, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+Single-page map of the **ELVish** monorepo (Go module `elvish`). For architecture and data planes, see [architecture.md](architecture.md). For day-to-day commands, see [Guides → Contributing](guides/contributing.md).
 
 ## Top-level tree
 
@@ -79,8 +79,8 @@ Feature parity: [client-parity-roadmap.md](client-parity-roadmap.md).
 
 | Platform | Role |
 |----------|------|
-| **GitLab CI** ([`.gitlab-ci.yml`](../.gitlab-ci.yml)) | **Merge gate:** `gofmt`, `go vet`, golangci-lint + repo invariants, `apiroutes -check`, `static-js` freshness, `go test`, `go test -race`, Flutter analyze/test, `govulncheck`, Docker image build (`elvishapi`, `elvishmta`, `elvishworker`) |
-| **GitHub Actions** ([`.github/workflows/`](../.github/workflows/)) | CodeQL (Go + JS), iOS `xcodebuild test` (macOS), Android workflow, optional docker publish |
+| **GitLab CI** ([`.gitlab-ci.yml`](../.gitlab-ci.yml)) | **Merge gate:** `gofmt`, `go vet`, golangci-lint + repo invariants, `apiroutes -check`, `lint-static-js`, **`lint-docs`**, `go test`, `go test -race`, Flutter analyze/test, `govulncheck`, Docker image build (`elvishapi`, `elvishmta`, `elvishworker`) |
+| **GitHub Actions** ([`.github/workflows/`](../.github/workflows/)) | CodeQL (Go + JS), iOS `xcodebuild test` (macOS), Android workflow, MkDocs strict build, optional docker publish |
 
 Local equivalent of the GitLab lint/test stack: **`make check`** plus **`make check-clients`** on macOS.
 

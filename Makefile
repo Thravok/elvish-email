@@ -35,7 +35,7 @@ define DEV_AUTO_DB_UP
 	fi;
 endef
 
-.PHONY: openapi openapi-check codeql codeql-go codeql-js codeql-all codeql-summary codeql-clean codeql-install-hint codeql-build docs-stage docs-serve docs-build docs-up
+.PHONY: openapi openapi-check codeql codeql-go codeql-js codeql-all codeql-summary codeql-clean codeql-install-hint codeql-build docs-stage docs-serve docs-build docs-check docs-up
 openapi:
 	go run ./cmd/apiroutes -write
 
@@ -115,9 +115,7 @@ compose-up:
 
 # MkDocs Material static site from docs/ (see docs-site/mkdocs.yml, docker/docs/Dockerfile).
 docs-stage:
-	@mkdir -p docs/guides
-	@cp README.md docs/guides/product-readme.md
-	@cp CONTRIBUTING.md docs/guides/contributing.md
+	@python3 scripts/docs-stage.py
 
 docs-serve: docs-stage
 	@command -v python3 >/dev/null 2>&1 || { printf '%s\n' "python3 required (or: docker compose --profile docs up docs)"; exit 1; }
@@ -128,6 +126,11 @@ docs-build: docs-stage
 	@command -v python3 >/dev/null 2>&1 || { printf '%s\n' "python3 required (or: docker build -f docker/docs/Dockerfile .)"; exit 1; }
 	@python3 -m pip install -q -r docs-site/requirements.txt
 	@cd docs-site && python3 -m mkdocs build
+
+docs-check: docs-stage
+	@command -v python3 >/dev/null 2>&1 || { printf '%s\n' "python3 required"; exit 1; }
+	@python3 -m pip install -q -r docs-site/requirements.txt
+	@cd docs-site && python3 -m mkdocs build --strict
 
 docs-up:
 	@command -v docker >/dev/null 2>&1 || { printf '%s\n' "docker not found"; exit 1; }
@@ -295,7 +298,6 @@ codeql-go: codeql-check
 	$(CODEQL) database analyze $(CODEQL_GO_DB) \
 		--format=sarif-latest \
 		--output="$(CODEQL_GO_SARIF)" \
-		--codescanning-config="$(CURDIR)/$(CODEQL_CONFIG)" \
 		--additional-packs="$(CODEQL_MODEL_PACK)" \
 		--model-packs=elvish/go-models
 	@printf '%s\n' "[codeql] Go SARIF: $(CODEQL_GO_SARIF)" \

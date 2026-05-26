@@ -6,7 +6,7 @@ SwiftUI client in this directory that talks to the same **`/api/...`** surface a
 
 1. Double-click `IOS.xcodeproj` or run `open IOS/IOS.xcodeproj` from the repository root.
 2. Select the **IOS** scheme for running the app on a simulator or device.
-3. Ensure **`elvishserver`** is running and reachable if you exercise authenticated flows (see root [README.md](../README.md) — default local URL is `http://127.0.0.1:8765` for `make dev` / `make dev-once`).
+3. Ensure **`elvishapi`** is running and reachable if you exercise authenticated flows (see root [README.md](../README.md) — default local URL is `http://127.0.0.1:8765` for `make dev` / `make dev-api-once`).
 
 ## API base URL
 

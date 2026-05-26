@@ -97,13 +97,13 @@ Markdown is rendered with [Goldmark](https://github.com/yuin/goldmark).
 
 ## Deploy
 
-Run **`elvishserver`** behind your reverse proxy (TLS, HTTP/2, etc.) with env for Cockroach/Postgres and Valkey. Operator routes under `/api/admin/*` and `/dist/mail-admin-embed.js` require an admin session when Valkey is configured.
+Run **`elvishapi`** (and scale **`elvishmta`** / **`elvishworker`** separately) behind your reverse proxy (TLS, HTTP/2, etc.) with env for Cockroach/Postgres and Valkey. Operator routes under `/api/admin/*` and `/dist/mail-admin-embed.js` require an admin session when Valkey is configured.
 
 **Caching:** HTML references `/page.css` and `/site.js` with `?v=` from `content/home.json` `hash_short` (fallback: `version`). The service worker (`static/sw.js`) is served with injected version lines. Bump `hash_short` when you change CSS/JS.
 
-**elvishserver:** Responses use `Cache-Control` aligned with [`static/_headers`](static/_headers) where applicable. HTML uses `private` cache directives when a `elvish_session` cookie is present so shared caches do not serve personalized nav. `/api/*` uses `no-store`. Text responses may be gzip-compressed when `Accept-Encoding: gzip` is sent (skipped for `Range` requests). In-process caching of parsed `home.json` and blog posts is controlled in **admin → Platform** (`content_cache_sec`, default `10`; `0` disables). Cache entries are dropped after successful admin post upsert, migrate, or PGP key upload.
+**elvishapi:** Responses use `Cache-Control` aligned with [`static/_headers`](static/_headers) where applicable. HTML uses `private` cache directives when a `elvish_session` cookie is present so shared caches do not serve personalized nav. `/api/*` uses `no-store`. Text responses may be gzip-compressed when `Accept-Encoding: gzip` is sent (skipped for `Range` requests). In-process caching of parsed `home.json` and blog posts is controlled in **admin → Platform** (`content_cache_sec`, default `10`; `0` disables). Cache entries are dropped after successful admin post upsert, migrate, or PGP key upload.
 
-**Verify caching (local):** With `make dev`, `make dev-once`, or `go run ./cmd/elvishserver -addr :8765 -root .` (with env set), run (use `curl -sD - -o /dev/null` for HTML so the request is GET; `curl -I` sends HEAD and the server returns 405 for `/`):
+**Verify caching (local):** With `make dev`, `make dev-api-once`, or `go run ./cmd/elvishapi -addr :8765 -root .` (with env set), run (use `curl -sD - -o /dev/null` for HTML so the request is GET; `curl -I` sends HEAD and the server returns 405 for `/`):
 
 ```bash
 curl -sD - -o /dev/null http://127.0.0.1:8765/ | grep -iE 'cache-control|content-encoding'

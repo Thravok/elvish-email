@@ -1,10 +1,10 @@
 # Architecture overview
 
-**ELVish** ships as **`elvishapi`**, **`elvishmta`**, and **`elvishworker`** (module **`elvish`**) — see [ADR 0017](adr/0017-mandatory-split-deployment.md) and [runbooks/split-deploy.md](runbooks/split-deploy.md). `elvishapi` is the browser tier (static, SSR, API). This page is a map; authoritative decisions live in [adr/](adr/) and [e2ee-mail-spec.md](e2ee-mail-spec.md).
+**ELVish** ships as **`elvishapi`**, **`elvishmta`**, and **`elvishworker`** (module **`elvish`**) — see [ADR 0017](adr/0017-mandatory-split-deployment.md) and [runbooks/split-deploy.md](runbooks/split-deploy.md). `elvishapi` is the browser tier (static, SSR, API). This page is a map; authoritative decisions live in [adr/](adr/README.md) and [e2ee-mail-spec.md](e2ee-mail-spec.md).
 
 ## Narrative
 
-1. **Browsers** talk to `elvishserver` over HTTPS (or local HTTP in development). The **mail** client (`static/mail/`) is the primary app shell; the **operator panel** is embedded in mail at `/mail?view=admin` via `static/dist/mail-admin-embed.js`. Shared admin section modules live under `static/admin/`. Legacy `/admin/` URLs redirect into mail.
+1. **Browsers** talk to **`elvishapi`** over HTTPS (or local HTTP in development). The **mail** client (`static/mail/`) is the primary app shell; the **operator panel** is embedded in mail at `/mail?view=admin` via `static/dist/mail-admin-embed.js`. Shared admin section modules live under `static/admin/`. Legacy `/admin/` URLs redirect into mail.
 2. **CockroachDB** (or any Postgres-compatible server on the same wire protocol) is the **system of record**: users, blog posts, mail settings, outbox rows, identity metadata, and relational invariants. Migrations live in `internal/db/migrations/` and run at startup when `COCKROACH_DSN` is set.
 3. **Valkey** (Redis-compatible) holds **ephemeral** data: HTTP sessions, rate-limit counters, and short-lived negative caches used by the mail keyserver path.
 4. **Mail at scale** splits hot paths across **ScyllaDB** (mailbox-scale projections and time-ordered access) and **S3-compatible object storage** (ciphertext blobs). See [ADR 0007](adr/0007-four-store-mail-architecture.md). Local development uses Docker Compose for all of these; production sets the same env vars explicitly.
@@ -53,6 +53,6 @@ Edges are simplified: some read paths hit only SQL; blob and Scylla usage follow
 
 ## Related reading
 
-- [README.md](../README.md) — runbooks and environment variables
+- [Product README](guides/product-readme.md) — runbooks and environment variables
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — Make targets and code layout
 - [adr/README.md](adr/README.md) — full ADR index

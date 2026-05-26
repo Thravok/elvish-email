@@ -5,7 +5,7 @@ Flutter client for **ELVish** mail in this repository: same `/api/...` JSON surf
 ## Prerequisites
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (stable), Android Studio or SDK for builds.
-- A running `elvishserver` (see repository root [README.md](../../README.md); local dev often uses port **8765**).
+- A running **`elvishapi`** stack (see repository root [README.md](../../README.md); local dev often uses port **8765** via `make dev` or `make dev-api-once`).
 
 ## API base URL
 
