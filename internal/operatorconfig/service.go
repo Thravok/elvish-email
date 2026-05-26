@@ -46,7 +46,7 @@ func New(st *store.Store, log *slog.Logger) *Service {
 	return &Service{store: st, log: log}
 }
 
-// MaybeMigrateFromEnv imports legacy environment variables into operator_settings once.
+// MaybeMigrateFromEnv imports legacy environment variables into operator_settings.
 func (s *Service) MaybeMigrateFromEnv(ctx context.Context) error {
 	if s == nil || s.store == nil {
 		return nil
@@ -55,25 +55,51 @@ func (s *Service) MaybeMigrateFromEnv(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if !doc.UpdatedAt.IsZero() {
+	fillEmptyOnly := !doc.UpdatedAt.IsZero()
+	changed := applyEnvBootstrap(doc, fillEmptyOnly)
+	if !changed {
 		return nil
 	}
+	if err := s.store.SetOperatorSettings(ctx, doc); err != nil {
+		return err
+	}
+	s.Invalidate()
+	if fillEmptyOnly {
+		s.log.Info("backfilled empty operator settings from environment")
+	} else {
+		s.log.Info("migrated operator settings from environment")
+	}
+	return nil
+}
+
+func applyEnvBootstrap(doc *models.OperatorSettingsDoc, fillEmptyOnly bool) bool {
+	if doc == nil {
+		return false
+	}
 	changed := false
-	if v := strings.TrimSpace(os.Getenv("ELVISH_PUBLIC_BASE_URL")); v != "" {
-		doc.PublicBaseURL = strings.TrimRight(v, "/")
+	setString := func(dst *string, envName string, normalize func(string) string) {
+		v := strings.TrimSpace(os.Getenv(envName))
+		if v == "" {
+			return
+		}
+		if fillEmptyOnly && strings.TrimSpace(*dst) != "" {
+			return
+		}
+		next := normalize(v)
+		if *dst == next {
+			return
+		}
+		*dst = next
 		changed = true
 	}
-	if v := strings.TrimSpace(os.Getenv("ELVISH_MAIL_DOMAIN")); v != "" {
-		doc.PlatformMailDomain = strings.ToLower(v)
-		changed = true
-	}
-	if v := strings.TrimSpace(os.Getenv("ELVISH_WEB_ORIGINS")); v != "" {
-		doc.WebOrigins = v
-		changed = true
-	}
-	if v := strings.TrimSpace(os.Getenv("ELVISH_COOKIE_DOMAIN")); v != "" {
-		doc.CookieDomain = v
-		changed = true
+	setString(&doc.PublicBaseURL, "ELVISH_PUBLIC_BASE_URL", func(v string) string {
+		return strings.TrimRight(v, "/")
+	})
+	setString(&doc.PlatformMailDomain, "ELVISH_MAIL_DOMAIN", strings.ToLower)
+	setString(&doc.WebOrigins, "ELVISH_WEB_ORIGINS", strings.TrimSpace)
+	setString(&doc.CookieDomain, "ELVISH_COOKIE_DOMAIN", strings.TrimSpace)
+	if fillEmptyOnly {
+		return changed
 	}
 	if envTruthy("ELVISH_DISABLE_REGISTRATION") {
 		doc.RegistrationClosed = true
@@ -99,15 +125,7 @@ func (s *Service) MaybeMigrateFromEnv(ctx context.Context) error {
 			changed = true
 		}
 	}
-	if !changed {
-		return nil
-	}
-	if err := s.store.SetOperatorSettings(ctx, doc); err != nil {
-		return err
-	}
-	s.Invalidate()
-	s.log.Info("migrated operator settings from environment")
-	return nil
+	return changed
 }
 
 // Invalidate clears the in-process settings cache.
