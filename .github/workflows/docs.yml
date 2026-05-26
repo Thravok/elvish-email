@@ -37,7 +37,7 @@ jobs:
           cache: pip
           cache-dependency-path: docs-site/requirements.txt
       - name: Install MkDocs
-        run: python3 -m pip install --no-cache-dir -r docs-site/requirements.txt
+        run: python3 -m pip install -r docs-site/requirements.txt
       - name: Stage guides and build (strict)
         run: |
           python3 scripts/docs-stage.py
