@@ -259,19 +259,12 @@ func computeX(group Group, username string, identityHash, salt []byte) *big.Int 
 	if len(identityHash) == 0 {
 		identityHash = srpIdentityHash(username, "")
 	}
-	var buf []byte
-	buf = append(buf, salt...)
-	buf = append(buf, identityHash...)
-	// codeql[go/weak-sensitive-data-hashing]
-	sum := sha256.Sum256(buf)
-	return new(big.Int).SetBytes(sum[:])
+	return new(big.Int).SetBytes(digest(salt, identityHash))
 }
 
 // srpIdentityHash returns H(username ":" password) per RFC 5054 SRP-6a (not offline password storage).
 func srpIdentityHash(username, password string) []byte {
-	// codeql[go/weak-sensitive-data-hashing]
-	sum := sha256.Sum256([]byte(username + ":" + password))
-	return sum[:]
+	return digest([]byte(username + ":" + password))
 }
 
 func clientProofBytes(group Group, username string, salt []byte, A, B *big.Int, key []byte) []byte {
@@ -291,11 +284,10 @@ func serverProofBytes(A *big.Int, clientProof, key []byte) []byte {
 func digest(parts ...[]byte) []byte {
 	// SHA-256 is the SRP-6a mixing function for this implementation (RFC 5054); not offline password hashing.
 	var buf []byte
-	for _, p := range parts {
+	for _, p := range parts { //codeql[go/weak-sensitive-data-hashing]: RFC 5054 SRP mixing, not offline password storage.
 		buf = append(buf, p...)
 	}
-	// codeql[go/weak-sensitive-data-hashing]
-	sum := sha256.Sum256(buf)
+	sum := sha256.Sum256(buf) //codeql[go/weak-sensitive-data-hashing]: RFC 5054 SRP mixing, not offline password storage.
 	return sum[:]
 }
 

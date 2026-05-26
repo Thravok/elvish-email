@@ -108,12 +108,16 @@ func (s *Server) takeSRPChallenge(ctx context.Context, id, purpose string) (*srp
 	return ch, true, nil
 }
 
-func dummySRPRegistration(username string) (*pake.Registration, error) {
-	salt, err := pake.RandomSalt(16)
+func dummySRPRegistration(username string) (salt, verifier []byte, groupName, hashName string, err error) {
+	salt, err = pake.RandomSalt(16)
 	if err != nil {
-		return nil, err
+		return nil, nil, "", "", err
 	}
-	return pake.ComputeRegistration(username, "dummy-password-for-missing-user", salt)
+	reg, err := pake.ComputeRegistration(username, "dummy-password-for-missing-user", salt)
+	if err != nil {
+		return nil, nil, "", "", err
+	}
+	return salt, reg.Verifier, reg.GroupName, reg.HashName, nil
 }
 
 func decodeB64Field(v, name string) ([]byte, error) {
@@ -180,27 +184,26 @@ func (s *Server) apiLoginSRPBegin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	regDummy := false
-	var reg *pake.Registration
+	var salt, verifier []byte
+	var groupName, hashName string
 	if ok {
-		reg = &pake.Registration{
-			Salt:      append([]byte(nil), authUser.SRPSalt...),
-			Verifier:  append([]byte(nil), authUser.SRPVerifier...),
-			GroupName: authUser.SRPGroup,
-			HashName:  authUser.SRPHash,
-		}
+		salt = append([]byte(nil), authUser.SRPSalt...)
+		verifier = append([]byte(nil), authUser.SRPVerifier...)
+		groupName = authUser.SRPGroup
+		hashName = authUser.SRPHash
 	} else {
 		regDummy = true
-		reg, err = dummySRPRegistration(user)
+		salt, verifier, groupName, hashName, err = dummySRPRegistration(user)
 		if err != nil {
 			s.writeErrAPIInternal(w, "srp dummy", err)
 			return
 		}
 	}
-	if _, err := pake.ParseGroup(reg.GroupName, reg.HashName); err != nil {
+	if _, err := pake.ParseGroup(groupName, hashName); err != nil {
 		s.writeErrAPIInternal(w, "srp params", err)
 		return
 	}
-	sess, err := pake.NewServerSession(user, reg.Salt, reg.Verifier, clientPublic)
+	sess, err := pake.NewServerSession(user, salt, verifier, clientPublic)
 	if err != nil {
 		s.writeErr(w, http.StatusBadRequest, "invalid client public")
 		return
@@ -222,7 +225,7 @@ func (s *Server) apiLoginSRPBegin(w http.ResponseWriter, r *http.Request) {
 	}
 	s.writeJSON(w, http.StatusOK, map[string]any{
 		"session_id":        chID,
-		"salt_b64":          base64.StdEncoding.EncodeToString(reg.Salt),
+		"salt_b64":          base64.StdEncoding.EncodeToString(salt),
 		"server_public_b64": base64.StdEncoding.EncodeToString(sess.ServerPublic()),
 		"group":             pake.DefaultGroup().Name,
 		"hash":              "sha256",
