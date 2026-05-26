@@ -17,7 +17,7 @@ Include enough detail to reproduce or reason about the issue (affected component
 
 ## Scope
 
-In scope: the `elvishserver` and related binaries in this repository, default configurations documented in [README.md](README.md), and documented trust boundaries for mail and auth ([docs/e2ee-mail-spec.md](docs/e2ee-mail-spec.md), ADRs under [docs/adr/](docs/adr/)).
+In scope: **`elvishapi`**, **`elvishmta`**, **`elvishworker`**, and related tooling in this repository, default configurations documented in [README.md](README.md), and documented trust boundaries for mail and auth ([docs/e2ee-mail-spec.md](docs/e2ee-mail-spec.md), ADRs under [docs/adr/](docs/adr/)).
 
 Out of scope: third-party infrastructure misconfiguration, social engineering, or issues in dependencies unless they affect this codebase in a novel way (those may still be worth reporting upstream).
 

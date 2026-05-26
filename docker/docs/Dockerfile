@@ -11,12 +11,12 @@ COPY docs-site/requirements.txt docs-site/
 RUN pip install --no-cache-dir -r docs-site/requirements.txt
 
 COPY docs-site/mkdocs.yml docs-site/
+COPY docs-site/hooks docs-site/hooks
+COPY scripts/docs-stage.py scripts/
 COPY docs /src/docs
 COPY README.md CONTRIBUTING.md /src/
 
-RUN mkdir -p /src/docs/guides && \
-	cp /src/README.md /src/docs/guides/product-readme.md && \
-	cp /src/CONTRIBUTING.md /src/docs/guides/contributing.md
+RUN python3 scripts/docs-stage.py
 
 WORKDIR /src/docs-site
 RUN mkdocs build

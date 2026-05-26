@@ -94,4 +94,4 @@ Compose env syntax follows [`.cursor/rules/docker-compose-coolify.mdc`](../.curs
 
 - [ADR 0017](adr/0017-mandatory-split-deployment.md) — mandatory split
 - [runbooks/split-deploy.md](runbooks/split-deploy.md) — ports and scaling
-- [README.md](../README.md) — env reference
+- [Product README](guides/product-readme.md) — env reference
