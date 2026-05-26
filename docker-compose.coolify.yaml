@@ -23,7 +23,7 @@ x-api-environment: &api_environment
   - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
   - BLOB_S3_FORCE_PATH_STYLE=1
   - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-}
-  # First-boot only: imported into operator_settings then ignored (configure in admin → Platform).
+  # Bootstrap fallback: imported into empty operator_settings fields (configure in admin → Platform).
   - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-}
   - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-$SERVICE_URL_API_8765}
   - ELVISH_WEB_ORIGINS=${ELVISH_WEB_ORIGINS:-$SERVICE_URL_API_8765}

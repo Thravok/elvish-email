@@ -17903,6 +17903,7 @@ ${body || ""}`;
       if (!searchReady || !searchRef.current) return;
       for (const m of messages) {
         if (!m || !m.id || indexedMessagesRef.current.has(m.id)) continue;
+        if (messageHasBodyCacheRestriction(m)) continue;
         indexedMessagesRef.current.add(m.id);
         const blobURL = new URL(`/api/v1/mail/messages/${encodeURIComponent(m.id)}/blob`, window.location.origin).toString();
         searchRef.current.indexMessage(m.id, blobURL);
@@ -18049,6 +18050,7 @@ ${body || ""}`;
       const cache = mailCacheReady && window.ElvishMailCache ? window.ElvishMailCache : null;
       const version = cache && typeof cache.extractVersion === "function" ? cache.extractVersion(message) : "";
       try {
+        if (messageHasBodyCacheRestriction(message)) return;
         if (cache && version && typeof cache.getEnvelope === "function" && typeof cache.unwrapVersionedPayload === "function") {
           const cachedEnvelopeEntry = await cache.getEnvelope(message.id);
           const cachedEnvelope = inflateCachedEnvelopePayload(cache.unwrapVersionedPayload(cachedEnvelopeEntry, version));
@@ -18078,6 +18080,7 @@ ${body || ""}`;
       const availableSlots = Math.max(0, BACKGROUND_RECOVERY_CONCURRENCY - recoveryInFlightRef.current.size);
       if (availableSlots === 0) return;
       const candidates = messages.filter((message) => {
+        if (messageHasBodyCacheRestriction(message)) return false;
         if (!shouldRecoverMetadataFromBody(message)) return false;
         const version = window.ElvishMailCache && typeof window.ElvishMailCache.extractVersion === "function" ? window.ElvishMailCache.extractVersion(message) : "";
         if (!version) return false;
