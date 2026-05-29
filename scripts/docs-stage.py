@@ -14,6 +14,7 @@ REPO = "https://github.com/Thravok/elvish-email/blob/main"
 ROOT_GITHUB = frozenset(
     {
         "AGENTS.md",
+        "CODEBASES.md",
         "CODE_OF_CONDUCT.md",
         "CONTRIBUTING.md",
         "LICENSE",
@@ -28,17 +29,17 @@ ROOT_GITHUB = frozenset(
 REPO_TREE_PREFIXES = (
     ".cursor/",
     ".gitlab/",
-    "cmd/",
-    "content/",
+    "apps/",
     "docker/",
     "e2e/",
     "flutter/",
-    "frontend/",
-    "internal/",
+    "libs/",
+    "packages/",
+    "services/",
+    "tools/",
     "IOS/",
     "Procfile",
     "scripts/",
-    "static/",
 )
 
 

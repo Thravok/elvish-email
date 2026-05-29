@@ -9,6 +9,17 @@ paths-ignore:
   - IOS/**
   - IOSTests/**
   - e2e/**
-  # Bundled output; scan sources under static/ and frontend/ instead.
+  # Bundled output; scan JSX sources under apps/ instead.
   - apps/web/dist/**
   - apps/admin/dist/**
+
+# Known false positives (documented in-source); path move from internal/ re-triggers on large PRs.
+query-filters:
+  - exclude:
+      id: go/weak-sensitive-data-hashing
+      paths:
+        - libs/go/pake
+  - exclude:
+      id: go/unvalidated-url-redirection
+      paths:
+        - libs/go/httpserver/safe_redirect.go
