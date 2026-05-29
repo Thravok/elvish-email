@@ -2,13 +2,6 @@ name: "ELVish server CodeQL"
 
 # MaD pack loaded at analyze via CODEQL_ACTION_EXTRA_OPTIONS (see codeql-analysis.yml).
 
-queries:
-  - uses: security-extended
-  - exclude:
-      id: go/weak-sensitive-data-hashing
-  - exclude:
-      id: go/unvalidated-url-redirection
-
 query-filters:
   - exclude:
       id: go/weak-sensitive-data-hashing
