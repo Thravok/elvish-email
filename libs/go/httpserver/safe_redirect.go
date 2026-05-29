@@ -8,7 +8,8 @@ import (
 )
 
 func redirectSafePath(w http.ResponseWriter, r *http.Request, rawNext string, status int) {
-	http.Redirect(w, r, safeRedirectPath(rawNext), status) //codeql[go/unvalidated-url-redirection]: same-origin relative path only via safeRedirectPath.
+	dest := safeRedirectPath(rawNext)
+	http.Redirect(w, r, dest, status) //codeql[go/unvalidated-url-redirection]: dest is same-origin relative path only.
 }
 
 // redirectLoginWithOAuthNext sends the browser to /login with a sanitized authorize URL in next=.

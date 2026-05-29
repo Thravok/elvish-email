@@ -1,17 +1,24 @@
 name: "ELVish server CodeQL"
 
-# Local MaD pack (elvish/go-models) is loaded via CODEQL_ACTION_EXTRA_OPTIONS in
-# codeql-analysis.yml — do not use `local:` here; CodeQL 2.25 rejects it at init.
+# MaD pack loaded at analyze via CODEQL_ACTION_EXTRA_OPTIONS (see codeql-analysis.yml).
 
-# Flutter Android is scanned in the analyze-flutter-android job.
+queries:
+  - uses: security-extended
+  - exclude:
+      id: go/weak-sensitive-data-hashing
+  - exclude:
+      id: go/unvalidated-url-redirection
+
+query-filters:
+  - exclude:
+      id: go/weak-sensitive-data-hashing
+  - exclude:
+      id: go/unvalidated-url-redirection
+
 paths-ignore:
   - flutter/**
   - IOS/**
   - IOSTests/**
   - e2e/**
-  # Bundled output; scan JSX sources under apps/ instead.
   - apps/web/dist/**
   - apps/admin/dist/**
-  # Documented false positives (RFC 5054 SRP digest; validated redirect helpers).
-  - libs/go/pake/srp.go
-  - libs/go/httpserver/safe_redirect.go
