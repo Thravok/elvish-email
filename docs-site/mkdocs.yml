@@ -84,6 +84,8 @@ nav:
       - Coolify: deploy-coolify.md
   - Runbooks:
       - Split deploy: runbooks/split-deploy.md
+      - Staging profile: runbooks/staging.md
+      - Observability baseline: runbooks/observability-baseline.md
       - Support mailbox: runbooks/support-mailbox.md
   - Architecture decisions:
       - ADR index: adr/README.md
@@ -104,6 +106,7 @@ nav:
       - "0015 — Multi-service deployment": adr/0015-multi-service-deployment.md
       - "0016 — Operator settings in SQL": adr/0016-operator-settings-in-sql.md
       - "0017 — Mandatory split deployment": adr/0017-mandatory-split-deployment.md
+      - "0018 — Monorepo split-origin deploy": adr/0018-monorepo-split-origin-deploy.md
 
 extra:
   generator: false

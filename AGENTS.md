@@ -1,16 +1,17 @@
 # Agent notes (ELVish)
 
-This repository implements **ELVish**: split Go services (`elvishapi`, `elvishmta`, `elvishworker`; module **`elvish`**). `elvishapi` serves static, API, and SSR. E2EE mail, Valkey-backed sessions, and browser / iOS / Flutter (Android) clients.
+This repository implements **ELVish**: split Go services (`elvishapi`, `elvishmta`, `elvishworker`; module **`elvish`**). Shared code lives in `libs/go/`; browser apps in `apps/web` and `apps/admin`. Production uses split origins (api + web + admin). E2EE mail, Valkey-backed sessions, and browser / iOS / Flutter clients.
 
 **Read first**
 
-1. [docs/README.md](docs/README.md) — documentation map and “where things live”.
-2. [docs/repo-layout.md](docs/repo-layout.md) — top-level tree, `cmd/` / `internal/` index, CI and artifact policy.
-3. [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md) — four-process layout, ports, `make dev`, Coolify scaling.
+1. [CODEBASES.md](CODEBASES.md) — where to change api, mail UI, admin, migrations.
+2. [docs/README.md](docs/README.md) — documentation map.
+3. [docs/repo-layout.md](docs/repo-layout.md) — monorepo tree and CI map.
+4. [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md) — five deployables, ports, `make dev`, Coolify.
 4. [docs/architecture.md](docs/architecture.md) — data planes and high-level diagram.
 5. [docs/client-parity-roadmap.md](docs/client-parity-roadmap.md) — web / iOS / Android feature matrix and tiers (update when changing native clients).
 6. [docs-site/](docs-site/) — MkDocs static documentation site (`make docs-serve`, `docs` compose service).
-7. Relevant [docs/adr/](docs/adr/) entries for mail, storage, or privacy changes (including [ADR 0017](docs/adr/0017-mandatory-split-deployment.md)).
+7. Relevant [docs/adr/](docs/adr/) entries (including [ADR 0017](docs/adr/0017-mandatory-split-deployment.md), [ADR 0018](docs/adr/0018-monorepo-split-origin-deploy.md)).
 
 **Contributing**
 

@@ -1,7 +1,7 @@
 # ELVISH — split deploy: elvishapi + elvishmta + elvishworker (browser tier is elvishapi)
 #
-# `make dev` starts all roles (Overmind if installed, else scripts/dev-split.sh).
-# App http://127.0.0.1:8765 · auto `make db-up` unless SKIP_AUTO_DB_UP=1
+# `make dev` starts api + web + admin + mta + worker (Overmind or scripts/dev-split.sh).
+# api :8765 · web :8081 · admin :8082 · auto `make db-up` unless SKIP_AUTO_DB_UP=1
 
 SHELL := /bin/bash
 
@@ -37,32 +37,37 @@ endef
 
 .PHONY: openapi openapi-check codeql codeql-go codeql-js codeql-all codeql-summary codeql-clean codeql-install-hint codeql-build docs-stage docs-serve docs-build docs-check docs-up
 openapi:
-	go run ./cmd/apiroutes -write
+	go run ./tools/apiroutes -write
 
 openapi-check:
-	go run ./cmd/apiroutes -check
+	go run ./tools/apiroutes -check
 .PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e test-flutter test-ios check-clients vuln bench-smoke check dev dev-api dev-mta dev-worker dev-api-once dev-mta-once dev-worker-once compose-up
 
 FLUTTER_APP ?= flutter/elvish_mail
 IOS_SCHEME ?= IOS
 IOS_SIMULATOR ?= platform=iOS Simulator,name=iPhone 17
 
-# Precompiled browser bundles (React 19, OpenPGP 6 vendor copy, mail search worker) into static/dist/.
-# Requires Node.js. First run installs frontend/node_modules via npm ci. Set SKIP_STATIC_JS=1 to skip (use prebuilt static/dist only).
+# Precompiled browser bundles into apps/web/dist/. Requires Node.js.
 static-js:
 	@if [ "$${SKIP_STATIC_JS:-}" = "1" ]; then printf '%s\n' "[static-js] skipped (SKIP_STATIC_JS=1)"; exit 0; fi
-	@command -v node >/dev/null 2>&1 || { printf '%s\n' "node required for static-js (or SKIP_STATIC_JS=1 with existing static/dist)"; exit 1; }
-	@if [ ! -d frontend/node_modules ]; then printf '%s\n' "[static-js] npm ci in frontend/ ..."; (cd frontend && npm ci); fi
-	@node frontend/build.mjs
+	@command -v node >/dev/null 2>&1 || { printf '%s\n' "node required for static-js (or SKIP_STATIC_JS=1)"; exit 1; }
+	@if [ ! -d apps/web/frontend/node_modules ]; then printf '%s\n' "[static-js] npm ci in apps/web/frontend ..."; (cd apps/web/frontend && npm ci); fi
+	@node apps/web/frontend/build.mjs
+	@node apps/admin/frontend/build.mjs
+	@mkdir -p apps/web/shared apps/admin/shared
+	@cp packages/elvish-client/src/api-config.js packages/elvish-client/src/api-fetch.js apps/web/shared/
+	@cp packages/elvish-client/src/api-config.js packages/elvish-client/src/api-fetch.js apps/admin/shared/
+	@cp packages/elvish-ui/src/shared.css apps/web/shared/shared.css
+	@cp services/api/static/perf.js apps/web/perf.js
 
 build:
 ifneq ($(SKIP_STATIC_JS),1)
 	@$(MAKE) static-js
 endif
 	@mkdir -p bin
-	go build -o bin/elvishapi ./cmd/elvishapi
-	go build -o bin/elvishmta ./cmd/elvishmta
-	go build -o bin/elvishworker ./cmd/elvishworker
+	go build -o bin/elvishapi ./services/api/cmd/elvishapi
+	go build -o bin/elvishmta ./services/mta/cmd/elvishmta
+	go build -o bin/elvishworker ./services/worker/cmd/elvishworker
 
 # Split stack (api + mta + worker). Prefer: brew install overmind
 dev:
@@ -70,7 +75,9 @@ dev:
 	@command -v overmind >/dev/null 2>&1 && overmind start -f Procfile || bash scripts/dev-split.sh
 
 define DEV_API_EXPORTS
-	export ELVISH_WEB_ORIGINS="$${ELVISH_WEB_ORIGINS:-http://127.0.0.1:$(PORT)}"; \
+	export ELVISH_WEB_ORIGINS="$${ELVISH_WEB_ORIGINS:-http://127.0.0.1:8081,http://127.0.0.1:$(PORT)}"; \
+	export ELVISH_WEB_ORIGIN="$${ELVISH_WEB_ORIGIN:-http://127.0.0.1:8081}"; \
+	export ELVISH_ADMIN_ORIGIN="$${ELVISH_ADMIN_ORIGIN:-http://127.0.0.1:8082}"; \
 	export ELVISH_PUBLIC_BASE_URL="$${ELVISH_PUBLIC_BASE_URL:-http://127.0.0.1:$(PORT)}"; \
 	export ELVISH_SMTP_ADDR=; \
 	export ELVISH_SMTP_SUBMISSION_ADDR=;
@@ -80,7 +87,7 @@ dev-api-once:
 	@$(DEV_AUTO_DB_UP) \
 	$(DEV_ENV_EXPORTS) \
 	$(DEV_API_EXPORTS) \
-	go run ./cmd/elvishapi -addr :$(PORT) -root $(ROOT)
+	go run ./services/api/cmd/elvishapi -addr :$(PORT) -root $(ROOT)
 
 dev-mta-once:
 	@$(DEV_AUTO_DB_UP) \
@@ -89,16 +96,26 @@ dev-mta-once:
 	ELVISH_HOSTNAME=$${ELVISH_HOSTNAME:-localhost.test} \
 	ELVISH_SMTP_ADDR=$${ELVISH_SMTP_ADDR:-:2525} \
 	ELVISH_SMTP_SUBMISSION_ADDR=$${ELVISH_SMTP_SUBMISSION_ADDR:-:2587} \
-	go run ./cmd/elvishmta -root $(ROOT)
+	go run ./services/mta/cmd/elvishmta -root $(ROOT)
 
 dev-worker-once:
 	@$(DEV_AUTO_DB_UP) \
 	$(DEV_ENV_EXPORTS) \
-	go run ./cmd/elvishworker -root $(ROOT)
+	go run ./services/worker/cmd/elvishworker -root $(ROOT)
 
 dev-api: dev-api-once
 dev-mta: dev-mta-once
 dev-worker: dev-worker-once
+
+dev-web-once:
+	@command -v npx >/dev/null 2>&1 || { printf '%s\n' "npx required for dev-web-once"; exit 1; }
+	@test -f apps/web/dist/mail-bundle.js || $(MAKE) -s static-js
+	cd apps/web && npx --yes serve -l 8081 .
+
+dev-admin-once:
+	@command -v npx >/dev/null 2>&1 || { printf '%s\n' "npx required for dev-admin-once"; exit 1; }
+	@test -f apps/admin/dist/admin-bundle.js || $(MAKE) -s static-js
+	cd apps/admin && npx --yes serve -l 8082 .
 
 # Aliases
 dev-once: dev-api-once
@@ -141,11 +158,10 @@ docs-up:
 dev-watch:
 	@command -v fswatch >/dev/null 2>&1 || { printf '%s\n' "fswatch required: brew install fswatch"; exit 1; }
 	@while fswatch -1 -r \
-		"$(ROOT)/content" \
-		"$(ROOT)/static" \
-		"$(ROOT)/templates" \
-		"$(ROOT)/cmd" \
-		"$(ROOT)/internal" \
+		"$(ROOT)/services" \
+		"$(ROOT)/libs/go" \
+		"$(ROOT)/apps" \
+		"$(ROOT)/packages" \
 		"$(ROOT)/go.mod" \
 		"$(ROOT)/go.sum"; do \
 		$(MAKE) -s build && printf '%s\n' "[elvish] rebuilt"; \
@@ -154,31 +170,31 @@ dev-watch:
 # Import posts from content/blog into SQL, then exit.
 migrate:
 	COCKROACH_DSN="$${COCKROACH_DSN:-postgres://root@127.0.0.1:26257/defaultdb?sslmode=disable}" \
-	go run ./cmd/elvishapi -root $(ROOT) -migrate
+	go run ./services/api/cmd/elvishapi -root $(ROOT) -migrate
 
 # Detached minisign signatures for Markdown posts (needs content/blog/signing.key; MINISIGN_PASSWORD if encrypted).
 blog-sign:
-	@key="$(ROOT)/content/blog/signing.key"; \
+	@key="$(ROOT)/services/api/content/blog/signing.key"; \
 	if [ ! -f "$$key" ]; then \
 		printf '%s\n' "Missing $$key" "" "Create a key pair first, then sign:" \
-			"  go run ./cmd/elvishsign keygen -out $(ROOT)/content/blog -password 'your-password'" \
+			"  go run ./tools/elvishsign keygen -out $(ROOT)/services/api/content/blog -password 'your-password'" \
 			"  make blog-sign"; \
 		exit 1; \
 	fi; \
-	go run ./cmd/elvishsign sign -key "$$key" $$(find $(ROOT)/content/blog -maxdepth 1 -name '*.md' ! -name README.md)
+	go run ./tools/elvishsign sign -key "$$key" $$(find $(ROOT)/services/api/content/blog -maxdepth 1 -name '*.md' ! -name README.md)
 
 blog-verify:
-	@pub="$(ROOT)/content/blog/signing.pub"; \
+	@pub="$(ROOT)/services/api/content/blog/signing.pub"; \
 	if [ ! -f "$$pub" ]; then \
 		printf '%s\n' "Missing $$pub" "" "Generate keys (creates signing.pub + signing.key):" \
-			"  go run ./cmd/elvishsign keygen -out $(ROOT)/content/blog -password 'your-password'"; \
+			"  go run ./tools/elvishsign keygen -out $(ROOT)/services/api/content/blog -password 'your-password'"; \
 		exit 1; \
 	fi; \
-	go run ./cmd/elvishsign verify -pub "$$pub" $$(find $(ROOT)/content/blog -maxdepth 1 -name '*.md' ! -name README.md)
+	go run ./tools/elvishsign verify -pub "$$pub" $$(find $(ROOT)/services/api/content/blog -maxdepth 1 -name '*.md' ! -name README.md)
 
 # Ping CockroachDB / Valkey if COCKROACH_DSN and/or VALKEY_ADDR are set (no-op if unset).
 db-health:
-	@go run ./cmd/elvishdb health
+	@go run ./tools/elvishdb health
 
 # Start local CockroachDB + Valkey + Scylla + MinIO (no api/frontend containers). Full stack: docker compose up -d
 db-up:
@@ -200,8 +216,8 @@ test-mail-e2e:
 	@command -v docker >/dev/null 2>&1 || { printf '%s\n' "docker required for full mail e2e"; exit 1; }
 	$(MAKE) db-up
 	@$(DEV_ENV_EXPORTS) \
-	go run ./cmd/elvishmailtest no-plaintext-audit && \
-	go run ./cmd/elvishmailtest bootstrap-and-selfcheck
+	go run ./tools/elvishmailtest no-plaintext-audit && \
+	go run ./tools/elvishmailtest bootstrap-and-selfcheck
 
 fmt:
 	@test -z "$$(gofmt -l .)" || (printf '%s\n' "gofmt needed on:"; gofmt -l .; exit 1)
@@ -212,14 +228,15 @@ vet:
 lint:
 	go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4 run
 	sh scripts/lint-invariants.sh
+	sh scripts/lint-import-boundaries.sh
 
 test:
 	go test ./...
 
 # Docker-backed Cockroach + goose + mailstore (set ELVISH_INTEGRATION_DB=1).
 test-integration:
-	ELVISH_INTEGRATION_DB=1 go test ./internal/db -run TestCockroachMigrationsAndMailstore -count=1 -v
-	ELVISH_INTEGRATION_DB=1 go test ./internal/httpserver -run TestAdminUptimeAPIIntegration -count=1 -v
+	ELVISH_INTEGRATION_DB=1 go test ./libs/go/db -run TestCockroachMigrationsAndMailstore -count=1 -v
+	ELVISH_INTEGRATION_DB=1 go test ./libs/go/httpserver -run TestAdminUptimeAPIIntegration -count=1 -v
 
 # Playwright admin smoke (start elvishserver separately; see e2e/README.md).
 test-e2e:
