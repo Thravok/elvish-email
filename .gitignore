@@ -34,6 +34,9 @@ content/blog/signing.key
 
 # Node (browser bundles — lockfile committed, install with npm ci)
 frontend/node_modules/
+apps/*/node_modules/
+packages/*/node_modules/
+ui/**/node_modules/
 
 # Playwright / local test output (root)
 /test-results/

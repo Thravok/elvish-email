@@ -1,31 +1,17 @@
-# Documentation
+# Documentation index
 
-Design notes, architecture, and feature specs for the **ELVish** server and clients. For how to run the stack locally, environment variables, and deploy notes, start at [Guides → Product README](guides/product-readme.md) (repository root `README.md`). For contributor workflows and Make targets, see [Guides → Contributing](guides/contributing.md).
+| Topic | Doc |
+|-------|-----|
+| **Where code lives** | [CODEBASES.md](../CODEBASES.md), [repo-layout.md](repo-layout.md) |
+| **Split deploy** | [runbooks/split-deploy.md](runbooks/split-deploy.md) |
+| **E2EE mail** | [e2ee-mail-spec.md](e2ee-mail-spec.md) |
+| **ADRs** | [adr/README.md](adr/README.md) (0018 = monorepo + split-origin) |
+| **Architecture** | [architecture.md](architecture.md) |
+| **Contributing** | [../CONTRIBUTING.md](../CONTRIBUTING.md) |
 
-**Browsable site:** run `make docs-serve` (http://127.0.0.1:8766) or `make docs-up` / `docker compose --profile docs up docs` for the nginx container. Config lives in [`docs-site/`](../docs-site/); build recipe in [`docker/docs/Dockerfile`](../docker/docs/Dockerfile).
+## Code map (post-rewrite)
 
-For how to read this repository:
-
-- **Server binaries:** [`cmd/elvishapi`](../cmd/elvishapi/), [`cmd/elvishmta`](../cmd/elvishmta/), [`cmd/elvishworker`](../cmd/elvishworker/) — split deploy; `elvishapi` serves [`static/`](../static/) and `/api/*`. See [runbooks/split-deploy.md](runbooks/split-deploy.md).
-- **Go module path:** `elvish` (see [`go.mod`](../go.mod)). Application code lives under [`internal/`](../internal/).
-- **SQL migrations:** [`internal/db/migrations/`](../internal/db/migrations/) — applied by goose when **`elvishapi`** starts with a configured `COCKROACH_DSN`.
-- **E2EE mail (browser):** [`static/mail/`](../static/mail/) — React/JSX mail app; local-only search worker in [`static/mail/search/`](../static/mail/search/README.md).
-- **Native iOS client:** [`IOS/`](../IOS/) — Xcode project and Swift sources.
-- **Flutter Android client:** [`flutter/elvish_mail/`](../flutter/elvish_mail/) — Flutter app (same JSON API as iOS); see [`flutter/elvish_mail/README.md`](../flutter/elvish_mail/README.md).
-
-## Table of contents
-
-| Document | Description |
-|----------|-------------|
-| [architecture.md](architecture.md) | High-level system diagram and data planes |
-| [client-parity-roadmap.md](client-parity-roadmap.md) | Web / iOS / Android feature matrix, tiers, and QA checklist |
-| [deploy-coolify.md](deploy-coolify.md) | Coolify Docker Compose deployment (domains, magic vars, SMTP) |
-| [e2ee-mail-spec.md](e2ee-mail-spec.md) | End-to-end encrypted mail product and protocol notes |
-| [backend-settings-api.md](backend-settings-api.md) | Mail settings / account API implementation checklist |
-| [runbooks/support-mailbox.md](runbooks/support-mailbox.md) | Support inbox provisioning, admin contact emails, `security.txt`, and triage notes |
-| [repo-layout.md](repo-layout.md) | Top-level tree, `cmd/` / `internal/` index, CI map, artifact policy |
-| [adr/README.md](adr/README.md) | Index of architecture decision records (0001–0015) |
-| [openapi/supplemental.yaml](openapi/supplemental.yaml) | Nested `/api` routes merged with auto-extracted `api.go` routes; run `make openapi` |
-| [../flutter/elvish_mail/README.md](../flutter/elvish_mail/README.md) | Flutter Android mail client: API base URL, `flutter run`, tests |
-
-See [adr/README.md](adr/README.md) for major mail, storage, and privacy decisions; the spec and checklists should stay consistent with them.
+- **Go module:** `elvish` — shared libraries under `libs/go/`, binaries under `services/*/cmd/`
+- **Browser:** `apps/web/`, `apps/admin/`, `packages/elvish-ui/`, `packages/elvish-client/`
+- **SQL migrations:** `libs/go/db/migrations/` (api only)
+- **OpenAPI:** `libs/go/apidoc/openapi.yaml` (`make openapi`)

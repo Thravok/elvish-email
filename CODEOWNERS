@@ -1,0 +1,9 @@
+* @elvish-platform/maintainers
+
+/services/api/ @elvish-platform/api
+/services/mta/ @elvish-platform/mail
+/services/worker/ @elvish-platform/mail
+/apps/web/ @elvish-platform/web
+/apps/admin/ @elvish-platform/web
+/packages/ @elvish-platform/web
+/libs/go/ @elvish-platform/api

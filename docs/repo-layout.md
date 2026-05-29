@@ -1,105 +1,60 @@
 # Repository layout
 
-Single-page map of the **ELVish** monorepo (Go module `elvish`). For architecture and data planes, see [architecture.md](architecture.md). For day-to-day commands, see [Guides → Contributing](guides/contributing.md).
+Single-page map of the **ELVish** monorepo (Go module `elvish`). See [architecture.md](architecture.md) and [CODEBASES.md](../CODEBASES.md).
 
 ## Top-level tree
 
 | Path | Role |
 |------|------|
-| [`cmd/`](../cmd/) | Go binaries (thin `main` packages) |
-| [`internal/`](../internal/) | Application libraries (not importable outside this module) |
-| [`static/`](../static/) | Browser assets served as files; JSX sources and committed bundles under `static/dist/` |
-| [`frontend/`](../frontend/) | esbuild pipeline (`build.mjs`, `package.json`) — produces `static/dist/*.js` |
-| [`templates/`](../templates/) | Go `html/template` SSR for marketing pages, manifesto, blog shell |
-| [`content/`](../content/) | Default site JSON and Markdown blog posts (seed when SQL is empty) |
-| [`IOS/`](../IOS/) | SwiftUI iOS mail client (Xcode) |
-| [`flutter/elvish_mail/`](../flutter/elvish_mail/) | Flutter Android mail client |
-| [`docker/`](../docker/), [`docker-compose.yml`](../docker-compose.yml) | Local and deploy service definitions; [`docker/docs/`](../docker/docs/) builds the MkDocs static site |
-| [`docs/`](../docs/) | Specs, ADRs, OpenAPI supplement, runbooks; browsable via `make docs-serve` or the `docs` compose service |
-| [`docs-site/`](../docs-site/) | MkDocs Material config for the documentation container |
-| [`e2e/`](../e2e/) | Playwright admin smoke tests |
-| [`.gitlab-ci.yml`](../.gitlab-ci.yml) | Primary CI (merge gate) |
-| [`.github/workflows/`](../.github/workflows/) | GitHub Actions (CodeQL, iOS, Android, image publish) |
+| [`libs/go/`](../libs/go/) | Shared Go libraries (httpserver, db, mail, smtp, …) |
+| [`services/api/`](../services/api/) | `elvishapi` binary, SSR templates, marketing static, blog seed content |
+| [`services/mta/`](../services/mta/) | `elvishmta` SMTP ingest |
+| [`services/worker/`](../services/worker/) | `elvishworker` outbox + sweepers |
+| [`apps/web/`](../apps/web/) | Mail/auth/protected browser app + `frontend/` esbuild + `dist/` |
+| [`apps/admin/`](../apps/admin/) | Standalone operator console |
+| [`packages/elvish-ui/`](../packages/elvish-ui/) | Shared React primitives (tokens, layout) |
+| [`packages/elvish-client/`](../packages/elvish-client/) | `api-config.js` / `api-fetch.js` (copied to `apps/*/shared/` on build) |
+| [`tools/`](../tools/) | CLIs: `apiroutes`, `elvishdb`, `elvishsign`, … |
+| [`IOS/`](../IOS/) | SwiftUI iOS client |
+| [`flutter/elvish_mail/`](../flutter/elvish_mail/) | Flutter Android client |
+| [`docker/`](../docker/), [`docker-compose.yml`](../docker-compose.yml) | Compose + nginx configs for web/admin |
+| [`docs/`](../docs/) | Specs, ADRs, runbooks |
+| [`e2e/`](../e2e/) | Playwright smoke tests |
 
-**Not served / not tracked (local only):**
+**Local-only:** [`data/`](../data/) (DKIM, MFA, relay keys).
 
-- **`/public/`** — ignored by git; legacy static export. The live site uses `static/` plus SSR templates, not `public/`.
-- **`/data/`** — ignored; runtime secrets (DKIM PEM, MFA key, relay key) for local dev.
+## Binaries
 
-## `cmd/` binaries
+| Command | Path |
+|---------|------|
+| `elvishapi` | [`services/api/cmd/elvishapi`](../services/api/cmd/elvishapi/) |
+| `elvishmta` | [`services/mta/cmd/elvishmta`](../services/mta/cmd/elvishmta/) |
+| `elvishworker` | [`services/worker/cmd/elvishworker`](../services/worker/cmd/elvishworker/) |
 
-| Command | Purpose |
-|---------|---------|
-| [`elvishapi`](../cmd/elvishapi/) | HTTP/API tier: `/api/`, SSR, SQL migrations |
-| [`elvishmta`](../cmd/elvishmta/) | SMTP MX + submission ingest |
-| [`elvishworker`](../cmd/elvishworker/) | Outbox delivery + background sweepers |
-| [`elvishserver`](../cmd/elvishserver/) | Removed (stub points to split binaries) |
-| [`elvishdb`](../cmd/elvishdb/) | Connectivity check for `COCKROACH_DSN`, `VALKEY_ADDR`, etc. (`make db-health`) |
-| [`elvishsign`](../cmd/elvishsign/) | Minisign signatures for disk blog posts under `content/blog/` |
-| [`elvishdkim`](../cmd/elvishdkim/) | Generate DKIM key + DNS TXT record |
-| [`elvishrelay`](../cmd/elvishrelay/) | Generate optional Mode-C plaintext-relay PGP keypair |
-| [`elvishmailtest`](../cmd/elvishmailtest/) | Mail subsystem integration / self-check CLI |
-| [`apiroutes`](../cmd/apiroutes/) | Regenerate or verify `internal/apidoc/openapi.yaml` (`make openapi`, `make openapi-check`) |
-| [`srpvector`](../cmd/srpvector/) | Print SRP test vectors (iOS / client crypto alignment) |
+Migrations run on **api** only: [`libs/go/db/migrations/`](../libs/go/db/migrations/).
 
-## `internal/` packages (grouped)
-
-| Group | Packages | Notes |
-|-------|----------|-------|
-| HTTP / API | `httpserver`, `apidoc`, `render`, `config` | Routes, SSR, OpenAPI generation |
-| SQL / auth | `db`, `store`, `session`, `pake`, `mfa`, `oauthoidc`, `ratelimit` | Migrations in `internal/db/migrations/` |
-| Mail core | `mail`, `mailmeta`, `mailstore`, `mailworker`, `mailops`, `mailpipe`, `mailutil`, `maillinks` | Four-store split per ADR 0007 |
-| Mail scale | `scyllastore`, `blobstore` | Scylla projections + S3 ciphertext blobs |
-| SMTP | `smtp`, `smtpserver`, `smtpout`, `dkim` | In-tree mail transport (ADR 0006) |
-| Crypto / keys | `openpgp`, `keyserver`, `envelope`, `relaykey` | PGP, WKD chain, protected links |
-| Ops / telemetry | `telemetry`, `uptime`, `toolcalls`, `adminbootstrap` | Anonymous telemetry (ADR 0011), admin tools |
-| Content | `blog`, `feeds`, `markdown`, `glyphs`, `migrate` | Blog, RSS/Atom, disk import |
-
-## Browser UI split
+## Browser UI
 
 | Layer | Location |
 |-------|----------|
-| Source (JSX, CSS, workers) | `static/mail/`, `static/admin/`, `static/auth/`, `static/shared/`, `static/protected/` |
-| Build config | `frontend/build.mjs`, `frontend/entries/`, `frontend/package.json` |
-| Shipped bundles (committed) | `static/dist/` — `mail-bundle.js`, `mail-admin-embed.js`, auth bundles, search worker |
-| Vendored libs | `static/vendor/` (React dev builds, cap-widget, OpenPGP copy from build) |
+| Mail/auth sources | `apps/web/mail/`, `apps/web/auth/`, … |
+| Operator UI | `apps/admin/src/` |
+| esbuild (web) | `apps/web/frontend/build.mjs` |
+| esbuild (admin) | `apps/admin/frontend/build.mjs` |
+| Bundles | `apps/web/dist/`, `apps/admin/dist/` |
 
-Regenerate bundles: `make static-js` (or `make build`). CI verifies `static/dist/` matches sources (`lint-static-js`).
+Regenerate: `make static-js`. Production split-origin: [ADR 0018](adr/0018-monorepo-split-origin-deploy.md).
 
-## Native clients
+## Deploy images
 
-| Client | Path | API |
-|--------|------|-----|
-| iOS | [`IOS/`](../IOS/) | Same `/api/` + session cookie as browser |
-| Android | [`flutter/elvish_mail/`](../flutter/elvish_mail/) | `ELVISH_API_BASE` dart-define |
+| Role | Dockerfile |
+|------|------------|
+| api | `services/api/Dockerfile` |
+| web | `apps/web/Dockerfile` |
+| admin | `apps/admin/Dockerfile` |
+| mta | `services/mta/Dockerfile` |
+| worker | `services/worker/Dockerfile` |
 
-Feature parity: [client-parity-roadmap.md](client-parity-roadmap.md).
+## CI
 
-## CI map
-
-| Platform | Role |
-|----------|------|
-| **GitLab CI** ([`.gitlab-ci.yml`](../.gitlab-ci.yml)) | **Merge gate:** `gofmt`, `go vet`, golangci-lint + repo invariants, `apiroutes -check`, `lint-static-js`, **`lint-docs`**, `go test`, `go test -race`, Flutter analyze/test, `govulncheck`, Docker image build (`elvishapi`, `elvishmta`, `elvishworker`) |
-| **GitHub Actions** ([`.github/workflows/`](../.github/workflows/)) | CodeQL (Go + JS), iOS `xcodebuild test` (macOS), Android workflow, MkDocs strict build, optional docker publish |
-
-Local equivalent of the GitLab lint/test stack: **`make check`** plus **`make check-clients`** on macOS.
-
-Shared ADR invariant checks: [`scripts/lint-invariants.sh`](../scripts/lint-invariants.sh) (used by `make lint` and GitLab `lint-golangci`).
-
-## Artifact policy
-
-| Artifact | Policy |
-|----------|--------|
-| `frontend/package-lock.json` | Committed — use `npm ci` in `frontend/` |
-| `frontend/node_modules/` | **Not** committed — install via `npm ci` |
-| `static/dist/*.js` | Committed — production Docker copies `static/` as-is |
-| `internal/apidoc/openapi.yaml` | Committed — regenerate with `make openapi`; verified with `make openapi-check` |
-| `e2e/node_modules/` | Not committed |
-| `/public/`, `/data/` | Not committed (local only) |
-
-## Related docs
-
-- [README.md](README.md) — documentation index
-- [architecture.md](architecture.md) — system diagram
-- [runbooks/split-deploy.md](runbooks/split-deploy.md) — four-process deploy and `make dev`
-- [adr/README.md](adr/README.md) — ADRs 0001–0017
+Primary: [`.gitlab-ci.yml`](../.gitlab-ci.yml). GitHub: CodeQL, native clients under [`.github/workflows/`](../.github/workflows/).

@@ -80,7 +80,7 @@ services:
       scylla:
         condition: service_healthy
     volumes:
-      - ./internal/scyllastore/schema.cql:/schema.cql:ro
+      - ./libs/go/scyllastore/schema.cql:/schema.cql:ro
       - ./docker/scylla-init.sh:/scylla-init.sh:ro
     entrypoint: ["sh", "/scylla-init.sh"]
     restart: "no"
@@ -117,10 +117,10 @@ services:
     restart: "no"
 
   api:
-    profiles: [full]
+    profiles: [full, staging]
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: services/api/Dockerfile
     container_name: elvish-api
     depends_on:
       cockroach:
@@ -135,6 +135,10 @@ services:
       - "8765:8765"
     command: ["/usr/local/bin/elvishapi", "-addr", ":8765", "-root", "/app"]
     environment:
+      - ELVISH_SERVE_STATIC=0
+      - ELVISH_WEB_ORIGIN=${ELVISH_WEB_ORIGIN:-http://127.0.0.1:8081}
+      - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-http://127.0.0.1:8082}
+      - ELVISH_WEB_ORIGINS=${ELVISH_WEB_ORIGINS:-http://127.0.0.1:8081,http://127.0.0.1:8082}
       - ELVISH_SMTP_ADDR=
       - ELVISH_SMTP_SUBMISSION_ADDR=
       - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
@@ -155,11 +159,38 @@ services:
     volumes:
       - elvish_data:/app/data
 
-  mail-mta:
-    profiles: [full]
+  web:
+    profiles: [full, staging]
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/web/Dockerfile
+      args:
+        ELVISH_API_BASE: ${ELVISH_API_BASE:-http://127.0.0.1:8765}
+        ELVISH_ADMIN_ORIGIN: ${ELVISH_ADMIN_ORIGIN:-http://127.0.0.1:8082}
+    container_name: elvish-web
+    ports:
+      - "8081:8080"
+    depends_on:
+      - api
+
+  admin:
+    profiles: [full, staging]
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        ELVISH_API_BASE: ${ELVISH_API_BASE:-http://127.0.0.1:8765}
+    container_name: elvish-admin
+    ports:
+      - "8082:8080"
+    depends_on:
+      - api
+
+  mail-mta:
+    profiles: [full, staging]
+    build:
+      context: .
+      dockerfile: services/mta/Dockerfile
     container_name: elvish-mail-mta
     depends_on:
       cockroach:
@@ -204,10 +235,10 @@ services:
       - "8766:8080"
 
   worker:
-    profiles: [full]
+    profiles: [full, staging]
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: services/worker/Dockerfile
     container_name: elvish-worker
     depends_on:
       cockroach:

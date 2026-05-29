@@ -48,7 +48,7 @@ Read [docs/e2ee-mail-spec.md](docs/e2ee-mail-spec.md) before making mail changes
 - `internal/mailpipe/pipe.go` — ingest orchestration
 - `internal/mailworker/worker.go` — outbound delivery
 - `internal/mailmeta/` — SQL metadata operations
-- `internal/scyllastore/schema.cql` — Scylla DDL
+- `libs/go/scyllastore/schema.cql` — Scylla DDL
 - `internal/blobstore/s3.go` — blob operations
 
 ## Testing

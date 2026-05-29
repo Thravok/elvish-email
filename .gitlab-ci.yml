@@ -29,7 +29,7 @@ lint-fmt:
   script:
     # Check only project source directories, not module cache
     - |
-      unformatted=$(gofmt -l cmd/ internal/ 2>/dev/null || true)
+      unformatted=$(gofmt -l libs/go services tools 2>/dev/null || true)
       if [ -n "$unformatted" ]; then
         echo "gofmt needed on:"
         echo "$unformatted"
@@ -68,7 +68,8 @@ lint-golangci:
   script:
     - go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4 run
     - sh scripts/lint-invariants.sh
-    - go run ./cmd/apiroutes -check
+    - sh scripts/lint-import-boundaries.sh
+    - go run ./tools/apiroutes -check
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
       when: never
@@ -79,9 +80,9 @@ lint-static-js:
   image: node:22-bookworm
   stage: lint
   script:
-    - cd frontend && npm ci
-    - cd .. && node frontend/build.mjs
-    - git diff --exit-code static/dist/
+    - cd apps/web/frontend && npm ci
+    - cd ../.. && node apps/web/frontend/build.mjs && node apps/admin/frontend/build.mjs
+    - git diff --exit-code apps/web/dist/ apps/admin/dist/
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
       when: never
@@ -237,8 +238,8 @@ test-integration:
         sleep 2
       done
   script:
-    - go test ./internal/db -run TestCockroachMigrationsAndMailstore -count=1 -v
-    - go test ./internal/httpserver -run TestAdminUptimeAPIIntegration -count=1 -v
+    - go test ./libs/go/db -run TestCockroachMigrationsAndMailstore -count=1 -v
+    - go test ./libs/go/httpserver -run TestAdminUptimeAPIIntegration -count=1 -v
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
       when: never
@@ -279,9 +280,9 @@ build-binary:
       - .go-cache/
   script:
     - mkdir -p bin
-    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishapi ./cmd/elvishapi
-    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishmta ./cmd/elvishmta
-    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishworker ./cmd/elvishworker
+    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishapi ./services/api/cmd/elvishapi
+    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishmta ./services/mta/cmd/elvishmta
+    - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/elvishworker ./services/worker/cmd/elvishworker
   artifacts:
     paths:
       - bin/elvishapi
@@ -293,7 +294,7 @@ build-binary:
       when: never
     - if: $CI_COMMIT_BRANCH
 
-# Docker Build - ELVish split binaries (using Kaniko, no Docker daemon required)
+# Docker Build — role images (Kaniko). Tags: ${CI_REGISTRY_IMAGE}/<role>:<ref>
 docker-build-elvish:
   image:
     name: gcr.io/kaniko-project/executor:v1.23.2-debug
@@ -301,33 +302,38 @@ docker-build-elvish:
   stage: build
   script:
     - |
-      # Create Kaniko config for registry auth
       mkdir -p /kaniko/.docker
       echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - |
-      # Build and push image
-      /kaniko/executor \
-        --context "${CI_PROJECT_DIR}" \
-        --dockerfile "${CI_PROJECT_DIR}/Dockerfile" \
-        --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}" \
-        --cache=true \
-        --cache-repo="${CI_REGISTRY_IMAGE}/cache"
-    - |
-      # Also tag as latest on default branch
-      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+      build_image() {
+        role="$1"
+        dockerfile="$2"
         /kaniko/executor \
           --context "${CI_PROJECT_DIR}" \
-          --dockerfile "${CI_PROJECT_DIR}/Dockerfile" \
-          --destination "${CI_REGISTRY_IMAGE}:latest" \
+          --dockerfile "${CI_PROJECT_DIR}/${dockerfile}" \
+          --destination "${CI_REGISTRY_IMAGE}/${role}:${CI_COMMIT_REF_SLUG}" \
           --cache=true \
-          --cache-repo="${CI_REGISTRY_IMAGE}/cache"
-      fi
+          --cache-repo="${CI_REGISTRY_IMAGE}/cache-${role}"
+        if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+          /kaniko/executor \
+            --context "${CI_PROJECT_DIR}" \
+            --dockerfile "${CI_PROJECT_DIR}/${dockerfile}" \
+            --destination "${CI_REGISTRY_IMAGE}/${role}:latest" \
+            --cache=true \
+            --cache-repo="${CI_REGISTRY_IMAGE}/cache-${role}"
+        fi
+      }
+      build_image api services/api/Dockerfile
+      build_image mta services/mta/Dockerfile
+      build_image worker services/worker/Dockerfile
+      build_image web apps/web/Dockerfile
+      build_image admin apps/admin/Dockerfile
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $RENOVATE_SCHEDULE == "true"
       when: never
     - if: $CI_COMMIT_BRANCH
       exists:
-        - Dockerfile
+        - services/api/Dockerfile
 
 # Renovate: opens a child pipeline so this schedule does not run lint/test/build here.
 # GitLab → Build → Pipeline schedules: new schedule on the default branch, variable RENOVATE_SCHEDULE=true,

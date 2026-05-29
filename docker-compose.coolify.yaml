@@ -270,7 +270,7 @@ services:
         condition: service_healthy
     volumes:
       - type: bind
-        source: ./internal/scyllastore/schema.cql
+        source: ./libs/go/scyllastore/schema.cql
         target: /schema.cql
         read_only: true
       - type: bind

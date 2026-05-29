@@ -2,7 +2,7 @@
 
 ELVish is **open source** under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html) (see [LICENSE](LICENSE)). Contributions are welcome; start with [CONTRIBUTING.md](CONTRIBUTING.md). Community: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Security reports: [SECURITY.md](SECURITY.md).
 
-When you publish your own deployment, point the site footer **Source** link at your public clone by editing `content/home.json` (`footer.pages`, entry with `"label": "Source"`) instead of the default `"#"`.
+When you publish your own deployment, point the site footer **Source** link at your public clone by editing `services/api/content/home.json` (`footer.pages`, entry with `"label": "Source"`) instead of the default `"#"`.
 
 ## Documentation
 
@@ -13,7 +13,7 @@ When you publish your own deployment, point the site footer **Source** link at y
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — dev commands, conventions, code map
 - **[AGENTS.md](AGENTS.md)** — short orientation for automation / AI assistants
 
-ELVish runs as **`elvishapi`** (static site, HTTP API, SSR), **`elvishmta`** (SMTP), and **`elvishworker`** (outbox + sweepers). The operator panel is embedded in the mail client at **`/mail?view=admin`**. **Defaults** still come from `content/home.json` and Markdown in `content/blog/` when the SQL database has no posts yet. Backend roles **refuse to start** until **CockroachDB/Postgres** (`COCKROACH_DSN`) and **Valkey** are configured and healthy (see `ELVISH_ALLOW_EMPTY_DB` for rare static-only API demos).
+ELVish runs as **`elvishapi`** (HTTP API + SSR marketing), **`elvishmta`** (SMTP), **`elvishworker`** (outbox + sweepers), plus browser tiers **`apps/web`** (mail) and **`apps/admin`** (operator). See [CODEBASES.md](CODEBASES.md) and [ADR 0018](docs/adr/0018-monorepo-split-origin-deploy.md). **Defaults** come from `services/api/content/` when SQL has no posts yet. Backend roles **refuse to start** until **CockroachDB/Postgres** (`COCKROACH_DSN`) and **Valkey** are configured (see `ELVISH_ALLOW_EMPTY_DB` for rare static-only API demos).
 
 **Feeds** (at site root): RSS `/feed.xml`, Atom `/atom.xml`, [JSON Feed 1.1](https://jsonfeed.org/version/1.1) `/feed.json`. `<link rel="alternate">` is emitted on home, log index, and post pages.
 
@@ -21,14 +21,14 @@ ELVish runs as **`elvishapi`** (static site, HTTP API, SSR), **`elvishmta`** (SM
 
 ```bash
 make db-up   # once: CockroachDB + Valkey + Scylla + MinIO
-make dev     # split stack: elvishapi :8765 + mta + worker (Overmind or scripts/dev-split.sh)
+make dev     # api :8765 + web :8081 + admin :8082 + mta + worker (Overmind or dev-split.sh)
 ```
 
 See [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md). Single roles: **`make dev-api-once`**, **`make dev-mta-once`**, **`make dev-worker-once`**. Docker all-in-one: **`make compose-up`**.
 
 For site-only work without Scylla/S3, use **`SKIP_MAIL_BACKENDS=1`** (mail APIs return 503 until backends are configured).
 
-Open `http://127.0.0.1:8765/`. Operator panel: `http://127.0.0.1:8765/mail?view=admin` (requires admin session).
+Open `http://127.0.0.1:8765/` (API/SSR), `http://127.0.0.1:8081/` (mail), `http://127.0.0.1:8082/` (operator; admin session required).
 
 **Auth pages (browser):** `/register` and `/login` — same API as the modals; after success, admins typically open `/mail?view=admin`, others go to `/mail` or `/`.
 
@@ -47,7 +47,7 @@ This starts **CockroachDB** on `127.0.0.1:26257`, **Valkey** on `127.0.0.1:6379`
 
 **Full stack (`make compose-up` or `docker compose --profile full up -d`):** **frontend** on `127.0.0.1:8765` serves static assets and proxies SSR to **api**; **mail-mta** exposes SMTP on host `2525`→container `25` and `2587`→`587`. Use **`make dev-api`** / **`make dev-mta`** on the host to run split roles without Docker. Production Coolify layout: [docs/deploy-coolify.md](docs/deploy-coolify.md) and [ADR 0015](docs/adr/0015-multi-service-deployment.md).
 
-**Scylla:** The first time it allocates its volume, startup can take **1–2 minutes** before CQL on `9042` is ready. Compose waits for a real `cqlsh` probe (not just nodetool) before **`scylla-init`** applies [`internal/scyllastore/schema.cql`](internal/scyllastore/schema.cql); if init ever races again, [`docker/scylla-init.sh`](docker/scylla-init.sh) retries for several minutes.
+**Scylla:** The first time it allocates its volume, startup can take **1–2 minutes** before CQL on `9042` is ready. Compose waits for a real `cqlsh` probe (not just nodetool) before **`scylla-init`** applies [`libs/go/scyllastore/schema.cql`](libs/go/scyllastore/schema.cql); if init ever races again, [`docker/scylla-init.sh`](docker/scylla-init.sh) retries for several minutes.
 
 If **`make db-up`** fails, ensure Docker is running (`docker info`), then try `docker compose pull`. Compose runs **Redis 7 Alpine** on port 6379 (same protocol as Valkey; `VALKEY_ADDR` still applies).
 
@@ -64,14 +64,14 @@ Set **`ELVISH_ALLOW_EMPTY_DB=1`** only to run **without** those backends (static
 - **Register / login:** `POST /api/auth/register`, `POST /api/auth/login` (HTTP-only cookie `elvish_session`), or open **`/register`** / **`/login`** in the browser.
 - **Bootstrap for admin:** `GET /api/bootstrap.json`.
 - **OpenPGP public keys:** `POST /api/pgp/keys` (**admin** session) — listed at `/pgp/keys.json`, each at `/pgp/key/<fingerprint16>.asc`.
-- **Migrate disk posts → SQL:** `make migrate` or `go run ./cmd/elvishapi -root . -migrate`. **`POST /api/migrate/posts`** does the same import over HTTP and requires an **admin** session.
+- **Migrate disk posts → SQL:** `make migrate` or `go run ./services/api/cmd/elvishapi -root . -migrate`. **`POST /api/migrate/posts`** does the same import over HTTP and requires an **admin** session.
 - **Admin E2E:** `make test-e2e` (Playwright under [`e2e/`](e2e/); see [`e2e/README.md`](e2e/README.md)).
 
-Connectivity check: `go run ./cmd/elvishdb health` or `make db-health`.
+Connectivity check: `go run ./tools/elvishdb health` or `make db-health`.
 
 ### Legacy minisign (disk-only posts)
 
-`make blog-sign` / `make blog-verify` use **`elvishsign`** for detached minisign signatures on files under `content/blog/` (see [content/blog/README.md](content/blog/README.md)). Live posts in SQL use **OpenPGP** detached signatures verified by the server (`internal/openpgp`).
+`make blog-sign` / `make blog-verify` use **`elvishsign`** on `services/api/content/blog/`. Live posts in SQL use **OpenPGP** detached signatures verified by the server (`libs/go/openpgp`).
 
 ## Build binary
 
@@ -82,22 +82,22 @@ make build
 
 ## File watching
 
-**`make dev`** uses [fswatch](https://emcrisostomo.github.io/fswatch/) to restart **`go run`** when `content/`, `static/`, `templates/`, `cmd/`, `internal/`, or module files change.
+**`make dev-watch`** uses [fswatch](https://emcrisostomo.github.io/fswatch/) to rebuild when `services/`, `libs/go/`, `apps/`, or module files change.
 
 **`make dev-watch`** only rebuilds **`bin/elvish`** on those changes; run **`./bin/elvish`** yourself in another terminal if you prefer a compiled binary workflow.
 
 ## Content
 
-- **Home / site config:** [content/home.json](content/home.json) — hero, tools, terminal boot lines, nav, footer, log index chrome, tweak defaults. Optional full JSON override in SQL (`site_config.home_json`) when you wire a writer in admin.
-- **Blog:** Markdown under [content/blog/](content/blog/) (see [content/blog/README.md](content/blog/README.md)). With the posts table empty, the server reads these files; after migration or API upserts, posts are served from SQL.
-- **Blog metrics (optional):** [content/blog/metrics.json](content/blog/metrics.json) merges `bytes`, `reach`, `type`, `time` per slug when loading from disk.
-- **Uptime probes (optional):** [content/uptime.json](content/uptime.json) — default probe paths plus `include_tools_from_home`; merged with admin/SQL settings when enabled.
+- **Home / site config:** [services/api/content/home.json](services/api/content/home.json)
+- **Blog:** Markdown under [services/api/content/blog/](services/api/content/blog/)
+- **Blog metrics (optional):** `services/api/content/blog/metrics.json`
+- **Uptime probes (optional):** `services/api/content/uptime.json`
 
 Markdown is rendered with [Goldmark](https://github.com/yuin/goldmark).
 
 ## Deploy
 
-Run **`elvishapi`** (and scale **`elvishmta`** / **`elvishworker`** separately) behind your reverse proxy (TLS, HTTP/2, etc.) with env for Cockroach/Postgres and Valkey. Operator routes under `/api/admin/*` and `/dist/mail-admin-embed.js` require an admin session when Valkey is configured.
+Run **`elvishapi`**, **`apps/web`**, **`apps/admin`**, **`elvishmta`**, and **`elvishworker`** per [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md). Operator routes under `/api/admin/*` require an admin session when Valkey is configured.
 
 **Caching:** HTML references `/page.css` and `/site.js` with `?v=` from `content/home.json` `hash_short` (fallback: `version`). The service worker (`static/sw.js`) is served with injected version lines. Bump `hash_short` when you change CSS/JS.
 
@@ -128,7 +128,7 @@ curl -sI http://127.0.0.1:8765/api/auth/me | grep -i cache-control
 | `COOKIE_SECURE` | `1` or `true` for `Secure` session cookies |
 | `ELVISH_COMPONENT` | Optional cross-check (`api`/`mta`/`worker`); see [ADR 0017](docs/adr/0017-mandatory-split-deployment.md) |
 | `ELVISH_HTTP_ENABLED` | `0`/`false` disables HTTP (default off for `mta`-only) |
-| `ELVISH_BACKGROUND_JOBS` | `1`/`true` for retention/deletion/uptime sweepers (one API replica when scaled) |
+| `ELVISH_BACKGROUND_JOBS` | **Do not set on API** — retention/deletion/uptime sweepers run on `elvishworker` only ([split-deploy](docs/runbooks/split-deploy.md)) |
 | `ELVISH_ALLOW_EMPTY_DB` | `1`/`true` for static-only demos without DB |
 
 ### Secrets and paths

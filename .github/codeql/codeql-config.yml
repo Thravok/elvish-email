@@ -10,4 +10,5 @@ paths-ignore:
   - IOSTests/**
   - e2e/**
   # Bundled output; scan sources under static/ and frontend/ instead.
-  - static/dist/**
+  - apps/web/dist/**
+  - apps/admin/dist/**

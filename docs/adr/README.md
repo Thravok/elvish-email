@@ -20,4 +20,5 @@ Numbered decisions for ELVish mail, storage, and operational choices. When addin
 | [0014](0014-inbound-mail-authentication.md) | Inbound mail authentication (SPF, DKIM, DMARC) | Proposed (Phase 2) | Verify sender auth on MX receive; store results for UI; optional quarantine/reject. |
 | [0015](0015-multi-service-deployment.md) | Multi-service deployment (API, frontend, mail-mta) | Superseded by 0017 | Historical: `ELVISH_COMPONENT` on one binary. |
 | [0016](0016-operator-settings-in-sql.md) | Operator settings in SQL | Accepted (2026-05) | Product config in admin Platform section; env for bootstrap/secrets only. |
-| [0017](0017-mandatory-split-deployment.md) | Mandatory split (api, mta, worker, frontend) | Accepted (2026-05) | Three binaries; worker owns outbox; migrations on api only. |
+| [0017](0017-mandatory-split-deployment.md) | Mandatory split (api, mta, worker) | Accepted (2026-05) | Three Go binaries; worker owns outbox; migrations on api only. |
+| [0018](0018-monorepo-split-origin-deploy.md) | Monorepo layout + split-origin browser tiers | Accepted (2026-05) | `libs/go`, `services/*`, `apps/*`, `packages/*`; web/admin nginx images; `ELVISH_SERVE_STATIC=0` on api. |
