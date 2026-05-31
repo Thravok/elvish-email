@@ -97,6 +97,8 @@ Markdown is rendered with [Goldmark](https://github.com/yuin/goldmark).
 
 ## Deploy
 
+**Coolify (production):** use [`docker-compose.coolify.yaml`](docker-compose.coolify.yaml) with the operator guide in [`docs/deploy-coolify.md`](docs/deploy-coolify.md). Images publish to GHCR via [`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml). Validate the compose file locally with **`make compose-coolify-config`**.
+
 Run **`elvishserver`** behind your reverse proxy (TLS, HTTP/2, etc.) with env for Cockroach/Postgres and Valkey. **Protect `/admin/`** at the edge until you rely on API auth alone.
 
 **Caching:** HTML references `/page.css` and `/site.js` with `?v=` from `content/home.json` `hash_short` (fallback: `version`). The service worker (`static/sw.js`) is served with injected version lines. Bump `hash_short` when you change CSS/JS.
@@ -169,6 +171,7 @@ When a logged-in user opens `/mail`, the unlock modal (`static/mail/unlock-modal
 | `ELVISH_DKIM_DOMAIN` | DKIM `d=` (e.g. `elvish.email`) — outbound mail is signed when domain+selector+key are all set |
 | `ELVISH_DKIM_SELECTOR` | DKIM `s=` (e.g. `mail`) |
 | `ELVISH_DKIM_KEY_PATH` | Path to PEM-encoded RSA private key used for `rsa-sha256` signatures |
+| `ELVISH_AUTO_GEN_DKIM_KEY` | `1`/`true` to generate a local-development DKIM key at startup when the key file is missing (not for production) |
 | `ELVISH_RELAY_KEY_PATH` | Path to ASCII-armored OpenPGP keypair used to wrap plaintext-relay outbox payloads at rest (Mode C). Generate manually with `go run ./cmd/elvishrelay genkey -out /var/lib/elvish/relay.asc` if desired. When unset, `elvishserver` now auto-generates a relay key at `<root>/data/relay.asc` on first run so plaintext-relay features, admin system mail, and protected-link recipient notifications work locally by default. |
 | `ELVISH_PUBLIC_BASE_URL` | Public base URL used when composing `/m/{token}` URLs in protected-link notification emails (e.g. `https://elvish.email`). |
 | `ELVISH_KEYSERVER_PROTON` | `1`/`true` (default) to query Proton's keyserver for `*.proton.me` / `*.protonmail.*` lookups |

@@ -38,5 +38,8 @@ COPY --from=build --chown=nonroot:nonroot /out/data /app/data
 USER nonroot:nonroot
 EXPOSE 8765
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+  CMD ["/usr/local/bin/elvishserver", "-root", "/app", "-addr", ":8765", "-healthcheck"]
+
 ENTRYPOINT ["/usr/local/bin/elvishserver"]
 CMD ["-addr", ":8765", "-root", "/app"]

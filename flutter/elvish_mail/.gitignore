@@ -13,8 +13,15 @@ build/
 **/local.properties
 **/captures/
 **/.cxx/
+**/.gradle/
+**/gradle-app.setting
 *.keystore
 !debug.keystore
+
+# Generated plugin registrant (flutter create / pub get)
+.flutter-plugins
+.flutter-plugins-dependencies
+**/GeneratedPluginRegistrant.java
 
 # iOS (if generated later)
 **/Pods/

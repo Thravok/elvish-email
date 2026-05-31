@@ -29,6 +29,8 @@ From the repository root:
 | `make fmt` | Fail if `gofmt` would change files. |
 | `make vet` | `go vet ./...` |
 | `make lint` | golangci-lint plus repo-specific guards (see Makefile). |
+| `make lint-invariants` | ADR 0008/0009 guards only (`scripts/lint-invariants.sh`). |
+| `make compose-coolify-config` | Validate `docker-compose.coolify.yaml` (strips Coolify-only keys). |
 | `make test` | `go test ./...` |
 | `make test-race` | `go test -race ./...` |
 | `make test-integration` | Docker-backed Cockroach tests (`ELVISH_INTEGRATION_DB=1`). |

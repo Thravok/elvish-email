@@ -101,7 +101,15 @@ func main() {
 	addr := flag.String("addr", ":8765", "listen address (e.g. :8765)")
 	root := flag.String("root", ".", "project root (content/, static/, templates/)")
 	migrateOnly := flag.Bool("migrate", false, "import markdown posts from content/blog into the database, then exit")
+	healthcheck := flag.Bool("healthcheck", false, "probe /api/healthz on the running server and exit")
 	flag.Parse()
+
+	if *healthcheck {
+		if err := runHealthcheck(*addr); err != nil {
+			os.Exit(1)
+		}
+		return
+	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
@@ -306,6 +314,10 @@ func main() {
 		)
 		smtpTLSConfig := smtpServerTLSConfig(logger)
 		outboundSMTPClientTLS := smtpClientTLSConfig()
+		if err := maybeBootstrapDKIMKey(*root, mailDomain, logger); err != nil {
+			logger.Error("dkim key bootstrap", "err", err)
+			os.Exit(1)
+		}
 		dkimSelector, dkimDomain, dkimKeyPath, _ := dkimSettingsForRoot(*root, mailDomain)
 		if sqlStore != nil {
 			doc, derr := sqlStore.GetAdminMailSettings(ctx)

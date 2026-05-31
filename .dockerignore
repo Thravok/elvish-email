@@ -1,0 +1,20 @@
+.git
+.github
+.cursor
+.codeql
+bin
+tmp
+public
+data
+e2e/node_modules
+e2e/test-results
+flutter/elvish_mail/.dart_tool
+flutter/elvish_mail/build
+flutter/elvish_mail/android/.gradle
+IOS/**/xcuserdata
+
+# Local DB compose is not part of the app image
+docker-compose.yml
+
+# Never bake minisign private key into an image layer
+content/blog/signing.key

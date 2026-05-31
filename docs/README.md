@@ -19,7 +19,8 @@ Design notes, architecture, and feature specs for the **ELVish** server and clie
 | [e2ee-mail-spec.md](e2ee-mail-spec.md) | End-to-end encrypted mail product and protocol notes |
 | [backend-settings-api.md](backend-settings-api.md) | Mail settings / account API implementation checklist |
 | [runbooks/support-mailbox.md](runbooks/support-mailbox.md) | Support inbox provisioning, admin contact emails, `security.txt`, and triage notes |
-| [adr/README.md](adr/README.md) | Index of architecture decision records (0001–0011) |
+| [adr/README.md](adr/README.md) | Index of architecture decision records (0001–0016) |
+| [deploy-coolify.md](deploy-coolify.md) | Coolify production deploy (monolith `docker-compose.coolify.yaml`) |
 | [openapi/supplemental.yaml](openapi/supplemental.yaml) | Nested `/api` routes merged with auto-extracted `api.go` routes; run `make openapi` |
 | [../flutter/elvish_mail/README.md](../flutter/elvish_mail/README.md) | Flutter Android mail client: API base URL, `flutter run`, tests |
 

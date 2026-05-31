@@ -1,3 +1,82 @@
+# Local runtime / secrets (MFA key, DKIM, relay key, dev DB exports)
+/data/
+
+# Go build output
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go module cache (CI may use .go/ as GOPATH)
+/.go/
+/.go-cache/
+
+# Go test/coverage
+*.test
+*.out
+coverage.html
+
+# Local CodeQL databases and SARIF (make codeql-go)
 .codeql/
-bin/
-data/
+
+# Minisign secret for blog posts (never commit; elvishsign keygen default name)
+content/blog/signing.key
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Node — lockfiles committed; install with npm ci
+frontend/node_modules/
+e2e/node_modules/
+
+# Playwright / local test output
+/test-results/
+e2e/test-results/
+e2e/playwright-report/
+e2e/.cache/
+
+# IDE — commit shared tasks/extensions only
+.idea/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/extensions.json
+
+# Xcode — never commit per-machine UI state
+**/xcuserdata/
+IOS/Config/Local.xcconfig
+*.xcuserstate
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Flutter (see also flutter/elvish_mail/.gitignore)
+flutter/**/.dart_tool/
+flutter/**/build/
+flutter/**/.flutter-plugins
+flutter/**/.flutter-plugins-dependencies
+
+# Standalone binary names (go build -o …)
+/elvishmailtest
+/elvishrelay
+
+# MkDocs build output (leftover from docs-site experiments)
+docs-site/site/
+
+# Staged guide copies (make docs-stage)
+docs/guides/
+
+# Split-monorepo leftovers on disk (archive/split-monorepo); not part of 1.0.0-pre tree
+/apps/
+/services/
+/libs/
+/packages/
+/public/
+/tmp/
