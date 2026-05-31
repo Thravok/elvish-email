@@ -1,6 +1,6 @@
 # ELVish
 
-ELVish is an open-source platform for **end-to-end encrypted mail**, operator tooling, and a public marketing site. The backend is split Go services; browser clients are static tiers on separate origins in production.
+ELVish is an open-source platform for **end-to-end encrypted mail**, operator tooling, and a public marketing site. Production defaults to a **single-origin** `elvishapi` process (marketing, mail UI, and `/api/*` on one domain); mail transport runs as separate Go roles (`elvishmta`, `elvishworker`).
 
 **License:** [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html) ([LICENSE](LICENSE))
 
@@ -16,11 +16,11 @@ Five deployables share one Go module (`elvish`) and talk to CockroachDB/Postgres
 
 | Tier | Binary / image | Role | Local port |
 |------|----------------|------|------------|
-| **api** | `elvishapi` | JSON API, SSR marketing, migrations | `:8765` |
-| **web** | nginx (`apps/web`) | Mail and auth UI | `:8081` |
-| **admin** | nginx (`apps/admin`) | Operator console | `:8082` |
+| **api** | `elvishapi` | JSON API, SSR marketing, mail/auth UI | `:8765` |
 | **mail-mta** | `elvishmta` | SMTP ingest (MX + submission) | `:2525` / `:2587` |
 | **worker** | `elvishworker` | Outbox delivery, sweepers | (no HTTP) |
+
+Optional split-origin nginx tiers (`web`, `admin`) exist for future use — see [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md).
 
 Backend roles **refuse to start** until **CockroachDB/Postgres** (`COCKROACH_DSN`) and **Valkey** are configured. Set `ELVISH_ALLOW_EMPTY_DB=1` only for static-only API demos without auth.
 
@@ -34,14 +34,14 @@ See [docs/architecture.md](docs/architecture.md), [CODEBASES.md](CODEBASES.md), 
 
 ```bash
 make db-up   # CockroachDB, Valkey, Scylla, MinIO (+ schema init)
-make dev     # api + web + admin + mta + worker (Overmind or scripts/dev-split.sh)
+make dev     # api + mta + worker (Overmind or scripts/dev-split.sh)
 ```
 
 | URL | Purpose |
 |-----|---------|
-| http://127.0.0.1:8765/ | API + SSR marketing |
-| http://127.0.0.1:8081/ | Mail UI (`/mail`, `/login`, `/register`) |
-| http://127.0.0.1:8082/ | Operator console (admin session) |
+| http://127.0.0.1:8765/ | Home (SSR marketing) |
+| http://127.0.0.1:8765/mail | Mail UI |
+| http://127.0.0.1:8765/login | Sign in |
 | http://127.0.0.1:8765/api/docs | OpenAPI Redoc |
 | http://127.0.0.1:8765/feed.xml | RSS (also `/atom.xml`, `/feed.json`) |
 

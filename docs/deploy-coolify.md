@@ -6,15 +6,15 @@ Coolify treats [`docker-compose.coolify.yaml`](../docker-compose.coolify.yaml) a
 
 | Service | Public access | Container port | Notes |
 |---------|---------------|------------------|--------|
-| `api` | Coolify domain | **8765** | JSON API + SSR marketing (`elvishapi`, `ELVISH_SERVE_STATIC=0`); health: `/api/healthz` |
-| `web` | Coolify domain | **8080** | Mail/auth nginx (`apps/web/Dockerfile`); health: `/healthz` |
-| `admin` | Coolify domain | **8080** | Operator console nginx (`apps/admin/Dockerfile`); health: `/healthz` |
+| `api` | Coolify domain | **8765** | Single-origin app: marketing, mail UI, `/api/*` (`ELVISH_SERVE_STATIC=1`); health: `/api/healthz` |
+| `web` | Coolify domain (profile `split-origin` only) | **8080** | Optional mail/auth nginx |
+| `admin` | Coolify domain (profile `split-origin` only) | **8080** | Optional operator nginx |
 | `docs` | Coolify domain (profile `docs` only) | **8080** | MkDocs static site (`ghcr.io/thravok/elvish-email/docs:main`); optional |
 | `mail-mta` | **Host ports** `25`, `587` | 25 / 587 | No HTTP domain; MX DNS → server IP |
 | `worker` | Internal only | — | `elvishworker`: outbox + sweepers; scale to **one** replica |
 | `cockroach`, `valkey`, `scylla`, `minio` | **None** (internal) | — | Reachable only as `cockroach:26257`, `valkey:6379`, `scylla:9042`, `minio:9000`. Do **not** assign Coolify domains or declare `SERVICE_URL_*` on these services. |
 
-Split-origin is the default: assign domains on **`web`** and **`admin`** for browser UIs; **`api`** for `/api/*`. Set `ELVISH_COOKIE_DOMAIN` (e.g. `.example.com`) so session cookies work across subdomains.
+**Default:** assign one domain on **`api`** only. Enable `COMPOSE_PROFILES=split-origin` before assigning domains on `web` / `admin`.
 
 ## Container images (GHCR)
 
@@ -30,9 +30,9 @@ Coolify **pulls** pre-built role images (no on-server Go/nginx builds for app ti
 | `docs` | `ghcr.io/thravok/elvish-email/docs:main` (profile `docs`) |
 | `scylla-init` | `ghcr.io/thravok/elvish-email/scylla-init:main` (one-shot) |
 
-Published on every push to `main` ([`.github/workflows/docker-publish.yml`](../.github/workflows/docker-publish.yml)). Set **`ELVISH_IMAGE_TAG`** in Coolify to pin another tag (e.g. `v1.2.3` or a commit SHA). All ELVish-built tiers pull from GHCR — **no repo bind mounts** on the Coolify host.
+Published on every push to `main` ([`.github/workflows/docker-publish.yml`](../.github/workflows/docker-publish.yml)). Set **`ELVISH_IMAGE_TAG`** in Coolify to pin another tag (e.g. `1.0.0-pre` or `main`). The **`api`** image bundles prebuilt mail UI assets — no separate `web` container required for single-origin deploy.
 
-`web` and `admin` write `shared/api-config.js` at container start from `ELVISH_API_BASE` / `ELVISH_ADMIN_ORIGIN` (defaults use Coolify `$SERVICE_URL_*` magic vars). Entrypoint and schema-init scripts are baked into the images.
+`web` and `admin` images remain available for the optional `split-origin` profile.
 
 `docs` is **off by default** (compose profile `docs`). Image: `ghcr.io/thravok/elvish-email/docs:main` after CI publishes it. Enable with `COMPOSE_PROFILES=docs` in Coolify **before** assigning a docs domain; otherwise the container stays **Exited**.
 
@@ -50,36 +50,32 @@ In the stack **Domains** UI:
 
 | Service | Example domain field | Why |
 |---------|----------------------|-----|
-| `api` | `https://api.example.com:8765` | JSON API + SSR; include `:8765` in the domain field |
-| `web` | `https://mail.example.com:8080` | Mail/auth UI; include `:8080` in the domain field |
-| `admin` | `https://admin.example.com:8080` | Operator console; include `:8080` in the domain field |
+| `api` | `https://mail.example.com:8765` | Full app (home, mail, API); include `:8765` |
+| `web` | `https://mail.example.com:8080` | Optional; requires `COMPOSE_PROFILES=split-origin` |
+| `admin` | `https://admin.example.com:8080` | Optional; requires `COMPOSE_PROFILES=split-origin` |
 | `docs` | `https://docs.example.com:8080` | Optional internal docs site; include `:8080` in the domain field |
 
 Coolify generates **magic variables from the compose service name** (hyphen + port when not 80, e.g. `SERVICE_URL_API_8765`):
 
 | Magic variable | Shape | Example use in this stack |
 |----------------|--------|---------------------------|
-| `SERVICE_URL_API_8765` | Full URL | `ELVISH_API_BASE` on `web` / `admin` (runtime `api-config.js`) |
-| `SERVICE_URL_WEB_8080` | Full URL | Default `ELVISH_WEB_ORIGIN`, `ELVISH_PUBLIC_BASE_URL`, CORS on `api` |
-| `SERVICE_URL_ADMIN_8080` | Full URL | Default `ELVISH_ADMIN_ORIGIN` on `api` and `web` build |
-| `SERVICE_FQDN_*` | Hostname only | DNS / debugging; use `SERVICE_URL_*` for browser and OIDC bases |
+| `SERVICE_URL_API_8765` | Full URL | Default `ELVISH_PUBLIC_BASE_URL` on `api` |
+| `SERVICE_FQDN_API` | Hostname only | Default `ELVISH_MAIL_DOMAIN` when unset |
 
 ### 3. Required environment variables (Coolify UI)
 
-Compose uses `${VAR:?}` so Coolify shows a **red border** until the value exists. Assign **domains** on `api`, `web`, and `admin` first — that populates the `SERVICE_URL_*` / `SERVICE_FQDN_*` magic vars below.
+Compose uses `${VAR:?}` so Coolify shows a **red border** until the value exists. Assign a domain on **`api`** first — that populates `SERVICE_URL_API_8765` and `SERVICE_FQDN_API`.
 
 | Variable | Service | Required | Notes |
 |----------|---------|----------|-------|
 | `COOKIE_SECURE` | `api` | `${COOKIE_SECURE:?1}` | Use `1` in production (HTTPS cookies) |
-| `SERVICE_URL_WEB_8080` | `api`, `web` | via domain on **web** | Defaults `ELVISH_PUBLIC_BASE_URL`, `ELVISH_WEB_ORIGIN`, CORS |
-| `SERVICE_URL_ADMIN_8080` | `api`, `web` | via domain on **admin** | Defaults `ELVISH_ADMIN_ORIGIN`, CORS |
-| `SERVICE_URL_API_8765` | `web`, `admin` | via domain on **api** | Defaults `ELVISH_API_BASE` in runtime `api-config.js` |
-| `SERVICE_FQDN_WEB` | `api`, `mail-mta` | via domain on **web** | Defaults `ELVISH_MAIL_DOMAIN` when unset |
+| `SERVICE_URL_API_8765` | `api` | via domain on **api** | Defaults `ELVISH_PUBLIC_BASE_URL` |
+| `SERVICE_FQDN_API` | `api`, `mail-mta` | via domain on **api** | Defaults `ELVISH_MAIL_DOMAIN` when unset |
 | `SERVICE_PASSWORD_64_VALKEY` | `valkey` (+ consumers) | auto-generated | Declared on `valkey`; required on `api` / `worker` / `mail-mta` via `:?` |
 | `SERVICE_USER_MINIO` / `SERVICE_PASSWORD_64_MINIO` | `minio` (+ consumers) | auto-generated | Blob credentials; `minio-init` creates the bucket |
 | `SERVICE_BASE64_64` | `api` (+ worker/mta) | auto-generated | MFA encryption key material |
 
-**Recommended (not `:?` in compose):** `ELVISH_COOKIE_DOMAIN` (e.g. `.example.com`) when `web`, `admin`, and `api` use different hostnames.
+**Recommended (not `:?` in compose):** `ELVISH_COOKIE_DOMAIN` only when using the optional `split-origin` profile across subdomains.
 
 **Internal data stores** (no `SERVICE_URL_*` — Docker DNS defaults; override only for predefined-network deploys):
 

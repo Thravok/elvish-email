@@ -17,7 +17,7 @@ CI: [.gitlab-ci.yml](.gitlab-ci.yml) (`gofmt`, `vet`, `golangci-lint`, `lint-inv
 
 | Command | Purpose |
 |---------|---------|
-| `make dev` | api :8765, web :8081, admin :8082, mta, worker ([Procfile](Procfile)) |
+| `make dev` | api :8765 (marketing + mail + API), mta, worker ([Procfile](Procfile)) |
 | `make dev-api-once` / `make dev-mta-once` / `make dev-worker-once` | Single Go role |
 | `make static-js` | Bundles → `apps/web/dist/`, `apps/admin/dist/` |
 | `make build` | `static-js` + `bin/elvishapi`, `elvishmta`, `elvishworker` |

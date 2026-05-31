@@ -1,7 +1,5 @@
-# ELVISH — split deploy: elvishapi + elvishmta + elvishworker (browser tier is elvishapi)
-#
-# `make dev` starts api + web + admin + mta + worker (Overmind or scripts/dev-split.sh).
-# api :8765 · web :8081 · admin :8082 · auto `make db-up` unless SKIP_AUTO_DB_UP=1
+# ELVISH — single-origin api + split Go roles (mta, worker). Prefer: brew install overmind
+# api :8765 (marketing + mail + /api/*) · auto `make db-up` unless SKIP_AUTO_DB_UP=1
 
 SHELL := /bin/bash
 
@@ -70,15 +68,12 @@ endif
 	go build -o bin/elvishmta ./services/mta/cmd/elvishmta
 	go build -o bin/elvishworker ./services/worker/cmd/elvishworker
 
-# Split stack (api + mta + worker). Prefer: brew install overmind
+# `make dev` starts api + mta + worker (Overmind or scripts/dev-split.sh).
 dev:
 	@$(DEV_AUTO_DB_UP)
 	@command -v overmind >/dev/null 2>&1 && overmind start -f Procfile || bash scripts/dev-split.sh
 
 define DEV_API_EXPORTS
-	export ELVISH_WEB_ORIGINS="$${ELVISH_WEB_ORIGINS:-http://127.0.0.1:8081,http://127.0.0.1:$(PORT)}"; \
-	export ELVISH_WEB_ORIGIN="$${ELVISH_WEB_ORIGIN:-http://127.0.0.1:8081}"; \
-	export ELVISH_ADMIN_ORIGIN="$${ELVISH_ADMIN_ORIGIN:-http://127.0.0.1:8082}"; \
 	export ELVISH_PUBLIC_BASE_URL="$${ELVISH_PUBLIC_BASE_URL:-http://127.0.0.1:$(PORT)}"; \
 	export ELVISH_SMTP_ADDR=; \
 	export ELVISH_SMTP_SUBMISSION_ADDR=;
@@ -126,9 +121,7 @@ compose-up:
 	$(MAKE) -s static-js
 	docker compose --profile full up -d --build
 	@printf '%s\n' \
-	  "API:   http://127.0.0.1:8765 (/api/*, SSR marketing)" \
-	  "Web:   http://127.0.0.1:8081 (mail/auth UI)" \
-	  "Admin: http://127.0.0.1:8082 (operator console)" \
+	  "API:   http://127.0.0.1:8765 (marketing, mail, /api/*)" \
 	  "Docs:  http://127.0.0.1:8766 (MkDocs static site)" \
 	  "SMTP:  localhost:2525 / :2587" \
 	  "worker: mail outbox + sweepers"

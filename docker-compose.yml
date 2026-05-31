@@ -3,7 +3,7 @@
 # Databases only (for `make dev` / `make dev-once` on the host): `make db-up`
 #   → cockroach + valkey + scylla + minio (+ automatic scylla-init + minio-init)
 #
-# Full stack in Docker: `make compose-up` (profile full) — api :8765, web :8081, admin :8082, docs :8766
+# Full stack in Docker: `make compose-up` (profile full) — api :8765, docs :8766
 # Docs only: `make docs-up` or `docker compose --profile docs up docs`
 #
 # Do not set COOKIE_SECURE for plain http://127.0.0.1 — session cookies must not use Secure on HTTP.
@@ -147,10 +147,8 @@ services:
       - "8765:8765"
     command: ["-addr", ":8765", "-root", "/app"]
     environment:
-      - ELVISH_SERVE_STATIC=0
-      - ELVISH_WEB_ORIGIN=${ELVISH_WEB_ORIGIN:-http://127.0.0.1:8081}
-      - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-http://127.0.0.1:8082}
-      - ELVISH_WEB_ORIGINS=${ELVISH_WEB_ORIGINS:-http://127.0.0.1:8081,http://127.0.0.1:8082}
+      - ELVISH_SERVE_STATIC=1
+      - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-http://127.0.0.1:8765}
       - ELVISH_SMTP_ADDR=
       - ELVISH_SMTP_SUBMISSION_ADDR=
       - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
@@ -179,7 +177,7 @@ services:
       start_period: 90s
 
   web:
-    profiles: [full, staging]
+    profiles: [split-origin]
     build:
       context: .
       dockerfile: apps/web/Dockerfile
@@ -197,7 +195,7 @@ services:
       start_period: 30s
 
   admin:
-    profiles: [full, staging]
+    profiles: [split-origin]
     build:
       context: .
       dockerfile: apps/admin/Dockerfile
