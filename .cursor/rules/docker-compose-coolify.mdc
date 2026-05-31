@@ -10,6 +10,8 @@ alwaysApply: false
 
 Production deploys use [`docker-compose.coolify.yaml`](docker-compose.coolify.yaml) as the **single source of truth**. Local dev uses [`docker-compose.yml`](docker-compose.yml). Operator guide: [docs/deploy-coolify.md](docs/deploy-coolify.md).
 
+**Coolify limitation:** do not use YAML anchors (`x-*`, `&anchor`, `*anchor`). Duplicate `environment` lists per service instead.
+
 ## Source of truth
 
 Define env vars, storage, ports, and health behavior **in the compose file** — not only in the Coolify UI. Coolify reads the file and surfaces `${VAR}` placeholders in the UI.
@@ -69,10 +71,10 @@ Prefer `configs:` with `content: |` for generated config files when bind-mount c
 
 ## ELVish-specific defaults
 
-- **`api`** (port 8765): browser + API + SSR (`elvishapi`); assign one Coolify domain; defaults from `SERVICE_URL_API_8765`.
+- **`api`** (port 8765): JSON API + SSR (`elvishapi`, `ELVISH_SERVE_STATIC=0`); assign a Coolify domain; defaults from `SERVICE_URL_API_8765`.
+- **`web`** / **`admin`** (port 8080): nginx static tiers (`apps/web`, `apps/admin`); assign separate Coolify domains; defaults on `api` from `SERVICE_URL_WEB_8080` and `SERVICE_URL_ADMIN_8080`.
 - **`mail-mta`**: host `ports` for 25/587 — HTTP proxy cannot carry SMTP.
-- **`worker`**, **`cockroach`**, **`valkey`**, **`scylla`**, **`minio`**: internal by default.
-- **No nginx** — do not add a `public` static tier; same-origin is the default production shape.
+- **`worker`**, **`cockroach`**, **`valkey`**, **`scylla`**, **`minio`**: internal only — no `ports:`, no Coolify domain, and **no** `SERVICE_URL_*` / `SERVICE_FQDN_*` on the service (Coolify treats those as HTTP exposure). MinIO credentials use `SERVICE_USER_MINIO` / `SERVICE_PASSWORD_64_MINIO` declared on `api` (generated from the `minio` service name).
 - Keep dev-only `ports:` in `docker-compose.yml`; production exposure goes through Coolify domains or intentional host binds in `docker-compose.coolify.yaml`.
 
 ## Predefined networks

@@ -6,13 +6,15 @@ Coolify treats [`docker-compose.coolify.yaml`](../docker-compose.coolify.yaml) a
 
 | Service | Public access | Container port | Notes |
 |---------|---------------|------------------|--------|
-| `api` | Coolify domain | **8765** | Static site, SSR, and JSON API (`elvishapi`); health: `/api/healthz` |
+| `api` | Coolify domain | **8765** | JSON API + SSR marketing (`elvishapi`, `ELVISH_SERVE_STATIC=0`); health: `/api/healthz` |
+| `web` | Coolify domain | **8080** | Mail/auth nginx (`apps/web/Dockerfile`); health: `/healthz` |
+| `admin` | Coolify domain | **8080** | Operator console nginx (`apps/admin/Dockerfile`); health: `/healthz` |
 | `docs` | Coolify domain | **8080** | MkDocs static documentation (`docker/docs/Dockerfile`); no app secrets |
 | `mail-mta` | **Host ports** `25`, `587` | 25 / 587 | No HTTP domain; MX DNS → server IP |
 | `worker` | Internal only | — | `elvishworker`: outbox + sweepers; scale to **one** replica |
-| `cockroach`, `valkey`, `scylla`, `minio` | Optional admin domains | 8080 / — / 9042 / 9001 | Internal only by default |
+| `cockroach`, `valkey`, `scylla`, `minio` | **None** (internal) | — | Reachable only as `cockroach:26257`, `valkey:6379`, `scylla:9042`, `minio:9000`. Do **not** assign Coolify domains or declare `SERVICE_URL_*` on these services. |
 
-There is **no** separate nginx or static-only container. Browsers use one origin on `api` (same-origin `/api/*`; `static/shared/api-config.js` keeps an empty `__ELVISH_API_BASE__` in the image).
+Split-origin is the default: assign domains on **`web`** and **`admin`** for browser UIs; **`api`** for `/api/*`. Set `ELVISH_COOKIE_DOMAIN` (e.g. `.example.com`) so session cookies work across subdomains. Image build args bake `$SERVICE_URL_API_8765` into `apps/web` and `apps/admin` `api-config.js`.
 
 ## One-time Coolify setup
 
@@ -26,15 +28,19 @@ In the stack **Domains** UI:
 
 | Service | Example domain field | Why |
 |---------|----------------------|-----|
-| `api` | `https://app.example.com:8765` | Listens on port **8765** (include `:8765` in the domain field) |
+| `api` | `https://api.example.com:8765` | JSON API + SSR; include `:8765` in the domain field |
+| `web` | `https://mail.example.com:8080` | Mail/auth UI; include `:8080` in the domain field |
+| `admin` | `https://admin.example.com:8080` | Operator console; include `:8080` in the domain field |
 | `docs` | `https://docs.example.com:8080` | Optional internal docs site; include `:8080` in the domain field |
 
 Coolify generates **magic variables from the compose service name** (hyphen + port when not 80, e.g. `SERVICE_URL_API_8765`):
 
 | Magic variable | Shape | Example use in this stack |
 |----------------|--------|---------------------------|
-| `SERVICE_URL_API_8765` | Full URL | Default `ELVISH_PUBLIC_BASE_URL` and `ELVISH_WEB_ORIGINS` on `api` |
-| `SERVICE_FQDN_API` | Hostname only | DNS / debugging; use `SERVICE_URL_*` for browser and OIDC bases |
+| `SERVICE_URL_API_8765` | Full URL | `ELVISH_API_BASE` build arg on `web` / `admin` |
+| `SERVICE_URL_WEB_8080` | Full URL | Default `ELVISH_WEB_ORIGIN`, `ELVISH_PUBLIC_BASE_URL`, CORS on `api` |
+| `SERVICE_URL_ADMIN_8080` | Full URL | Default `ELVISH_ADMIN_ORIGIN` on `api` and `web` build |
+| `SERVICE_FQDN_*` | Hostname only | DNS / debugging; use `SERVICE_URL_*` for browser and OIDC bases |
 
 ### 3. Required environment variables (Coolify UI)
 
@@ -45,15 +51,16 @@ These use `${VAR:?}` in compose and show a **red border** until set:
 | `ELVISH_MAIL_DOMAIN` | `mail.example.com` |
 | `COOKIE_SECURE` | `1` (production HTTPS) |
 
-`ELVISH_COOKIE_DOMAIN` is optional for single-origin deploys (leave empty). Set it (e.g. `.example.com`) only if you intentionally split app and API across different registrable domains.
+Set `ELVISH_COOKIE_DOMAIN` (e.g. `.example.com`) when `web`, `admin`, and `api` use different hostnames so the session cookie is shared.
 
 ### 4. Recommended overrides
 
 | Variable | Where | Value |
 |----------|-------|--------|
 | `worker` service | Deploy enabled | Outbox delivery; do not run multiple workers until leader lock exists |
-| `ELVISH_WEB_ORIGINS` | `api` | Usually leave default `$SERVICE_URL_API_8765` after the `api` domain is assigned |
-| `ELVISH_PUBLIC_BASE_URL` | `api` | Usually leave default `$SERVICE_URL_API_8765` |
+| `ELVISH_WEB_ORIGINS` | `api` | Defaults to `$SERVICE_URL_WEB_8080,$SERVICE_URL_ADMIN_8080` after domains are assigned |
+| `ELVISH_PUBLIC_BASE_URL` | `api` | Defaults to `$SERVICE_URL_WEB_8080` (user-facing links) |
+| `ELVISH_COOKIE_DOMAIN` | `api` | e.g. `.example.com` for split subdomains |
 
 ### 5. SMTP (`mail-mta`)
 

@@ -125,9 +125,11 @@ compose-up:
 	$(MAKE) -s static-js
 	docker compose --profile full up -d --build
 	@printf '%s\n' \
-	  "Full stack: http://127.0.0.1:8765 (elvishapi: static + API + SSR)" \
-	  "Docs:      http://127.0.0.1:8766 (MkDocs static site)" \
-	  "SMTP: localhost:2525 / :2587" \
+	  "API:   http://127.0.0.1:8765 (/api/*, SSR marketing)" \
+	  "Web:   http://127.0.0.1:8081 (mail/auth UI)" \
+	  "Admin: http://127.0.0.1:8082 (operator console)" \
+	  "Docs:  http://127.0.0.1:8766 (MkDocs static site)" \
+	  "SMTP:  localhost:2525 / :2587" \
 	  "worker: mail outbox + sweepers"
 
 # MkDocs Material static site from docs/ (see docs-site/mkdocs.yml, docker/docs/Dockerfile).
