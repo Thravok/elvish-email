@@ -7,7 +7,8 @@ import (
 
 // setSecureAppPageHeaders tightens the security posture for mail/protected
 // HTML shells. It intentionally allows the minimum needed by the current
-// self-hosted React + OpenPGP runtime (JSX is precompiled; no Babel eval).
+// self-hosted React + OpenPGP runtime (JSX is precompiled; no Babel eval)
+// and argon2-browser (WASM KDF for account key unwrap).
 func setSecureAppPageHeaders(w http.ResponseWriter) {
 	hdr := w.Header()
 	hdr.Set("Referrer-Policy", "no-referrer")
@@ -40,7 +41,7 @@ func setSecureAppPageHeaders(w http.ResponseWriter) {
 		"manifest-src 'self'",
 		"media-src 'self' blob:",
 		"object-src 'none'",
-		"script-src 'self' 'unsafe-inline'",
+		"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
 		"style-src 'self' 'unsafe-inline'",
 		"worker-src 'self' blob:",
 	}, "; "))

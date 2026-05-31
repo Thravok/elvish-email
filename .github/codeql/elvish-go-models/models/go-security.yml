@@ -3,6 +3,14 @@ extensions:
       pack: codeql/go-all
       extensible: barrierModel
     data:
+      - ["elvish/internal/uptime", "", false, "NewValidatedProbeURL", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/uptime", "ValidatedProbeURL", false, "String", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/httpserver", "", false, "parseValidatedSenderFetchURL", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/httpserver", "validatedSenderFetchURL", false, "String", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/keyserver", "", false, "newWKDAdvancedURL", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/keyserver", "", false, "newWKDDirectURL", "", "", "ReturnValue", "request-forgery", "manual"]
+      - ["elvish/internal/keyserver", "wkdHTTPSURL", false, "String", "", "", "ReturnValue", "request-forgery", "manual"]
       - ["elvish/internal/uptime", "", false, "ValidateProbeHTTPURL", "", "", "Argument[0]", "request-forgery", "manual"]
+      - ["elvish/internal/httpserver", "", false, "validateSenderFetchURL", "", "", "Argument[0]", "request-forgery", "manual"]
       - ["elvish/internal/httpserver", "", false, "safeRedirectPath", "", "", "ReturnValue", "url-redirection", "manual"]
       - ["elvish/internal/httpserver", "", false, "safeOAuthAuthorizeNext", "", "", "ReturnValue", "url-redirection", "manual"]

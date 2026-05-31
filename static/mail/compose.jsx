@@ -9,6 +9,7 @@
 //                             /m/{token} with the out-of-band-shared password.
 
 import * as React from "react";
+import { stripHtmlBlocks, decodeHtmlEntities, innerPlain } from "./html-plaintext.js";
 
 (function () {
   const { useState, useEffect, useCallback, useMemo, useRef } = React;
@@ -414,50 +415,42 @@ import * as React from "react";
 
   function htmlToPlainText(html) {
     if (!html || typeof html !== "string") return "";
-    let text = html;
-    text = text.replace(/<style[\s\S]*?<\/style>/gi, "");
-    text = text.replace(/<script[\s\S]*?<\/script>/gi, "");
-    text = text.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, "\n# $1\n");
-    text = text.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, "\n## $1\n");
-    text = text.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, "\n### $1\n");
+    let text = stripHtmlBlocks(html);
+    text = text.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, (_, content) => "\n# " + innerPlain(content) + "\n");
+    text = text.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, (_, content) => "\n## " + innerPlain(content) + "\n");
+    text = text.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, (_, content) => "\n### " + innerPlain(content) + "\n");
     text = text.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content) => {
-      const lines = content.replace(/<[^>]+>/g, "").trim().split("\n");
+      const lines = innerPlain(content).split("\n");
       return "\n" + lines.map((l) => `> ${l.trim()}`).join("\n") + "\n";
     });
-    text = text.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, "\n```\n$1\n```\n");
-    text = text.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, "`$1`");
+    text = text.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (_, content) => "\n```\n" + innerPlain(content) + "\n```\n");
+    text = text.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_, content) => "`" + innerPlain(content) + "`");
     text = text.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, content) => {
       const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
-      return "\n" + items.map((item) => "- " + item.replace(/<[^>]+>/g, "").trim()).join("\n") + "\n";
+      return "\n" + items.map((item) => "- " + innerPlain(item.replace(/<\/?li[^>]*>/gi, ""))).join("\n") + "\n";
     });
     text = text.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, content) => {
       const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
-      return "\n" + items.map((item, i) => `${i + 1}. ` + item.replace(/<[^>]+>/g, "").trim()).join("\n") + "\n";
+      return "\n" + items.map((item, i) => `${i + 1}. ` + innerPlain(item.replace(/<\/?li[^>]*>/gi, ""))).join("\n") + "\n";
     });
     text = text.replace(/<a[^>]+href=\s*"([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => {
-      const linkText = content.replace(/<[^>]+>/g, "").trim();
+      const linkText = innerPlain(content);
       if (linkText === href || !linkText) return href;
       return `${linkText} (${href})`;
     });
     text = text.replace(/<a[^>]+href=\s*'([^']*)'[^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => {
-      const linkText = content.replace(/<[^>]+>/g, "").trim();
+      const linkText = innerPlain(content);
       if (linkText === href || !linkText) return href;
       return `${linkText} (${href})`;
     });
-    text = text.replace(/<(b|strong)[^>]*>([\s\S]*?)<\/(b|strong)>/gi, "**$2**");
-    text = text.replace(/<(i|em)[^>]*>([\s\S]*?)<\/(i|em)>/gi, "_$2_");
-    text = text.replace(/<(u)[^>]*>([\s\S]*?)<\/(u)>/gi, "$2");
-    text = text.replace(/<(s|strike|del)[^>]*>([\s\S]*?)<\/(s|strike|del)>/gi, "~$2~");
+    text = text.replace(/<(b|strong)[^>]*>([\s\S]*?)<\/(b|strong)>/gi, (_, _o, content) => "**" + innerPlain(content) + "**");
+    text = text.replace(/<(i|em)[^>]*>([\s\S]*?)<\/(i|em)>/gi, (_, _o, content) => "_" + innerPlain(content) + "_");
+    text = text.replace(/<(u)[^>]*>([\s\S]*?)<\/(u)>/gi, (_, _o, content) => innerPlain(content));
+    text = text.replace(/<(s|strike|del)[^>]*>([\s\S]*?)<\/(s|strike|del)>/gi, (_, _o, content) => "~" + innerPlain(content) + "~");
     text = text.replace(/<br\s*\/?>/gi, "\n");
     text = text.replace(/<\/p>/gi, "\n\n");
     text = text.replace(/<\/div>/gi, "\n");
-    text = text.replace(/<[^>]+>/g, "");
-    text = text.replace(/&nbsp;/gi, " ");
-    text = text.replace(/&amp;/gi, "&");
-    text = text.replace(/&lt;/gi, "<");
-    text = text.replace(/&gt;/gi, ">");
-    text = text.replace(/&quot;/gi, '"');
-    text = text.replace(/&#39;/gi, "'");
+    text = innerPlain(text);
     text = text.replace(/\n{3,}/g, "\n\n");
     return text.trim();
   }

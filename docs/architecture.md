@@ -4,7 +4,7 @@
 
 ## Narrative
 
-1. **Browsers** talk to `elvishserver` over HTTPS (or local HTTP in development). The **admin** and **mail** surfaces are implemented as client-side bundles under `static/` with HTML shells from `templates/`.
+1. **Browsers** talk to `elvishserver` over HTTPS (or local HTTP in development). The **Console** operator surface runs as a separate **`elvishconsole`** service (see [ADR 0018](adr/0018-console-service-and-support-escrow.md)).
 2. **CockroachDB** (or any Postgres-compatible server on the same wire protocol) is the **system of record**: users, blog posts, mail settings, outbox rows, identity metadata, and relational invariants. Migrations live in `internal/db/migrations/` and run at startup when `COCKROACH_DSN` is set.
 3. **Valkey** (Redis-compatible) holds **ephemeral** data: HTTP sessions, rate-limit counters, and short-lived negative caches used by the mail keyserver path.
 4. **Mail at scale** splits hot paths across **ScyllaDB** (mailbox-scale projections and time-ordered access) and **S3-compatible object storage** (ciphertext blobs). See [ADR 0007](adr/0007-four-store-mail-architecture.md). Local development uses Docker Compose for all of these; production sets the same env vars explicitly.

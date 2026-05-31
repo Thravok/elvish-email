@@ -9,15 +9,38 @@ import (
 
 	"elvish/internal/dkim"
 	"elvish/internal/mailmeta"
+	"elvish/internal/openpgp"
+
+	pgpcrypto "github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/armor"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 )
 
 func TestPreparePGPOutboundPayload_WrapsArmoredCiphertextForSMTP(t *testing.T) {
 	t.Parallel()
 
+	cfg := &packet.Config{Algorithm: packet.PubKeyAlgoEdDSA}
+	ent, err := pgpcrypto.NewEntity("Bob", "", "bob@example.com", cfg)
+	if err != nil {
+		t.Fatalf("NewEntity: %v", err)
+	}
+	var pubBuf bytes.Buffer
+	aw, err := armor.Encode(&pubBuf, "PGP PUBLIC KEY BLOCK", nil)
+	if err != nil {
+		t.Fatalf("armor: %v", err)
+	}
+	if err := ent.Serialize(aw); err != nil {
+		t.Fatalf("serialize pub: %v", err)
+	}
+	_ = aw.Close()
+	payload, err := openpgp.Encrypt(pubBuf.String(), []byte("hello"))
+	if err != nil {
+		t.Fatalf("encrypt: %v", err)
+	}
+
 	row := mailmeta.OutboxRow{
 		SentCopyFromAddr: "Alice <alice@example.com>",
 	}
-	payload := []byte("-----BEGIN PGP MESSAGE-----\n\naGVsbG8=\n-----END PGP MESSAGE-----\n")
 	now := time.Date(2026, time.May, 12, 22, 0, 0, 0, time.UTC)
 
 	wrapped, from, err := preparePGPOutboundPayload(row, []string{"bob@example.com"}, payload, now)
@@ -34,7 +57,7 @@ func TestPreparePGPOutboundPayload_WrapsArmoredCiphertextForSMTP(t *testing.T) {
 	if !strings.Contains(text, "Subject: ...\r\n") {
 		t.Fatalf("wrapped payload missing obscured subject:\n%s", text)
 	}
-	if !strings.Contains(text, "-----BEGIN PGP MESSAGE-----\r\n") {
+	if !strings.Contains(text, "-----BEGIN PGP MESSAGE-----") {
 		t.Fatalf("wrapped payload missing armored body:\n%s", text)
 	}
 

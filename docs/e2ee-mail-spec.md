@@ -9,7 +9,7 @@ This document is the **source of truth** for the Elvish encrypted mail subsystem
 | Store | Role | Code |
 |-------|------|------|
 | **CockroachDB** | Identity (`user_account_keys`, `user_identity_keys`, `identity_secret_blobs`), global keyserver positive cache (`contact_pgp_keys`), **per-user trusted contact keys** (`mail_user_contact_keys`), control (`mail_metadata_consent`, `user_mail_settings`, `mail_domains`, `mail_aliases`), durable state (`mail_outbox`, `mail_bounces`, `mail_ingest_ledger`) | `internal/mailmeta` + `internal/db/migrations/` |
-| **ScyllaDB** (`elvish_mail`) | `message_manifest_by_id`, `messages_by_mailbox`, `message_flags_by_user`, `message_events_by_user` (TTL 90d), `opt_in_metadata_by_user` (sparse, only consented fields) | `internal/scyllastore` + `internal/scyllastore/schema.cql` |
+| **ScyllaDB** (`elvish_mail`) | `message_manifest_by_id`, `messages_by_mailbox`, `message_flags_by_user`, `message_events_by_user` (TTL 90d), `opt_in_metadata_by_user` (header metadata for inbound SMTP; client mail uses `header_ciphertext`) | `internal/scyllastore` + `internal/scyllastore/schema.cql` |
 | **Object storage (S3-compatible / MinIO locally)** | `mail/{user_id}/{message_id}/body.enc`, `mail/{user_id}/{message_id}/attachments/{attachment_id}.enc`, `outbox/{user_id}/{outbox_id}.enc` — all PGP ciphertext | `internal/blobstore` |
 | **Valkey** | Sessions, rate limits, keyserver negative cache, SMTP per-IP throttle, worker coordination | `internal/session`, `internal/ratelimit`, `internal/keyserver/cache.go` |
 
@@ -20,8 +20,8 @@ Drivers/libraries we **own in-tree** (no third-party dep): `internal/smtp/{wire,
 - The server **never** holds plaintext private keys at any layer. KDF-wrapped account secret + wrapped identity secrets are the only user key material persisted.
 - **Internal/client-authored mail** (web UI → `POST /api/v1/mail/messages`) is true zero-access: the browser OpenPGP-signs and encrypts before upload. The server only stores ciphertext.
 - **External SMTP inbound** (`mailpipe.IngestExternal`): if the body is already OpenPGP-wrapped (`already_encrypted` / sender PGP-MIME provenance), it is stored as-is. Otherwise the server **gateway-encrypts** the RFC822 payload to the resolved recipient identity’s **public** key before persistence (`smtp_gateway_encrypted` provenance). Cleartext is not stored at rest, but the ingest path may see plaintext transiently—the same residual class as any encrypt-on-receipt gateway. (See `internal/mailpipe/pipe.go` and `cmd/elvishserver/smtp_backend.go`.)
-- **Per-field consent** (`mail_metadata_consent`) is **forward-only**: toggling subject ON applies only to mail received afterward; past messages stay readable via `header_ciphertext` decrypt in the browser (ADR 0004).
-- **Body content is never indexable on the server**, irrespective of consent settings. There is no `/api/v1/mail/search/body` endpoint, ever. Body search is exclusively a client-side, IndexedDB-backed, AES-GCM-encrypted index built per identity from decrypted message bodies (ADR 0008). CI enforces this with `make lint` (`! grep search/body internal/httpserver/`) and a Go test in `internal/httpserver/no_search_body_test.go`.
+- **Server metadata for inbound SMTP:** When RFC822 headers are parsed at ingest (external SMTP / gateway-encrypt), the server persists subject/from/to/date/thread in `opt_in_metadata_by_user` for listing and metadata search (ADR 0017). Client-authored mail keeps headers in `header_ciphertext` only at ingest.
+- **Body content is never indexable on the server**, irrespective of metadata settings. There is no `/api/v1/mail/search/body` endpoint, ever. Body search is exclusively a client-side, IndexedDB-backed, AES-GCM-encrypted index built per identity from decrypted message bodies (ADR 0008). CI enforces this with `make lint` (`! grep search/body internal/httpserver/`) and a Go test in `internal/httpserver/no_search_body_test.go`.
 - **THE invariant**: after `mailpipe.Ingest*` returns, the original cleartext bytes are absent from every Cockroach row, every Scylla row, every blobstore value/key, every log line, and every API response. Validated by `internal/mailpipe/no_plaintext_test.go` and `elvishmailtest no-plaintext-audit`.
 
 ## 3. Key flows
@@ -164,12 +164,12 @@ Implementation pointers: `static/mail/compose.jsx` (UI), `internal/httpserver/ap
 | POST | `/api/v1/identities/{fp}/revoke` | session | Submit revocation cert + mark inactive |
 | DELETE | `/api/v1/identities/{fp}` | session | Hard delete identity + secret blob |
 | GET | `/api/v1/keys/lookup?email=` | session | Run resolver chain (local → cache → WKD → Proton/HKPS) |
-| GET | `/api/v1/mail/messages?folder=&limit=&before=` | session | Manifest list with `header_ciphertext_b64` + sparse consented fields |
+| GET | `/api/v1/mail/messages?folder=&limit=&before=` | session | Manifest list with `header_ciphertext_b64` + metadata projection when present |
 | GET | `/api/v1/mail/messages/{id}` | session | Single manifest |
 | GET | `/api/v1/mail/messages/{id}/blob` | session | Stream PGP body ciphertext |
 | POST | `/api/v1/mail/messages` | session | Internal-route ingest of pre-encrypted body |
-| GET | `/api/v1/mail/settings` | session | Settings + per-field consent |
-| POST | `/api/v1/mail/settings` | session | Update settings + consent (forward-only) |
+| GET | `/api/v1/mail/settings` | session | Mail settings (encrypt inbound, WKD, retention) |
+| POST | `/api/v1/mail/settings` | session | Update mail settings |
 | POST | `/api/v1/mail/test/echo` | session | Self-deliver a ciphertext (selfcheck) |
 | POST | `/api/v1/mail/outbox` | session | Queue PGP ciphertext for outbound delivery (Mode A) |
 | POST | `/api/v1/mail/outbox-plain` | session | Disabled for user-authored mail (`410 Gone`) |
@@ -182,7 +182,7 @@ Implementation pointers: `static/mail/compose.jsx` (UI), `internal/httpserver/ap
 | GET  | `/api/v1/keys/contacts/{email}` | session | Preferred row for one address (latest trusted, else latest updated) |
 | POST | `/api/v1/keys/contacts` | session | Upsert contact key; body may include `trusted` (default `true`). Persists to `mail_user_contact_keys` (per-user), not the global resolver cache |
 | DELETE | `/api/v1/keys/contacts/{email}` | session | Remove all keys for `{email}` for this user, or `?fingerprint=` to delete one fingerprint |
-| GET | `/api/v1/mail/search/metadata?q=&fields=` | session | Server-side search over consented columns only |
+| GET | `/api/v1/mail/search/metadata?q=&fields=` | session | Server-side search over metadata columns (inbound SMTP paths) |
 | PATCH | `/api/admin/domains/{domain}/sharing` | admin session | Set `share_mode` (`owner_only` / `all_verified_users` / `allowlist`) and optional `allowlist_user_ids` |
 | GET | `/.well-known/openpgpkey/policy` | public | WKD discovery (empty body) |
 | GET | `/.well-known/openpgpkey/hu/{hash}` | public | WKD direct (gated by `wkd_publish`) |
@@ -246,7 +246,7 @@ ELVISH_PUBLIC_BASE_URL=https://elvish.email
 | 0001 | CockroachDB primary database |
 | 0002 | (superseded by 0006) Mail transport via go-smtp |
 | 0003 | Keyserver resolution chain |
-| 0004 | Per-field metadata consent (replaces strict/balanced) |
+| 0017 | Full server metadata policy (supersedes 0004 consent toggles) |
 | 0005 | Skiff-style account/identity key hierarchy |
 | 0006 | Own SMTP stack (supersedes 0002) |
 | 0007 | Four-store mail architecture |

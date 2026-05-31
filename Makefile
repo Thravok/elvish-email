@@ -60,6 +60,24 @@ endif
 	@mkdir -p bin
 	go build -o $(BINARY) ./cmd/elvishserver
 
+CONSOLE_PORT ?= 8780
+CONSOLE_BINARY ?= bin/elvishconsole
+
+build-console:
+ifneq ($(SKIP_STATIC_JS),1)
+	@$(MAKE) static-js
+endif
+	@mkdir -p bin
+	go build -o $(CONSOLE_BINARY) ./cmd/elvishconsole
+
+dev-console:
+	@$(DEV_AUTO_DB_UP) \
+	$(DEV_ENV_EXPORTS) \
+	export ELVISH_CONSOLE_VAULT_KEY="$${ELVISH_CONSOLE_VAULT_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}"; \
+	export ELVISH_STAFF_BOOTSTRAP_EMAILS="$${ELVISH_STAFF_BOOTSTRAP_EMAILS:-ops@localhost}"; \
+	export ELVISH_STAFF_BOOTSTRAP_PASSWORD="$${ELVISH_STAFF_BOOTSTRAP_PASSWORD:-changeme-console-dev}"; \
+	go run ./cmd/elvishconsole -addr :$(CONSOLE_PORT) -root $(ROOT)
+
 # Run elvishserver on http://127.0.0.1:$(PORT)/ (not Docker). Auto-starts local Docker backends unless
 # SKIP_AUTO_DB_UP=1. For one shot without watching: make dev-once
 # Requires fswatch. For one shot without watching: make dev-once

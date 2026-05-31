@@ -10,13 +10,16 @@ import (
 func toolOpenRedirectURL(t config.Tool) string {
 	d := strings.TrimSpace(t.OpenHref)
 	if d != "" {
+		if strings.ContainsAny(d, "\r\n\x00") || strings.Contains(d, `\`) {
+			return "/"
+		}
 		if strings.HasPrefix(d, "http://") || strings.HasPrefix(d, "https://") {
 			return d
 		}
-		if !strings.HasPrefix(d, "/") {
-			return "/" + strings.TrimLeft(d, "/")
+		if strings.HasPrefix(d, "//") {
+			return "/"
 		}
-		return d
+		return safeRedirectPath(d)
 	}
 	slug := strings.TrimSpace(t.Slug)
 	if slug == "" {

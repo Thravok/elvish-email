@@ -224,7 +224,7 @@ final class ElvishKeyVault {
             do {
                 let clear = try ObjectivePGP.decrypt(
                     ciphertext,
-                    andVerifySignature: false,
+                    andVerifySignature: true,
                     using: [key],
                     passphraseForKey: { _ in nil }
                 )

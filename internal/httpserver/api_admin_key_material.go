@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -304,38 +303,6 @@ func normalizeDKIMSelector(raw string) (string, error) {
 
 func normalizeDKIMDomain(raw string) (string, error) {
 	return normalizeOptionalDNSDomain(raw)
-}
-
-func writeSecretFile(path string, body []byte) error {
-	path = filepath.Clean(strings.TrimSpace(path))
-	if path == "" {
-		return errors.New("secret path required")
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return err
-	}
-	f, err := os.CreateTemp(filepath.Dir(path), ".tmp-secret-*")
-	if err != nil {
-		return err
-	}
-	tmpPath := f.Name()
-	defer func() {
-		_ = f.Close()
-		_ = os.Remove(tmpPath)
-	}()
-	if err := f.Chmod(0o600); err != nil {
-		return err
-	}
-	if _, err := f.Write(body); err != nil {
-		return err
-	}
-	if err := f.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(tmpPath, path); err != nil {
-		return err
-	}
-	return os.Chmod(path, 0o600)
 }
 
 type adminKeyError struct {

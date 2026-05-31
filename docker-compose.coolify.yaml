@@ -200,6 +200,56 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  console:
+    image: ghcr.io/thravok/elvish-email/console:${ELVISH_IMAGE_TAG:-main}
+    build:
+      context: .
+      dockerfile: docker/console/Dockerfile
+    command: ["-addr", ":8080", "-root", "/app"]
+    depends_on:
+      cockroach:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      scylla:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      scylla-init:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      - SERVICE_URL_CONSOLE_8080
+      - SERVICE_FQDN_CONSOLE
+      - SERVICE_PASSWORD_64_VALKEY
+      - SERVICE_USER_MINIO
+      - SERVICE_PASSWORD_64_MINIO
+      - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
+      - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
+      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY:?}}
+      - VALKEY_DB=${VALKEY_DB:-0}
+      - SCYLLA_HOSTS=${SCYLLA_HOSTS:-scylla:9042}
+      - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
+      - BLOB_S3_ENDPOINT=${BLOB_S3_ENDPOINT:-http://minio:9000}
+      - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
+      - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
+      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO:?}}
+      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO:?}}
+      - BLOB_S3_FORCE_PATH_STYLE=1
+      - ELVISH_CONSOLE_PUBLIC_URL=${ELVISH_CONSOLE_PUBLIC_URL:-${SERVICE_URL_CONSOLE_8080:?}}
+      - ELVISH_CONSOLE_VAULT_KEY=${ELVISH_CONSOLE_VAULT_KEY:?}
+      - ELVISH_STAFF_BOOTSTRAP_EMAILS=${ELVISH_STAFF_BOOTSTRAP_EMAILS:-}
+      - ELVISH_STAFF_BOOTSTRAP_PASSWORD=${ELVISH_STAFF_BOOTSTRAP_PASSWORD:-}
+      - COOKIE_SECURE=${COOKIE_SECURE:?1}
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/elvishconsole", "-root", "/app", "-addr", ":8080", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+
   minio-init:
     image: minio/mc:latest
     exclude_from_hc: true

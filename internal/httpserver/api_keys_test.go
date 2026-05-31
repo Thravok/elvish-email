@@ -12,12 +12,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	pgpcrypto "github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 
 	"elvish/internal/keyserver"
 	"elvish/internal/mailmeta"
+	"elvish/internal/models"
 	"elvish/internal/store"
 )
 
@@ -55,7 +57,7 @@ func TestAPIKeysLookupReturnsArmoredPublicAlias(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/keys/lookup?email=alice@example.com", nil)
 	rec := httptest.NewRecorder()
 
-	s.apiKeysLookup(rec, req)
+	s.apiKeysLookup(rec, req, &models.User{ID: uuid.New()})
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())

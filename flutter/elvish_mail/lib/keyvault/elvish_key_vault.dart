@@ -295,7 +295,7 @@ class ElvishKeyVault {
         continue;
       }
       try {
-        final text = decryptOpenPgpUtf8(ciphertext, [key]);
+        final text = decryptOpenPgpUtf8(ciphertext, [key], verifySignature: true);
         if (text.isNotEmpty) {
           return text;
         }

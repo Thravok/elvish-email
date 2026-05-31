@@ -12900,7 +12900,7 @@
     let document2 = window2.document;
     const originalDocument = document2;
     const currentScript = originalDocument.currentScript;
-    const DocumentFragment = window2.DocumentFragment, HTMLTemplateElement = window2.HTMLTemplateElement, Node = window2.Node, Element = window2.Element, NodeFilter = window2.NodeFilter, _window$NamedNodeMap = window2.NamedNodeMap, NamedNodeMap = _window$NamedNodeMap === void 0 ? window2.NamedNodeMap || window2.MozNamedAttrMap : _window$NamedNodeMap, HTMLFormElement = window2.HTMLFormElement, DOMParser = window2.DOMParser, trustedTypes = window2.trustedTypes;
+    const DocumentFragment = window2.DocumentFragment, HTMLTemplateElement = window2.HTMLTemplateElement, Node = window2.Node, Element = window2.Element, NodeFilter = window2.NodeFilter, _window$NamedNodeMap = window2.NamedNodeMap, NamedNodeMap = _window$NamedNodeMap === void 0 ? window2.NamedNodeMap || window2.MozNamedAttrMap : _window$NamedNodeMap, HTMLFormElement = window2.HTMLFormElement, DOMParser2 = window2.DOMParser, trustedTypes = window2.trustedTypes;
     const ElementPrototype = Element.prototype;
     const cloneNode = lookupGetter(ElementPrototype, "cloneNode");
     const remove = lookupGetter(ElementPrototype, "remove");
@@ -13252,7 +13252,7 @@
       const dirtyPayload = trustedTypesPolicy ? trustedTypesPolicy.createHTML(dirty) : dirty;
       if (NAMESPACE === HTML_NAMESPACE) {
         try {
-          doc = new DOMParser().parseFromString(dirtyPayload, PARSER_MEDIA_TYPE);
+          doc = new DOMParser2().parseFromString(dirtyPayload, PARSER_MEDIA_TYPE);
         } catch (_) {
         }
       }
@@ -14313,11 +14313,44 @@
     }
   });
 
+  // ../static/mail/html-plaintext.js
+  function stripHtmlBlocks(html2) {
+    const raw = String(html2 || "");
+    if (typeof DOMParser === "undefined") {
+      return raw.replace(/<[^>]+>/g, " ");
+    }
+    const doc = new DOMParser().parseFromString(raw, "text/html");
+    doc.querySelectorAll("script, style").forEach((node) => node.remove());
+    return doc.body.innerHTML || "";
+  }
+  function decodeHtmlEntities(text2) {
+    const raw = String(text2 || "");
+    if (typeof DOMParser !== "undefined") {
+      const doc = new DOMParser().parseFromString(raw, "text/html");
+      return doc.documentElement.textContent || "";
+    }
+    return raw;
+  }
+  function innerPlain(fragment) {
+    return decodeHtmlEntities(String(fragment || "").replace(/<[^>]+>/g, " ")).trim();
+  }
+  function htmlToDisplayText(html2) {
+    let text2 = stripHtmlBlocks(html2);
+    text2 = text2.replace(/<(br|\/p|\/div|\/li|\/tr|\/h[1-6])\b[^>]*>/gi, "\n").replace(/<[^>]+>/g, " ");
+    text2 = decodeHtmlEntities(text2);
+    return text2.replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+  var init_html_plaintext = __esm({
+    "../static/mail/html-plaintext.js"() {
+    }
+  });
+
   // ../static/mail/compose.jsx
   var React6;
   var init_compose = __esm({
     "../static/mail/compose.jsx"() {
       React6 = __toESM(require_react());
+      init_html_plaintext();
       (function() {
         const { useState: useState6, useEffect: useEffect6, useCallback: useCallback3, useMemo: useMemo5, useRef: useRef4 } = React6;
         const TTL_OPTIONS = [
@@ -14688,50 +14721,42 @@ ${body || ""}`;
         };
         function htmlToPlainText(html2) {
           if (!html2 || typeof html2 !== "string") return "";
-          let text2 = html2;
-          text2 = text2.replace(/<style[\s\S]*?<\/style>/gi, "");
-          text2 = text2.replace(/<script[\s\S]*?<\/script>/gi, "");
-          text2 = text2.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, "\n# $1\n");
-          text2 = text2.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, "\n## $1\n");
-          text2 = text2.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, "\n### $1\n");
+          let text2 = stripHtmlBlocks(html2);
+          text2 = text2.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, (_, content) => "\n# " + innerPlain(content) + "\n");
+          text2 = text2.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, (_, content) => "\n## " + innerPlain(content) + "\n");
+          text2 = text2.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, (_, content) => "\n### " + innerPlain(content) + "\n");
           text2 = text2.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content) => {
-            const lines = content.replace(/<[^>]+>/g, "").trim().split("\n");
+            const lines = innerPlain(content).split("\n");
             return "\n" + lines.map((l) => `> ${l.trim()}`).join("\n") + "\n";
           });
-          text2 = text2.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, "\n```\n$1\n```\n");
-          text2 = text2.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, "`$1`");
+          text2 = text2.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (_, content) => "\n```\n" + innerPlain(content) + "\n```\n");
+          text2 = text2.replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, (_, content) => "`" + innerPlain(content) + "`");
           text2 = text2.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, content) => {
             const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
-            return "\n" + items.map((item) => "- " + item.replace(/<[^>]+>/g, "").trim()).join("\n") + "\n";
+            return "\n" + items.map((item) => "- " + innerPlain(item.replace(/<\/?li[^>]*>/gi, ""))).join("\n") + "\n";
           });
           text2 = text2.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, content) => {
             const items = content.match(/<li[^>]*>([\s\S]*?)<\/li>/gi) || [];
-            return "\n" + items.map((item, i) => `${i + 1}. ` + item.replace(/<[^>]+>/g, "").trim()).join("\n") + "\n";
+            return "\n" + items.map((item, i) => `${i + 1}. ` + innerPlain(item.replace(/<\/?li[^>]*>/gi, ""))).join("\n") + "\n";
           });
           text2 = text2.replace(/<a[^>]+href=\s*"([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => {
-            const linkText = content.replace(/<[^>]+>/g, "").trim();
+            const linkText = innerPlain(content);
             if (linkText === href || !linkText) return href;
             return `${linkText} (${href})`;
           });
           text2 = text2.replace(/<a[^>]+href=\s*'([^']*)'[^>]*>([\s\S]*?)<\/a>/gi, (_, href, content) => {
-            const linkText = content.replace(/<[^>]+>/g, "").trim();
+            const linkText = innerPlain(content);
             if (linkText === href || !linkText) return href;
             return `${linkText} (${href})`;
           });
-          text2 = text2.replace(/<(b|strong)[^>]*>([\s\S]*?)<\/(b|strong)>/gi, "**$2**");
-          text2 = text2.replace(/<(i|em)[^>]*>([\s\S]*?)<\/(i|em)>/gi, "_$2_");
-          text2 = text2.replace(/<(u)[^>]*>([\s\S]*?)<\/(u)>/gi, "$2");
-          text2 = text2.replace(/<(s|strike|del)[^>]*>([\s\S]*?)<\/(s|strike|del)>/gi, "~$2~");
+          text2 = text2.replace(/<(b|strong)[^>]*>([\s\S]*?)<\/(b|strong)>/gi, (_, _o, content) => "**" + innerPlain(content) + "**");
+          text2 = text2.replace(/<(i|em)[^>]*>([\s\S]*?)<\/(i|em)>/gi, (_, _o, content) => "_" + innerPlain(content) + "_");
+          text2 = text2.replace(/<(u)[^>]*>([\s\S]*?)<\/(u)>/gi, (_, _o, content) => innerPlain(content));
+          text2 = text2.replace(/<(s|strike|del)[^>]*>([\s\S]*?)<\/(s|strike|del)>/gi, (_, _o, content) => "~" + innerPlain(content) + "~");
           text2 = text2.replace(/<br\s*\/?>/gi, "\n");
           text2 = text2.replace(/<\/p>/gi, "\n\n");
           text2 = text2.replace(/<\/div>/gi, "\n");
-          text2 = text2.replace(/<[^>]+>/g, "");
-          text2 = text2.replace(/&nbsp;/gi, " ");
-          text2 = text2.replace(/&amp;/gi, "&");
-          text2 = text2.replace(/&lt;/gi, "<");
-          text2 = text2.replace(/&gt;/gi, ">");
-          text2 = text2.replace(/&quot;/gi, '"');
-          text2 = text2.replace(/&#39;/gi, "'");
+          text2 = innerPlain(text2);
           text2 = text2.replace(/\n{3,}/g, "\n\n");
           return text2.trim();
         }
@@ -16513,9 +16538,6 @@ ${body || ""}`;
     }
     return { headers, totalHeaders, knownHeaders };
   }
-  function htmlToDisplayText(html2) {
-    return String(html2 || "").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<(br|\/p|\/div|\/li|\/tr|\/h[1-6])\b[^>]*>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"').replace(/&#39;/gi, "'").replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-  }
   function splitMultipartBody(body, boundary) {
     const marker = `--${boundary}`;
     const out = [];
@@ -16757,28 +16779,28 @@ ${body || ""}`;
     return t.startsWith("<") ? t : `<${t}>`;
   }
   function buildReplyComposeDraft(message, identities, accountEmail, replyAll) {
-    const self = /* @__PURE__ */ new Set();
+    const self2 = /* @__PURE__ */ new Set();
     const ae = canonicalizeSenderId(accountEmail);
-    if (ae) self.add(ae);
+    if (ae) self2.add(ae);
     for (const idn of identities || []) {
       const e = canonicalizeSenderId(idn && idn.email);
-      if (e) self.add(e);
+      if (e) self2.add(e);
     }
     const fromDisp = String(message.from_addr || "").trim();
     const fromCanon = canonicalizeSenderId(fromDisp);
     const replyToRaw = String(message.reply_to || "").trim();
     let toDisp = "";
     const ccParts = [];
-    const outgoing = !!(fromCanon && self.has(fromCanon));
+    const outgoing = !!(fromCanon && self2.has(fromCanon));
     if (outgoing) {
-      const others = (Array.isArray(message.to_addrs) ? message.to_addrs : []).filter((d) => !self.has(canonicalizeSenderId(d)));
+      const others = (Array.isArray(message.to_addrs) ? message.to_addrs : []).filter((d) => !self2.has(canonicalizeSenderId(d)));
       toDisp = others.map((d) => String(d).trim()).filter(Boolean).join(", ");
       if (!toDisp) toDisp = fromDisp;
       if (replyAll) {
         const onTo = new Set(splitMailAddressListHeader(toDisp).map(canonicalizeSenderId).filter(Boolean));
         for (const d of Array.isArray(message.cc_addrs) ? message.cc_addrs : []) {
           const c = canonicalizeSenderId(d);
-          if (!c || self.has(c) || onTo.has(c)) continue;
+          if (!c || self2.has(c) || onTo.has(c)) continue;
           onTo.add(c);
           ccParts.push(d);
         }
@@ -16789,7 +16811,7 @@ ${body || ""}`;
         const onTo = new Set(splitMailAddressListHeader(toDisp).map(canonicalizeSenderId).filter(Boolean));
         for (const d of [...Array.isArray(message.to_addrs) ? message.to_addrs : [], ...Array.isArray(message.cc_addrs) ? message.cc_addrs : []]) {
           const c = canonicalizeSenderId(d);
-          if (!c || self.has(c) || onTo.has(c)) continue;
+          if (!c || self2.has(c) || onTo.has(c)) continue;
           onTo.add(c);
           ccParts.push(d);
         }
@@ -17051,21 +17073,16 @@ ${body || ""}`;
       /* @__PURE__ */ import_react8.default.createElement("span", { className: "mail-folder-icon" }, /* @__PURE__ */ import_react8.default.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" }, /* @__PURE__ */ import_react8.default.createElement("circle", { cx: "12", cy: "12", r: "3" }), /* @__PURE__ */ import_react8.default.createElement("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" }))),
       /* @__PURE__ */ import_react8.default.createElement("span", { className: "mail-folder-name" }, "Settings")
     ), isAdmin && /* @__PURE__ */ import_react8.default.createElement(
-      "div",
+      "a",
       {
-        className: `mail-folder ${view === "admin" ? "active" : ""}`,
-        onClick: () => onViewChange("admin"),
-        role: "button",
-        tabIndex: 0,
-        onKeyDown: (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onViewChange("admin");
-          }
-        }
+        className: "mail-folder",
+        href: typeof window !== "undefined" && window.ELVISH_CONSOLE_ORIGIN || "http://127.0.0.1:8780",
+        target: "_blank",
+        rel: "noopener noreferrer",
+        style: { textDecoration: "none", color: "inherit" }
       },
       /* @__PURE__ */ import_react8.default.createElement("span", { className: "mail-folder-icon" }, /* @__PURE__ */ import_react8.default.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" }, /* @__PURE__ */ import_react8.default.createElement("path", { d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" }))),
-      /* @__PURE__ */ import_react8.default.createElement("span", { className: "mail-folder-name" }, "Admin")
+      /* @__PURE__ */ import_react8.default.createElement("span", { className: "mail-folder-name" }, "Console")
     )), /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-sidebar-disposable" }, /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-folder-section", style: { padding: 0, marginBottom: 8 } }, "Disposable"), /* @__PURE__ */ import_react8.default.createElement("button", { className: "mail-sidebar-action", onClick: onCreateDisposable, disabled: creatingDisposable }, Icons2.plus, /* @__PURE__ */ import_react8.default.createElement("span", null, creatingDisposable ? "Generating..." : "Create Address")), latestDisposable && /* @__PURE__ */ import_react8.default.createElement("button", { className: "mail-sidebar-generated", onClick: () => onCopyDisposable(latestDisposable), title: "Click to copy" }, /* @__PURE__ */ import_react8.default.createElement("span", { className: "mail-sidebar-generated-email" }, latestDisposable), /* @__PURE__ */ import_react8.default.createElement("span", { className: "mail-sidebar-generated-copy" }, "Click to copy"))), /* @__PURE__ */ import_react8.default.createElement("div", { className: "mail-sidebar-bottom" }, /* @__PURE__ */ import_react8.default.createElement(
       "button",
       {
@@ -18875,6 +18892,7 @@ ${body || ""}`;
   var import_react8, useState5, useEffect5, useLayoutEffect, useCallback2, useMemo4, useRef3, BACKGROUND_RECOVERY_CONCURRENCY, EMPTY_SENDER_PROFILES, MAIL_HTML_IFRAME_DOC_PREFIX, MAIL_HTML_IFRAME_DOC_SUFFIX, root;
   var init_mail_app = __esm({
     "../static/mail/mail-app.jsx"() {
+      init_html_plaintext();
       import_react8 = __toESM(require_react());
       init_mail_icons();
       init_mail_format_helpers();

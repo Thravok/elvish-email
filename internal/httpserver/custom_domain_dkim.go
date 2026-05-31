@@ -13,8 +13,16 @@ import (
 	"elvish/internal/models"
 )
 
-func customDomainDKIMKeyBasename(domain string) string {
-	return strings.TrimSpace(strings.ToLower(domain)) + ".pem"
+func customDomainDKIMKeyBasename(domain string) (string, error) {
+	d, err := normalizeDNSDomain(domain)
+	if err != nil {
+		return "", err
+	}
+	base := d + ".pem"
+	if filepath.Base(base) != base {
+		return "", fmt.Errorf("invalid dkim key basename")
+	}
+	return base, nil
 }
 
 func (s *Server) customDomainDKIMDir() string {
@@ -47,13 +55,19 @@ func (s *Server) ensureCustomDomainDKIM(ctx context.Context, userID uuid.UUID, d
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("dkim domains dir: %w", err)
 	}
-	base := customDomainDKIMKeyBasename(domain)
-	path := filepath.Join(dir, base)
+	base, err := customDomainDKIMKeyBasename(domain)
+	if err != nil {
+		return err
+	}
+	path, err := secretFileUnderDir(dir, base)
+	if err != nil {
+		return err
+	}
 	raw, err := dkim.GenerateRSAPrivatePEM(2048)
 	if err != nil {
 		return fmt.Errorf("dkim generate: %w", err)
 	}
-	if err := writeSecretFile(path, raw); err != nil {
+	if err := writeSecretFileAt(path, raw); err != nil {
 		return fmt.Errorf("dkim write: %w", err)
 	}
 	selector := strings.TrimSpace(strings.ToLower(models.DefaultAdminDKIMSelector))
@@ -72,8 +86,13 @@ func (s *Server) removeCustomDomainDKIMFiles(domain string) {
 	if dir == "" {
 		return
 	}
-	base := customDomainDKIMKeyBasename(domain)
-	_ = os.Remove(filepath.Join(dir, base))
+	base, err := customDomainDKIMKeyBasename(domain)
+	if err != nil {
+		return
+	}
+	if p, err := secretFileUnderDir(dir, base); err == nil {
+		_ = os.Remove(p)
+	}
 }
 
 // dkimKeyStatusForDomain returns DKIM DNS guidance material for domain (custom mail_domains row or platform default).
@@ -88,8 +107,13 @@ func (s *Server) dkimKeyStatusForDomain(ctx context.Context, domain string) admi
 	if s.mailmeta != nil && dir != "" {
 		sel, ref, err := s.mailmeta.GetDomainDKIMByName(ctx, domain)
 		if err == nil && ref != "" && sel != "" {
+			wantBase, err := customDomainDKIMKeyBasename(domain)
+			if err != nil {
+				out.Error = err.Error()
+				return out
+			}
 			safeRef := filepath.Base(ref)
-			if safeRef != ref || safeRef != customDomainDKIMKeyBasename(domain) {
+			if safeRef != ref || safeRef != wantBase {
 				out.Error = "invalid dkim key reference"
 				return out
 			}

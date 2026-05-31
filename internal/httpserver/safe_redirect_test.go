@@ -10,6 +10,7 @@ func TestSafeRedirectPath_InputScenarios_ReturnsCleanPath(t *testing.T) {
 		{"", "/"},
 		{"/foo", "/foo"},
 		{"//evil.com", "/"},
+		{"/\\evil", "/"},
 		{"https://evil.com", "/"},
 		{"  /ok  ", "/ok"},
 	}

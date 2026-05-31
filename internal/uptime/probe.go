@@ -42,11 +42,15 @@ func probeOne(ctx context.Context, hc *http.Client, t ResolvedTarget, timeout ti
 	if err := ValidateProbeHTTPURL(t.URL); err != nil {
 		return ProbeResult{ID: t.ID, URL: t.URL, Method: method, OK: false, Error: err.Error()}
 	}
+	validated, err := NewValidatedProbeURL(t.URL)
+	if err != nil {
+		return ProbeResult{ID: t.ID, URL: t.URL, Method: method, OK: false, Error: err.Error()}
+	}
 	pctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	start := time.Now()
-	req, err := http.NewRequestWithContext(pctx, method, t.URL, nil)
+	req, err := http.NewRequestWithContext(pctx, method, validated.String(), nil)
 	if err != nil {
 		return ProbeResult{ID: t.ID, URL: t.URL, Method: method, OK: false, Error: err.Error()}
 	}
@@ -81,10 +85,14 @@ func probeGETFallback(ctx context.Context, hc *http.Client, t ResolvedTarget, ti
 	if err := ValidateProbeHTTPURL(t.URL); err != nil {
 		return ProbeResult{ID: t.ID, URL: t.URL, Method: "GET", OK: false, LatencyMS: headLatency, Error: err.Error()}
 	}
+	validated, err := NewValidatedProbeURL(t.URL)
+	if err != nil {
+		return ProbeResult{ID: t.ID, URL: t.URL, Method: "GET", OK: false, LatencyMS: headLatency, Error: err.Error()}
+	}
 	pctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	start := time.Now()
-	req, err := http.NewRequestWithContext(pctx, http.MethodGet, t.URL, nil)
+	req, err := http.NewRequestWithContext(pctx, http.MethodGet, validated.String(), nil)
 	if err != nil {
 		return ProbeResult{ID: t.ID, URL: t.URL, Method: "GET", OK: false, LatencyMS: headLatency, Error: err.Error()}
 	}

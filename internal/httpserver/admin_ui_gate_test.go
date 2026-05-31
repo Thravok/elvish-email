@@ -95,7 +95,7 @@ func TestMailTrailingSlashRedirects(t *testing.T) {
 	}
 }
 
-func TestAdminRedirectsToMail(t *testing.T) {
+func TestAdminRedirectsToConsole(t *testing.T) {
 	t.Parallel()
 	srv, err := New(Options{Root: testRepoRoot(t), CookieSecure: false}, nil)
 	if err != nil {
@@ -107,8 +107,8 @@ func TestAdminRedirectsToMail(t *testing.T) {
 		t.Fatalf("expected redirect, got status = %d body=%q", rec.Code, rec.Body.String())
 	}
 	loc := rec.Header().Get("Location")
-	if loc != "/mail" {
-		t.Fatalf("expected redirect to /mail, got Location=%q", loc)
+	if loc != "http://127.0.0.1:8780/" {
+		t.Fatalf("expected redirect to console, got Location=%q", loc)
 	}
 }
 

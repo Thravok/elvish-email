@@ -7,9 +7,10 @@ Coolify treats [`docker-compose.coolify.yaml`](../docker-compose.coolify.yaml) a
 | Service | Public access | Container port | Notes |
 |---------|---------------|----------------|-------|
 | `api` | Coolify domain | **8765** | Monolith `elvishserver`: marketing, mail UI, `/api/*`, SMTP **25/587**; health: `/api/healthz` |
+| `console` | Coolify domain | **8080** | `elvishconsole`: staff auth, `/api/console/*`, support inbox; health: `/healthz` |
 | `cockroach`, `valkey`, `scylla`, `minio` | **None** (internal) | — | Reachable only as `cockroach:26257`, `valkey:6379`, `scylla:9042`, `minio:9000`. Do **not** assign Coolify domains or declare `SERVICE_URL_*` on these services. |
 
-Assign **one domain on `api`** only. SMTP ports **25** and **587** are published on the same service.
+Assign domains on **`api`** and **`console`**. SMTP ports **25** and **587** are published on **`api`** only.
 
 ## Container images (GHCR)
 
@@ -18,6 +19,7 @@ Coolify **pulls** pre-built images (no on-server Go build in production):
 | Role | Image |
 |------|--------|
 | `api` | `ghcr.io/thravok/elvish-email/api:main` |
+| `console` | `ghcr.io/thravok/elvish-email/console:main` |
 | `scylla-init` | `ghcr.io/thravok/elvish-email/scylla-init:main` (one-shot) |
 
 Published on every push to `main` ([`.github/workflows/docker-publish.yml`](../.github/workflows/docker-publish.yml)). Set **`ELVISH_IMAGE_TAG`** in Coolify to pin another tag (e.g. `1.0.0-pre` or `main`).

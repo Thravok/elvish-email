@@ -129,15 +129,24 @@ func TestSniffClassification(t *testing.T) {
 	if got := Sniff([]byte("plain text body")); got != BodyCleartext {
 		t.Errorf("expected cleartext, got %v", got)
 	}
-	if got := Sniff([]byte("\r\n  -----BEGIN PGP MESSAGE-----\nabc\n-----END PGP MESSAGE-----\n")); got != BodyArmoredMessage {
-		t.Errorf("expected armored, got %v", got)
+	if got := Sniff([]byte("\r\n  -----BEGIN PGP MESSAGE-----\nabc\n-----END PGP MESSAGE-----\n")); got != BodyCleartext {
+		t.Errorf("fake armor should classify as cleartext, got %v", got)
 	}
-	mime := []byte("Content-Type: multipart/encrypted; protocol=\"application/pgp-encrypted\"; boundary=foo\r\n\r\n--foo\r\nContent-Type: application/pgp-encrypted\r\n")
+	mime := []byte("Content-Type: multipart/encrypted; protocol=\"application/pgp-encrypted\"; boundary=foo\r\n\r\n--foo\r\nContent-Type: application/pgp-encrypted\r\nVersion: 1\r\n\r\n--foo--\r\n")
 	if got := Sniff(mime); got != BodyPGPMIME {
 		t.Errorf("expected PGP/MIME, got %v", got)
 	}
 	if got := Sniff([]byte("-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\nx\n-----BEGIN PGP SIGNATURE-----\nabc\n-----END PGP SIGNATURE-----\n")); got != BodyCleartext {
 		t.Errorf("signed cleartext should classify as cleartext, got %v", got)
+	}
+	e := genKey(t, "sniff", "sniff@test.local")
+	pub := armorPub(t, e)
+	ct, err := Encrypt(pub, []byte("secret"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := Sniff(ct); got != BodyArmoredMessage {
+		t.Errorf("real ciphertext should classify as armored, got %v", got)
 	}
 }
 

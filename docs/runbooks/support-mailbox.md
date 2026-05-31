@@ -41,7 +41,8 @@ They **do not** create SMTP routes. Every `@yourdomain.tld` address must still r
 
 ## 3. Staff access and triage
 
-- Mail is **per `user_id`**. There is no shared mailbox delegation in-tree; typical patterns are a locked-down shared credential for a small team (password manager + MFA), or forwarding from a ticketing system (understand third-party trust).
+- Use the **ELVish Console** service (`elvishconsole`) for multi-staff support inbox access with key escrow (see [ADR 0018](../adr/0018-console-service-and-support-escrow.md) and [console-cutover.md](console-cutover.md)).
+- Mail is **per `user_id`**. There is no shared mailbox delegation in the public mail API; Console escrow applies only to the configured support mailbox.
 - **Outbound replies**: prefer OpenPGP direct (Mode A) when the customer has a key; use protected links (Mode B) for ad-hoc recipients. Avoid user-facing plaintext relay (ADR 0010) except narrow internal cases.
 - **Logging**: never log message bodies, passwords, or session tokens. Use generic auth failure messages.
 

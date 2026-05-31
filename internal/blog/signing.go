@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	jed "github.com/jedisct1/go-minisign"
@@ -34,9 +35,27 @@ func KeyIDHexLE(id [8]byte) string {
 	return fmt.Sprintf("%016X", binary.LittleEndian.Uint64(id[:]))
 }
 
-func parseSigning(mdPath string, raw []byte, opts *SigningLoadOpts) (PostSigning, error) {
+func parseSigning(contentRoot, mdPath string, raw []byte, opts *SigningLoadOpts) (PostSigning, error) {
 	var out PostSigning
-	sigPath := mdPath + ".minisig"
+	if strings.TrimSpace(contentRoot) == "" {
+		if opts != nil && opts.RequireSigned {
+			return out, fmt.Errorf("require signed: content root is required to load minisig sidecars")
+		}
+		return out, nil
+	}
+	rootAbs, err := filepath.Abs(filepath.Clean(contentRoot))
+	if err != nil {
+		return out, fmt.Errorf("content root: %w", err)
+	}
+	mdAbs, err := filepath.Abs(filepath.Clean(mdPath))
+	if err != nil {
+		return out, fmt.Errorf("markdown path: %w", err)
+	}
+	rel, err := filepath.Rel(rootAbs, mdAbs)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return out, fmt.Errorf("markdown path outside content root")
+	}
+	sigPath := mdAbs + ".minisig"
 	sigBytes, err := os.ReadFile(sigPath)
 	if err != nil {
 		if os.IsNotExist(err) {

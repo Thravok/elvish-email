@@ -29,6 +29,8 @@ jobs:
         include:
           - role: api
             file: Dockerfile
+          - role: console
+            file: docker/console/Dockerfile
           - role: scylla-init
             file: docker/scylla-init/Dockerfile
 
@@ -60,7 +62,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/${{ matrix.role }}
 
       - name: Build static JS (api image only)
-        if: matrix.role == 'api'
+        if: matrix.role == 'api' || matrix.role == 'console'
         run: |
           cd frontend && npm ci && cd ..
           node frontend/build.mjs
@@ -78,4 +80,4 @@ jobs:
       - name: Sign image
         if: github.event_name != 'pull_request'
         run: |
-          cosign sign --yes "${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/${{ matrix.role }}@${{ steps.build.outputs.digest }}"
+          cosign sign --yes "${{ env.REGISTRY }}/thravok/elvish-email/${{ matrix.role }}@${{ steps.build.outputs.digest }}"
