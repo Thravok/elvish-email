@@ -3,7 +3,7 @@
 # Coolify does not support YAML anchors (x-* / & / *); env is duplicated per service.
 #
 # App images: ghcr.io/thravok/elvish-email/<role>:<tag> (built by .github/workflows/docker-publish.yml).
-# Override tag with ELVISH_IMAGE_TAG in Coolify (default main). web/admin bake api-config.js at container start.
+# Override tag with ELVISH_IMAGE_TAG in Coolify (default main). All app tiers pull from GHCR — no repo bind mounts.
 #
 # Required in Coolify UI: assign domains on api/web/admin; COOKIE_SECURE=1. Magic vars (SERVICE_*)
 # are declared per service — use ${VAR:-${SERVICE_*:?}} so empty secrets/URLs show a red border.
@@ -162,8 +162,7 @@ services:
       start_period: 90s
     restart: unless-stopped
 
-  # Optional — not in default deploy (Coolify cannot build from partial checkout paths).
-  # Enable: COMPOSE_PROFILES=docs in Coolify, or after GHCR image exists: pull ghcr.io/thravok/elvish-email/docs:main
+  # Optional — enable COMPOSE_PROFILES=docs in Coolify before assigning a docs domain.
   docs:
     profiles: [docs]
     image: ghcr.io/thravok/elvish-email/docs:${ELVISH_IMAGE_TAG:-main}
@@ -322,7 +321,7 @@ services:
     restart: unless-stopped
 
   scylla-init:
-    image: scylladb/scylla:5.4
+    image: ghcr.io/thravok/elvish-email/scylla-init:${ELVISH_IMAGE_TAG:-main}
     exclude_from_hc: true
     depends_on:
       scylla:
@@ -330,16 +329,6 @@ services:
     environment:
       - SCYLLA_HOST=${SCYLLA_HOST:-scylla}
       - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
-    volumes:
-      - type: bind
-        source: ./libs/go/scyllastore/schema.cql
-        target: /schema.cql
-        read_only: true
-      - type: bind
-        source: ./docker/scylla-init.sh
-        target: /scylla-init.sh
-        read_only: true
-    entrypoint: ["sh", "/scylla-init.sh"]
     restart: "no"
 
   # Internal only — S3 API on :9000; no SERVICE_URL_* (console not exposed).

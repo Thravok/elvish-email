@@ -12,7 +12,7 @@ Production deploys use [`docker-compose.coolify.yaml`](docker-compose.coolify.ya
 
 **Coolify limitation:** do not use YAML anchors (`x-*`, `&anchor`, `*anchor`). Duplicate `environment` lists per service instead.
 
-**Images:** App tiers use pre-built **`ghcr.io/thravok/elvish-email/<role>:${ELVISH_IMAGE_TAG:-main}`** (not `build:`). `web`/`admin` mount `docker/nginx/write-*-api-config.sh` to inject API URLs at start. `docs` uses profile `docs` (optional; same GHCR pattern).
+**Images:** App tiers use pre-built **`ghcr.io/thravok/elvish-email/<role>:${ELVISH_IMAGE_TAG:-main}`** (not `build:`). Roles: `api`, `mta`, `worker`, `web`, `admin`, `docs`, `scylla-init`. `web`/`admin` write runtime `api-config.js` from env (entrypoint scripts baked in image). `docs` uses profile `docs` (optional).
 
 ## Source of truth
 
@@ -83,7 +83,7 @@ Prefer `configs:` with `content: |` for generated config files when bind-mount c
 - **`api`** (port 8765): JSON API + SSR (`elvishapi`, `ELVISH_SERVE_STATIC=0`); assign a Coolify domain; defaults from `SERVICE_URL_API_8765`.
 - **`web`** / **`admin`** (port 8080): nginx static tiers; runtime `api-config.js` from env (scripts baked in image). Assign separate Coolify domains; health probe path **`/healthz`** (not `/` — web has no root index).
 - **`mail-mta`**: host `ports` for 25/587 — HTTP proxy cannot carry SMTP. Internal `:8765` serves `/api/healthz` when `ELVISH_HTTP_ENABLED=1` (compose default); not published to the host.
-- **`worker`**, **`cockroach`**, **`valkey`**, **`scylla`**, **`minio`**: internal only — no `SERVICE_URL_*` / `SERVICE_FQDN_*` on those services (Coolify would offer a public domain). App tiers connect via `COCKROACH_DSN`, `VALKEY_ADDR`, `SCYLLA_HOSTS`, `BLOB_S3_ENDPOINT` (defaults use Docker service names). **`scylla-init`** / **`minio-init`** gate mail startup. Valkey/MinIO secrets use `SERVICE_PASSWORD_64_VALKEY` and `SERVICE_USER_MINIO` / `SERVICE_PASSWORD_64_MINIO` with `${…:?}` on consumers.
+- **`worker`**, **`cockroach`**, **`valkey`**, **`scylla`**, **`minio`**: internal only — no `SERVICE_URL_*` / `SERVICE_FQDN_*` on those services (Coolify would offer a public domain). App tiers connect via `COCKROACH_DSN`, `VALKEY_ADDR`, `SCYLLA_HOSTS`, `BLOB_S3_ENDPOINT` (defaults use Docker service names). **`scylla-init`** (GHCR image) / **`minio-init`** (inline `minio/mc`) gate mail startup. Valkey/MinIO secrets use `SERVICE_PASSWORD_64_VALKEY` and `SERVICE_USER_MINIO` / `SERVICE_PASSWORD_64_MINIO` with `${…:?}` on consumers.
 - Compose **`healthcheck`** blocks on app tiers use `-healthcheck` on Go binaries (distroless-safe) or `wget /healthz` on nginx images — see [docs/deploy-coolify.md](docs/deploy-coolify.md).
 - Keep dev-only `ports:` in `docker-compose.yml`; production exposure goes through Coolify domains or intentional host binds in `docker-compose.coolify.yaml`.
 

@@ -1,6 +1,6 @@
 name: Docker
 
-# Per-role images (ADR 0018): api, mta, worker, web, admin, docs.
+# Per-role images (ADR 0018): api, mta, worker, web, admin, docs, scylla-init.
 # Tags: ghcr.io/<owner>/<repo>/<role>:<ref>  (e.g. .../api:main, .../web:pr-7)
 
 on:
@@ -39,6 +39,8 @@ jobs:
             file: apps/admin/Dockerfile
           - role: docs
             file: docker/docs/Dockerfile
+          - role: scylla-init
+            file: docker/scylla-init/Dockerfile
 
     steps:
       - name: Checkout repository

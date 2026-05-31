@@ -27,10 +27,12 @@ Coolify **pulls** pre-built role images (no on-server Go/nginx builds for app ti
 | `admin` | `ghcr.io/thravok/elvish-email/admin:main` |
 | `worker` | `ghcr.io/thravok/elvish-email/worker:main` |
 | `mail-mta` | `ghcr.io/thravok/elvish-email/mta:main` |
+| `docs` | `ghcr.io/thravok/elvish-email/docs:main` (profile `docs`) |
+| `scylla-init` | `ghcr.io/thravok/elvish-email/scylla-init:main` (one-shot) |
 
-Published on every push to `main` ([`.github/workflows/docker-publish.yml`](../.github/workflows/docker-publish.yml)). Set **`ELVISH_IMAGE_TAG`** in Coolify to pin another tag (e.g. `v1.2.3` or a commit SHA).
+Published on every push to `main` ([`.github/workflows/docker-publish.yml`](../.github/workflows/docker-publish.yml)). Set **`ELVISH_IMAGE_TAG`** in Coolify to pin another tag (e.g. `v1.2.3` or a commit SHA). All ELVish-built tiers pull from GHCR — **no repo bind mounts** on the Coolify host.
 
-`web` and `admin` write `shared/api-config.js` at container start from `ELVISH_API_BASE` / `ELVISH_ADMIN_ORIGIN` (defaults use Coolify `$SERVICE_URL_*` magic vars). Entrypoint scripts are **baked into the GHCR images** — no bind mount required on the Coolify host. The repo still supplies bind-mounted init scripts for **`scylla-init`** only.
+`web` and `admin` write `shared/api-config.js` at container start from `ELVISH_API_BASE` / `ELVISH_ADMIN_ORIGIN` (defaults use Coolify `$SERVICE_URL_*` magic vars). Entrypoint and schema-init scripts are baked into the images.
 
 `docs` is **off by default** (compose profile `docs`). Image: `ghcr.io/thravok/elvish-email/docs:main` after CI publishes it. Enable with `COMPOSE_PROFILES=docs` in Coolify **before** assigning a docs domain; otherwise the container stays **Exited**.
 
@@ -40,7 +42,7 @@ If packages are private, add a GHCR registry credential in Coolify before deploy
 
 ### 1. Create the stack
 
-Import the repo and select **Docker Compose** with `docker-compose.coolify.yaml` (compose file + init bind mounts; app images from GHCR).
+Import the repo and select **Docker Compose** with `docker-compose.coolify.yaml`. Coolify only needs the compose file from git; all ELVish services pull pre-built GHCR images.
 
 ### 2. Assign domains (HTTP services)
 

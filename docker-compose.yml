@@ -74,15 +74,16 @@ services:
       start_period: 120s
 
   scylla-init:
-    image: scylladb/scylla:5.4
+    build:
+      context: .
+      dockerfile: docker/scylla-init/Dockerfile
     container_name: elvish-scylla-init
     depends_on:
       scylla:
         condition: service_healthy
-    volumes:
-      - ./libs/go/scyllastore/schema.cql:/schema.cql:ro
-      - ./docker/scylla-init.sh:/scylla-init.sh:ro
-    entrypoint: ["sh", "/scylla-init.sh"]
+    environment:
+      - SCYLLA_HOST=${SCYLLA_HOST:-scylla}
+      - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
     restart: "no"
 
   minio:
@@ -98,11 +99,11 @@ services:
     volumes:
       - elvish_minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null || wget -q --spider http://127.0.0.1:9000/minio/health/live || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 8
-      start_period: 10s
+      start_period: 15s
 
   minio-init:
     image: minio/mc:latest
