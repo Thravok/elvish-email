@@ -64,14 +64,32 @@ Coolify generates **magic variables from the compose service name** (hyphen + po
 
 ### 3. Required environment variables (Coolify UI)
 
-These use `${VAR:?}` in compose and show a **red border** until set:
+Compose uses `${VAR:?}` so Coolify shows a **red border** until the value exists. Assign **domains** on `api`, `web`, and `admin` first — that populates the `SERVICE_URL_*` / `SERVICE_FQDN_*` magic vars below.
 
-| Variable | Example |
-|----------|---------|
-| `ELVISH_MAIL_DOMAIN` | `mail.example.com` |
-| `COOKIE_SECURE` | `1` (production HTTPS) |
+| Variable | Service | Required | Notes |
+|----------|---------|----------|-------|
+| `COOKIE_SECURE` | `api` | `${COOKIE_SECURE:?1}` | Use `1` in production (HTTPS cookies) |
+| `SERVICE_URL_WEB_8080` | `api`, `web` | via domain on **web** | Defaults `ELVISH_PUBLIC_BASE_URL`, `ELVISH_WEB_ORIGIN`, CORS |
+| `SERVICE_URL_ADMIN_8080` | `api`, `web` | via domain on **admin** | Defaults `ELVISH_ADMIN_ORIGIN`, CORS |
+| `SERVICE_URL_API_8765` | `web`, `admin` | via domain on **api** | Defaults `ELVISH_API_BASE` in runtime `api-config.js` |
+| `SERVICE_FQDN_WEB` | `api`, `mail-mta` | via domain on **web** | Defaults `ELVISH_MAIL_DOMAIN` when unset |
+| `SERVICE_PASSWORD_64_VALKEY` | `valkey` (+ consumers) | auto-generated | Declared on `valkey`; required on `api` / `worker` / `mail-mta` via `:?` |
+| `SERVICE_USER_MINIO` / `SERVICE_PASSWORD_64_MINIO` | `minio` (+ consumers) | auto-generated | Blob credentials; `minio-init` creates the bucket |
+| `SERVICE_BASE64_64` | `api` (+ worker/mta) | auto-generated | MFA encryption key material |
 
-Set `ELVISH_COOKIE_DOMAIN` (e.g. `.example.com`) when `web`, `admin`, and `api` use different hostnames so the session cookie is shared.
+**Recommended (not `:?` in compose):** `ELVISH_COOKIE_DOMAIN` (e.g. `.example.com`) when `web`, `admin`, and `api` use different hostnames.
+
+**Internal data stores** (no `SERVICE_URL_*` — Docker DNS defaults; override only for predefined-network deploys):
+
+| Variable | Default | Used by |
+|----------|---------|---------|
+| `COCKROACH_DSN` | `postgres://root@cockroach:26257/defaultdb?sslmode=disable` | `api`, `worker`, `mail-mta` |
+| `VALKEY_ADDR` | `valkey:6379` | same |
+| `SCYLLA_HOSTS` | `scylla:9042` | same; **`scylla-init`** applies schema |
+| `SCYLLA_KEYSPACE` | `elvish_mail` | same + `scylla-init` |
+| `BLOB_S3_ENDPOINT` | `http://minio:9000` | same; **`minio-init`** creates bucket |
+| `SCYLLA_SMP` / `SCYLLA_MEMORY` | `2` / `2G` | `scylla` tuning (Coolify UI) |
+| `COCKROACH_CACHE` / `COCKROACH_MAX_SQL_MEMORY` | `256MiB` | `cockroach` tuning |
 
 ### 4. Recommended overrides
 
@@ -118,11 +136,22 @@ After changing healthcheck code, rebuild/publish GHCR images (`ELVISH_IMAGE_TAG`
 
 ## Magic variables declared in compose
 
-Declared on `api` (reused stack-wide per Coolify rules):
+Coolify generates `SERVICE_*` values when the name appears in a service’s `environment` list. **Each service must declare every magic var it reads**, including cross-service URLs.
 
-- `SERVICE_URL_API_8765`, `SERVICE_FQDN_API`
-- `SERVICE_PASSWORD_64_VALKEY`, `SERVICE_USER_MINIO`, `SERVICE_PASSWORD_64_MINIO`
-- `SERVICE_BASE64_64` (MFA key seed material)
+| Service | Declared magic vars | Consumed as |
+|---------|---------------------|-------------|
+| `api` | `SERVICE_URL_*_8765/8080`, `SERVICE_FQDN_*`, `SERVICE_PASSWORD_64_VALKEY`, `SERVICE_USER_MINIO`, `SERVICE_PASSWORD_64_MINIO`, `SERVICE_BASE64_64` | CORS/origins, MFA key, blob/Valkey creds; `ELVISH_MAIL_DOMAIN` defaults to `$SERVICE_FQDN_WEB` |
+| `web` | `SERVICE_URL_WEB_8080`, `SERVICE_URL_API_8765`, `SERVICE_URL_ADMIN_8080`, matching `SERVICE_FQDN_*` | `ELVISH_API_BASE`, `ELVISH_ADMIN_ORIGIN` in runtime `api-config.js` |
+| `admin` | `SERVICE_URL_ADMIN_8080`, `SERVICE_URL_API_8765`, matching `SERVICE_FQDN_*` | `ELVISH_API_BASE` |
+| `docs` (profile) | `SERVICE_URL_DOCS_8080`, `SERVICE_FQDN_DOCS` | Coolify domain for optional docs site |
+| `worker`, `mail-mta` | `SERVICE_PASSWORD_64_VALKEY`, `SERVICE_USER_MINIO`, `SERVICE_PASSWORD_64_MINIO`, `SERVICE_BASE64_64`; `mail-mta` also `SERVICE_FQDN_WEB` | Shared secrets + mail domain default; SQL/Scylla/MinIO via internal DNS env |
+| `valkey` | `SERVICE_PASSWORD_64_VALKEY` | Generates Valkey password (required by consumers via `:?`) |
+| `minio`, `minio-init` | `SERVICE_USER_MINIO`, `SERVICE_PASSWORD_64_MINIO` | Generates MinIO root credentials |
+| `scylla` | (none — internal) | Tune via `SCYLLA_SMP`, `SCYLLA_MEMORY` in Coolify UI |
+| `scylla-init` | `SCYLLA_HOST`, `SCYLLA_KEYSPACE` | One-shot schema apply after `scylla` healthy |
+| `cockroach` | (none — internal) | Tune via `COCKROACH_CACHE`, `COCKROACH_MAX_SQL_MEMORY` |
+
+Prefer **`SERVICE_URL_<SERVICE>_<port>`** over generic `SERVICE_URL_<SERVICE>` (Coolify keeps port-specific vars aligned when domains change).
 
 Compose env syntax follows [`.cursor/rules/docker-compose-coolify.mdc`](../.cursor/rules/docker-compose-coolify.mdc): `${VAR:?}` for required secrets, `${VAR:-default}` for optional values, and `$SERVICE_URL_*` for generated URLs — not hardcoded hostnames in the file.
 

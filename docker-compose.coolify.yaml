@@ -4,6 +4,11 @@
 #
 # App images: ghcr.io/thravok/elvish-email/<role>:<tag> (built by .github/workflows/docker-publish.yml).
 # Override tag with ELVISH_IMAGE_TAG in Coolify (default main). web/admin bake api-config.js at container start.
+#
+# Required in Coolify UI: assign domains on api/web/admin; COOKIE_SECURE=1. Magic vars (SERVICE_*)
+# are declared per service — use ${VAR:-${SERVICE_*:?}} so empty secrets/URLs show a red border.
+# Internal stores (cockroach, valkey, scylla, minio) use Docker DNS; override COCKROACH_DSN / VALKEY_ADDR /
+# SCYLLA_HOSTS / BLOB_S3_ENDPOINT only for predefined-network deploys.
 
 services:
   api:
@@ -33,34 +38,35 @@ services:
       - SERVICE_USER_MINIO
       - SERVICE_PASSWORD_64_MINIO
       - SERVICE_BASE64_64
-      - COCKROACH_DSN=postgres://root@cockroach:26257/defaultdb?sslmode=disable
-      - VALKEY_ADDR=valkey:6379
-      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
+      - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
+      - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
+      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY:?}}
       - VALKEY_DB=${VALKEY_DB:-0}
-      - SCYLLA_HOSTS=scylla:9042
+      - SCYLLA_HOSTS=${SCYLLA_HOSTS:-scylla:9042}
       - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
       - SCYLLA_USERNAME=${SCYLLA_USERNAME:-}
       - SCYLLA_PASSWORD=${SCYLLA_PASSWORD:-}
-      - BLOB_S3_ENDPOINT=http://minio:9000
+      - SCYLLA_LOCAL_DC=${SCYLLA_LOCAL_DC:-}
+      - BLOB_S3_ENDPOINT=${BLOB_S3_ENDPOINT:-http://minio:9000}
       - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
       - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
-      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
-      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
+      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO:?}}
+      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO:?}}
       - BLOB_S3_FORCE_PATH_STYLE=1
       - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-}
-      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-}
+      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-${SERVICE_FQDN_WEB:?}}
       - ELVISH_SERVE_STATIC=0
-      - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-$SERVICE_URL_WEB_8080}
-      - ELVISH_WEB_ORIGIN=${ELVISH_WEB_ORIGIN:-$SERVICE_URL_WEB_8080}
-      - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-$SERVICE_URL_ADMIN_8080}
-      - ELVISH_WEB_ORIGINS=${ELVISH_WEB_ORIGINS:-$SERVICE_URL_WEB_8080,$SERVICE_URL_ADMIN_8080}
+      - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-${SERVICE_URL_WEB_8080:?}}
+      - ELVISH_WEB_ORIGIN=${ELVISH_WEB_ORIGIN:-${SERVICE_URL_WEB_8080:?}}
+      - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-${SERVICE_URL_ADMIN_8080:?}}
+      - ELVISH_WEB_ORIGINS=${ELVISH_WEB_ORIGINS:-${SERVICE_URL_WEB_8080:?},${SERVICE_URL_ADMIN_8080:?}}
       - ELVISH_COOKIE_DOMAIN=${ELVISH_COOKIE_DOMAIN:-}
       - ELVISH_TRUST_FORWARDED_FOR=${ELVISH_TRUST_FORWARDED_FOR:-1}
       - ELVISH_SMTP_ADDR=
       - ELVISH_SMTP_SUBMISSION_ADDR=
       - COOKIE_SECURE=${COOKIE_SECURE:?1}
       - ELVISH_AUTO_GEN_MFA_KEY=${ELVISH_AUTO_GEN_MFA_KEY:-0}
-      - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64}}
+      - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64:?}}
       - ELVISH_ALLOW_EMPTY_DB=0
     volumes:
       - elvish_data:/app/data
@@ -86,8 +92,12 @@ services:
     environment:
       - SERVICE_URL_WEB_8080
       - SERVICE_FQDN_WEB
-      - ELVISH_API_BASE=${ELVISH_API_BASE:-$SERVICE_URL_API_8765}
-      - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-$SERVICE_URL_ADMIN_8080}
+      - SERVICE_URL_API_8765
+      - SERVICE_FQDN_API
+      - SERVICE_URL_ADMIN_8080
+      - SERVICE_FQDN_ADMIN
+      - ELVISH_API_BASE=${ELVISH_API_BASE:-${SERVICE_URL_API_8765:?}}
+      - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-${SERVICE_URL_ADMIN_8080:?}}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 30s
@@ -110,7 +120,9 @@ services:
     environment:
       - SERVICE_URL_ADMIN_8080
       - SERVICE_FQDN_ADMIN
-      - ELVISH_API_BASE=${ELVISH_API_BASE:-$SERVICE_URL_API_8765}
+      - SERVICE_URL_API_8765
+      - SERVICE_FQDN_API
+      - ELVISH_API_BASE=${ELVISH_API_BASE:-${SERVICE_URL_API_8765:?}}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 30s
@@ -140,22 +152,23 @@ services:
       - SERVICE_USER_MINIO
       - SERVICE_PASSWORD_64_MINIO
       - SERVICE_BASE64_64
-      - COCKROACH_DSN=postgres://root@cockroach:26257/defaultdb?sslmode=disable
-      - VALKEY_ADDR=valkey:6379
-      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
+      - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
+      - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
+      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY:?}}
       - VALKEY_DB=${VALKEY_DB:-0}
-      - SCYLLA_HOSTS=scylla:9042
+      - SCYLLA_HOSTS=${SCYLLA_HOSTS:-scylla:9042}
       - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
       - SCYLLA_USERNAME=${SCYLLA_USERNAME:-}
       - SCYLLA_PASSWORD=${SCYLLA_PASSWORD:-}
-      - BLOB_S3_ENDPOINT=http://minio:9000
+      - SCYLLA_LOCAL_DC=${SCYLLA_LOCAL_DC:-}
+      - BLOB_S3_ENDPOINT=${BLOB_S3_ENDPOINT:-http://minio:9000}
       - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
       - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
-      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
-      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
+      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO:?}}
+      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO:?}}
       - BLOB_S3_FORCE_PATH_STYLE=1
       - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-}
-      - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64}}
+      - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64:?}}
       - ELVISH_ALLOW_EMPTY_DB=0
     volumes:
       - elvish_data:/app/data
@@ -172,6 +185,9 @@ services:
   docs:
     profiles: [docs]
     image: ghcr.io/thravok/elvish-email/docs:${ELVISH_IMAGE_TAG:-main}
+    environment:
+      - SERVICE_URL_DOCS_8080
+      - SERVICE_FQDN_DOCS
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 30s
@@ -201,29 +217,31 @@ services:
       - SERVICE_USER_MINIO
       - SERVICE_PASSWORD_64_MINIO
       - SERVICE_BASE64_64
-      - COCKROACH_DSN=postgres://root@cockroach:26257/defaultdb?sslmode=disable
-      - VALKEY_ADDR=valkey:6379
-      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
+      - SERVICE_FQDN_WEB
+      - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
+      - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
+      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY:?}}
       - VALKEY_DB=${VALKEY_DB:-0}
-      - SCYLLA_HOSTS=scylla:9042
+      - SCYLLA_HOSTS=${SCYLLA_HOSTS:-scylla:9042}
       - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
       - SCYLLA_USERNAME=${SCYLLA_USERNAME:-}
       - SCYLLA_PASSWORD=${SCYLLA_PASSWORD:-}
-      - BLOB_S3_ENDPOINT=http://minio:9000
+      - SCYLLA_LOCAL_DC=${SCYLLA_LOCAL_DC:-}
+      - BLOB_S3_ENDPOINT=${BLOB_S3_ENDPOINT:-http://minio:9000}
       - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
       - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
-      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
-      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
+      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO:?}}
+      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO:?}}
       - BLOB_S3_FORCE_PATH_STYLE=1
       - ELVISH_HTTP_ENABLED=1
       - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-}
-      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-}
+      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-${SERVICE_FQDN_WEB:?}}
       - ELVISH_SMTP_ADDR=${ELVISH_SMTP_ADDR:-:25}
       - ELVISH_SMTP_SUBMISSION_ADDR=${ELVISH_SMTP_SUBMISSION_ADDR:-:587}
       - ELVISH_SMTP_ALLOW_PLAIN_AUTH=${ELVISH_SMTP_ALLOW_PLAIN_AUTH:-0}
       - ELVISH_SMTP_TLS_CERT_PATH=${ELVISH_SMTP_TLS_CERT_PATH:-}
       - ELVISH_SMTP_TLS_KEY_PATH=${ELVISH_SMTP_TLS_KEY_PATH:-}
-      - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64}}
+      - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64:?}}
       - ELVISH_ALLOW_EMPTY_DB=0
     volumes:
       - elvish_data:/app/data
@@ -248,6 +266,9 @@ services:
       - --http-addr=127.0.0.1:8080
       - --cache=${COCKROACH_CACHE:-256MiB}
       - --max-sql-memory=${COCKROACH_MAX_SQL_MEMORY:-256MiB}
+    environment:
+      - COCKROACH_CACHE=${COCKROACH_CACHE:-256MiB}
+      - COCKROACH_MAX_SQL_MEMORY=${COCKROACH_MAX_SQL_MEMORY:-256MiB}
     volumes:
       - elvish_crdb_data:/cockroach/cockroach-data
     healthcheck:
@@ -268,9 +289,10 @@ services:
       - --appendonly
       - "yes"
       - --requirepass
-      - ${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
+      - ${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY:?}}
     environment:
       - SERVICE_PASSWORD_64_VALKEY
+      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY:?}}
     volumes:
       - elvish_valkey_data:/data
     healthcheck:
@@ -280,7 +302,7 @@ services:
           "redis-cli",
           "--no-auth-warning",
           "-a",
-          "${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}",
+          "${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY:?}}",
           "ping",
         ]
       interval: 10s
@@ -300,6 +322,9 @@ services:
       - --reactor-backend=epoll
       - --developer-mode
       - "1"
+    environment:
+      - SCYLLA_SMP=${SCYLLA_SMP:-2}
+      - SCYLLA_MEMORY=${SCYLLA_MEMORY:-2G}
     volumes:
       - elvish_scylla_data:/var/lib/scylla
     healthcheck:
@@ -320,6 +345,9 @@ services:
     depends_on:
       scylla:
         condition: service_healthy
+    environment:
+      - SCYLLA_HOST=${SCYLLA_HOST:-scylla}
+      - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
     volumes:
       - type: bind
         source: ./libs/go/scyllastore/schema.cql
@@ -339,8 +367,8 @@ services:
     environment:
       - SERVICE_USER_MINIO
       - SERVICE_PASSWORD_64_MINIO
-      - MINIO_ROOT_USER=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
-      - MINIO_ROOT_PASSWORD=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
+      - MINIO_ROOT_USER=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO:?}}
+      - MINIO_ROOT_PASSWORD=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO:?}}
     volumes:
       - elvish_minio_data:/data
     restart: unless-stopped
@@ -354,8 +382,8 @@ services:
     environment:
       - SERVICE_USER_MINIO
       - SERVICE_PASSWORD_64_MINIO
-      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
-      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
+      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO:?}}
+      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO:?}}
       - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
     entrypoint:
       - /bin/sh

@@ -41,14 +41,21 @@ environment:
 
 - Use `${VAR:?}` for secrets and critical config operators must set.
 - Shared Coolify vars: define in compose, then set `VAR={{environment.SHARED_NAME}}` in the UI.
-- Magic vars (`SERVICE_URL_*`, `SERVICE_FQDN_*`, `SERVICE_PASSWORD_*`, etc.) are generated from **compose service names**. Use hyphens in identifiers when ports are needed (`SERVICE_URL_API-8765` is wrong — use `SERVICE_URL_API_8765` per Coolify’s port suffix convention).
+- Magic vars (`SERVICE_URL_*`, `SERVICE_FQDN_*`, `SERVICE_PASSWORD_*`, etc.) are generated from **compose service names** (hyphens → underscores in keys, e.g. `mail-mta` → `SERVICE_URL_MAIL_MTA_*`). Use **port-suffixed** URLs (`SERVICE_URL_API_8765`, not bare `SERVICE_URL_API`) so custom domains stay in sync. **Declare every `SERVICE_*` name a service references** in that service’s `environment` list — including cross-service refs like `SERVICE_URL_API_8765` on `web`.
 
 ```yaml
-# ✅ GOOD — magic vars from service name "api" on port 8765
+# ✅ GOOD — port-specific magic vars (prefer SERVICE_URL_*_<port> over generic SERVICE_URL_*)
 environment:
-  - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-$SERVICE_URL_API_8765}
-  - ELVISH_WEB_ORIGINS=${ELVISH_WEB_ORIGINS:-$SERVICE_URL_API_8765}
-  - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
+  - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-${SERVICE_URL_WEB_8080:?}}
+  - ELVISH_WEB_ORIGINS=${ELVISH_WEB_ORIGINS:-${SERVICE_URL_WEB_8080:?},${SERVICE_URL_ADMIN_8080:?}}
+  - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY:?}}
+  - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO:?}}
+  - ELVISH_API_BASE=${ELVISH_API_BASE:-${SERVICE_URL_API_8765:?}}
+
+# ✅ GOOD — internal store endpoints (override for predefined-network deploys only)
+environment:
+  - SCYLLA_HOSTS=${SCYLLA_HOSTS:-scylla:9042}
+  - BLOB_S3_ENDPOINT=${BLOB_S3_ENDPOINT:-http://minio:9000}
 
 # ❌ BAD — hardcoded public URL instead of SERVICE_URL_*
 environment:
@@ -76,7 +83,7 @@ Prefer `configs:` with `content: |` for generated config files when bind-mount c
 - **`api`** (port 8765): JSON API + SSR (`elvishapi`, `ELVISH_SERVE_STATIC=0`); assign a Coolify domain; defaults from `SERVICE_URL_API_8765`.
 - **`web`** / **`admin`** (port 8080): nginx static tiers (`apps/web`, `apps/admin`); assign separate Coolify domains; defaults on `api` from `SERVICE_URL_WEB_8080` and `SERVICE_URL_ADMIN_8080`.
 - **`mail-mta`**: host `ports` for 25/587 — HTTP proxy cannot carry SMTP. Internal `:8765` serves `/api/healthz` when `ELVISH_HTTP_ENABLED=1` (compose default); not published to the host.
-- **`worker`**, **`cockroach`**, **`valkey`**, **`scylla`**, **`minio`**: internal only — no `ports:`, no Coolify domain, and **no** `SERVICE_URL_*` / `SERVICE_FQDN_*` on the service (Coolify treats those as HTTP exposure). MinIO credentials use `SERVICE_USER_MINIO` / `SERVICE_PASSWORD_64_MINIO` declared on `api` (generated from the `minio` service name). MinIO readiness is gated by **`minio-init`**, not an in-container healthcheck (scratch image).
+- **`worker`**, **`cockroach`**, **`valkey`**, **`scylla`**, **`minio`**: internal only — no `SERVICE_URL_*` / `SERVICE_FQDN_*` on those services (Coolify would offer a public domain). App tiers connect via `COCKROACH_DSN`, `VALKEY_ADDR`, `SCYLLA_HOSTS`, `BLOB_S3_ENDPOINT` (defaults use Docker service names). **`scylla-init`** / **`minio-init`** gate mail startup. Valkey/MinIO secrets use `SERVICE_PASSWORD_64_VALKEY` and `SERVICE_USER_MINIO` / `SERVICE_PASSWORD_64_MINIO` with `${…:?}` on consumers.
 - Compose **`healthcheck`** blocks on app tiers use `-healthcheck` on Go binaries (distroless-safe) or `wget /healthz` on nginx images — see [docs/deploy-coolify.md](docs/deploy-coolify.md).
 - Keep dev-only `ports:` in `docker-compose.yml`; production exposure goes through Coolify domains or intentional host binds in `docker-compose.coolify.yaml`.
 
