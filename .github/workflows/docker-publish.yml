@@ -1,6 +1,6 @@
 name: Docker
 
-# Per-role images (ADR 0018): api, mta, worker, web, admin.
+# Per-role images (ADR 0018): api, mta, worker, web, admin, docs.
 # Tags: ghcr.io/<owner>/<repo>/<role>:<ref>  (e.g. .../api:main, .../web:pr-7)
 
 on:
@@ -37,6 +37,8 @@ jobs:
             file: apps/web/Dockerfile
           - role: admin
             file: apps/admin/Dockerfile
+          - role: docs
+            file: docker/docs/Dockerfile
 
     steps:
       - name: Checkout repository

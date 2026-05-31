@@ -1,12 +1,13 @@
 # Elvish — Coolify production (Docker Compose is the source of truth).
 # Operator guide: docs/deploy-coolify.md
 # Coolify does not support YAML anchors (x-* / & / *); env is duplicated per service.
+#
+# App images: ghcr.io/thravok/elvish-email/<role>:<tag> (built by .github/workflows/docker-publish.yml).
+# Override tag with ELVISH_IMAGE_TAG in Coolify (default main). web/admin bake api-config.js at container start.
 
 services:
   api:
-    build:
-      context: .
-      dockerfile: services/api/Dockerfile
+    image: ghcr.io/thravok/elvish-email/api:${ELVISH_IMAGE_TAG:-main}
     command: ["/usr/local/bin/elvishapi", "-addr", ":8765", "-root", "/app"]
     depends_on:
       cockroach:
@@ -66,38 +67,42 @@ services:
     restart: unless-stopped
 
   web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      args:
-        ELVISH_API_BASE: ${ELVISH_API_BASE:-$SERVICE_URL_API_8765}
-        ELVISH_ADMIN_ORIGIN: ${ELVISH_ADMIN_ORIGIN:-$SERVICE_URL_ADMIN_8080}
+    image: ghcr.io/thravok/elvish-email/web:${ELVISH_IMAGE_TAG:-main}
+    entrypoint: ["sh", "/runtime/write-api-config.sh"]
+    volumes:
+      - type: bind
+        source: ./docker/nginx/write-api-config.sh
+        target: /runtime/write-api-config.sh
+        read_only: true
     depends_on:
       api:
         condition: service_started
     environment:
       - SERVICE_URL_WEB_8080
       - SERVICE_FQDN_WEB
+      - ELVISH_API_BASE=${ELVISH_API_BASE:-$SERVICE_URL_API_8765}
+      - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-$SERVICE_URL_ADMIN_8080}
     restart: unless-stopped
 
   admin:
-    build:
-      context: .
-      dockerfile: apps/admin/Dockerfile
-      args:
-        ELVISH_API_BASE: ${ELVISH_API_BASE:-$SERVICE_URL_API_8765}
+    image: ghcr.io/thravok/elvish-email/admin:${ELVISH_IMAGE_TAG:-main}
+    entrypoint: ["sh", "/runtime/write-admin-api-config.sh"]
+    volumes:
+      - type: bind
+        source: ./docker/nginx/write-admin-api-config.sh
+        target: /runtime/write-admin-api-config.sh
+        read_only: true
     depends_on:
       api:
         condition: service_started
     environment:
       - SERVICE_URL_ADMIN_8080
       - SERVICE_FQDN_ADMIN
+      - ELVISH_API_BASE=${ELVISH_API_BASE:-$SERVICE_URL_API_8765}
     restart: unless-stopped
 
   worker:
-    build:
-      context: .
-      dockerfile: services/worker/Dockerfile
+    image: ghcr.io/thravok/elvish-email/worker:${ELVISH_IMAGE_TAG:-main}
     command: ["/usr/local/bin/elvishworker", "-root", "/app"]
     depends_on:
       cockroach:
@@ -138,16 +143,15 @@ services:
       - elvish_data:/app/data
     restart: unless-stopped
 
+  # Optional — not in default deploy (Coolify cannot build from partial checkout paths).
+  # Enable: COMPOSE_PROFILES=docs in Coolify, or after GHCR image exists: pull ghcr.io/thravok/elvish-email/docs:main
   docs:
-    build:
-      context: .
-      dockerfile: docker/docs/Dockerfile
+    profiles: [docs]
+    image: ghcr.io/thravok/elvish-email/docs:${ELVISH_IMAGE_TAG:-main}
     restart: unless-stopped
 
   mail-mta:
-    build:
-      context: .
-      dockerfile: services/mta/Dockerfile
+    image: ghcr.io/thravok/elvish-email/mta:${ELVISH_IMAGE_TAG:-main}
     command: ["/usr/local/bin/elvishmta", "-root", "/app"]
     depends_on:
       cockroach:
@@ -200,9 +204,7 @@ services:
 
   mail-mta-2:
     profiles: [dual-mta]
-    build:
-      context: .
-      dockerfile: services/mta/Dockerfile
+    image: ghcr.io/thravok/elvish-email/mta:${ELVISH_IMAGE_TAG:-main}
     command: ["/usr/local/bin/elvishmta", "-root", "/app"]
     depends_on:
       cockroach:

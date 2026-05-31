@@ -12,6 +12,8 @@ Production deploys use [`docker-compose.coolify.yaml`](docker-compose.coolify.ya
 
 **Coolify limitation:** do not use YAML anchors (`x-*`, `&anchor`, `*anchor`). Duplicate `environment` lists per service instead.
 
+**Images:** App tiers use pre-built **`ghcr.io/thravok/elvish-email/<role>:${ELVISH_IMAGE_TAG:-main}`** (not `build:`). `web`/`admin` mount `docker/nginx/write-*-api-config.sh` to inject API URLs at start. `docs` uses profile `docs` (optional; same GHCR pattern).
+
 ## Source of truth
 
 Define env vars, storage, ports, and health behavior **in the compose file** — not only in the Coolify UI. Coolify reads the file and surfaces `${VAR}` placeholders in the UI.
