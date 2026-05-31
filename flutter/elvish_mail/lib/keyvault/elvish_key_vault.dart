@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'dart_pg_openpgp.dart';
+import 'package:dart_pg/dart_pg.dart';
 
 import '../api/elvish_api_client.dart';
 import '../api/mail_dtos.dart';
 import '../crypto/account_wrap.dart';
 import 'openpgp_decrypt.dart';
-import 'openpgp_encrypt.dart';
 import 'secure_account_store.dart';
 
 enum KeyVaultError implements Exception {
@@ -17,8 +16,7 @@ enum KeyVaultError implements Exception {
   noAccountSecretKey,
   vaultLocked,
   emptyCiphertext,
-  bodyDecryptFailed,
-  signingIdentityUnavailable;
+  bodyDecryptFailed;
 
   @override
   String toString() {
@@ -37,8 +35,6 @@ enum KeyVaultError implements Exception {
         return 'Empty message body from server.';
       case KeyVaultError.bodyDecryptFailed:
         return 'Could not decrypt this message with your identities.';
-      case KeyVaultError.signingIdentityUnavailable:
-        return 'Sender signing identity is not unlocked.';
     }
   }
 }
@@ -54,7 +50,6 @@ class ElvishKeyVault {
   final Map<String, PrivateKeyInterface> _identitySecretKeys = {};
   String? _defaultFingerprint16;
   final List<String> _orderedIdentityFingerprintsFull = [];
-  List<IdentityRowDto> identityRows = [];
 
   Future<void> deletePersistedAccount(String sessionEmail) =>
       _store.delete(SecureAccountStore.normalizeEmail(sessionEmail));
@@ -63,58 +58,7 @@ class ElvishKeyVault {
     _identitySecretKeys.clear();
     _defaultFingerprint16 = null;
     _orderedIdentityFingerprintsFull.clear();
-    identityRows = [];
     isUnlocked = false;
-  }
-
-  String encryptToRecipient(String armoredRecipientPub, String plaintext) {
-    if (!isUnlocked) {
-      throw KeyVaultError.vaultLocked;
-    }
-    return encryptToRecipientArmored(
-      armoredRecipientPub: armoredRecipientPub,
-      plaintext: plaintext,
-    );
-  }
-
-  String encryptAndSignToRecipient({
-    required String armoredRecipientPub,
-    required String plaintext,
-    required String signerFingerprint,
-  }) {
-    if (!isUnlocked) {
-      throw KeyVaultError.vaultLocked;
-    }
-    final kid = fingerprintKeyId16(signerFingerprint);
-    final signer = _identitySecretKeys[kid];
-    if (signer == null) {
-      throw KeyVaultError.signingIdentityUnavailable;
-    }
-    return encryptAndSignToRecipientArmored(
-      armoredRecipientPub: armoredRecipientPub,
-      plaintext: plaintext,
-      signer: signer,
-    );
-  }
-
-  String encryptAndSignBinary({
-    required String armoredRecipientPub,
-    required Uint8List plaintext,
-    required String signerFingerprint,
-  }) {
-    if (!isUnlocked) {
-      throw KeyVaultError.vaultLocked;
-    }
-    final kid = fingerprintKeyId16(signerFingerprint);
-    final signer = _identitySecretKeys[kid];
-    if (signer == null) {
-      throw KeyVaultError.signingIdentityUnavailable;
-    }
-    return encryptAndSignBinaryArmored(
-      armoredRecipientPub: armoredRecipientPub,
-      plaintext: plaintext,
-      signer: signer,
-    );
   }
 
   Future<void> unlock({
@@ -242,7 +186,6 @@ class ElvishKeyVault {
 
   Future<void> _unlockIdentities(ElvishApiClient api, PrivateKeyInterface accountKey) async {
     final idList = IdentitiesListResponse.fromJson(await api.getJson('/api/v1/identities'));
-    identityRows = idList.identities;
     final ordered = <String>[];
     for (final row in idList.identities) {
       final fp = row.fingerprint;

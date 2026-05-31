@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-font="ibm" data-site-theme-default="light">
+<head>
+  <meta charset="utf-8" />
+  <title>ELVISH — mail</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/page.css" />
+  <link rel="stylesheet" href="/shared/shared.css" />
+  <link rel="stylesheet" href="/auth/auth-pages.css" />
+  <link rel="stylesheet" href="/mail/mail.css" />
+  <meta name="referrer" content="no-referrer" />
+  <script>
+    const TWEAK_DEFAULTS = { theme: "light", font: "ibm", showGrid: false, scanlines: false };
+    (function () {
+      function resolve(raw) {
+        if (raw === "dark" || raw === "light") return raw;
+        try {
+          return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        } catch (e) {
+          return "light";
+        }
+      }
+      function apply(raw, setAttr) {
+        var el = document.documentElement;
+        if (setAttr) el.setAttribute("data-user-ui-theme", raw);
+        el.setAttribute("data-theme", resolve(raw));
+        el.setAttribute("data-theme-preference", raw);
+      }
+      (async function () {
+        var raw = TWEAK_DEFAULTS.theme;
+        try {
+          var r = await fetch("/api/auth/me", { credentials: "include" });
+          var j = await r.json().catch(function () { return {}; });
+          if (j && j.user && j.user.ui_theme) {
+            apply(String(j.user.ui_theme), true);
+            return;
+          }
+        } catch (e1) {}
+        try {
+          var ls = JSON.parse(localStorage.getItem("elvish-tweaks-v1") || "{}");
+          if (ls.theme) raw = ls.theme;
+        } catch (e2) {}
+        apply(String(raw), false);
+      })();
+    })();
+  </script>
+  <script src="/vendor/openpgp-6.3.0.min.js" integrity="sha384-Z5tStPoeClmuLPd1gAwdTCU53WcAkUjBNw7mEEvrQumVuNqEl52A9Nx5IhFdKE/c"></script>
+</head>
+<body>
+  <div class="bg-ambient" id="fx-ambient" aria-hidden="true"></div>
+  <div class="bg-grid" id="fx-grid" style="display: none"></div>
+  <div class="scanline" id="fx-scan" style="display: none"></div>
+  <div id="root"></div>
+  <script src="/perf.js"></script>
+  <script src="/vendor/argon2-browser-1.18.0-bundled.min.js"></script>
+  <script src="/auth/srp.js"></script>
+  <script src="/auth/webauthn.js"></script>
+  <script src="/auth/keygen.js"></script>
+  <script src="/auth/unlock.js"></script>
+  <script src="/mail/crypto/envelope.js"></script>
+  <script type="module" src="/mail/mail-manifest.js"></script>
+  <script type="module" src="/mail/mail-cache.js"></script>
+  <script type="module" src="/mail/search/search.js"></script>
+  <script src="/dist/mail-bundle.js" defer></script>
+</body>
+</html>

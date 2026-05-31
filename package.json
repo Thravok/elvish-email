@@ -1,9 +1,0 @@
-{
-  "name": "elvish-mono",
-  "private": true,
-  "workspaces": [
-    "apps/web/frontend",
-    "packages/elvish-ui",
-    "packages/elvish-client"
-  ]
-}

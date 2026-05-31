@@ -5,7 +5,7 @@ Flutter client for **ELVish** mail in this repository: same `/api/...` JSON surf
 ## Prerequisites
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (stable), Android Studio or SDK for builds.
-- A running **`elvishapi`** stack (see repository root [README.md](../../README.md); local dev often uses port **8765** via `make dev` or `make dev-api-once`).
+- A running `elvishserver` (see repository root [README.md](../../README.md); local dev often uses port **8765**).
 
 ## API base URL
 
@@ -39,29 +39,10 @@ If the `android/` Gradle layout is out of date for your Flutter SDK, regenerate 
 flutter create . --platforms=android --project-name elvish_mail --org org.elvish
 ```
 
-## Git / generated files
-
-Ignore rules live in [`.gitignore`](.gitignore) and [`android/.gitignore`](android/.gitignore). Do not commit Gradle cache (`.gradle/`), `local.properties`, `.flutter-plugins-dependencies`, or `GeneratedPluginRegistrant.java` — they are recreated by `flutter pub get` / Android builds. **`gradlew`** and **`gradle/wrapper/`** are committed so CI can run Gradle without regenerating the whole `android/` tree.
-
 ## Scope notes
 
 - Login uses **SRP-6a** + optional **TOTP / recovery** MFA (same as iOS). **WebAuthn-only** accounts are not supported in-app (use the web client), matching iOS behavior.
 - Mail decryption uses **dart_pg** (OpenPGP). Test against your dev server early.
-
-## Compose (mobile)
-
-Use the **FAB** (edit icon) on the mail screen when keys are unlocked.
-
-| Mode | Behavior |
-|------|----------|
-| **PGP Direct** | One **To** address; local delivery vs outbox matches iOS/web (`compose.jsx`). |
-| **Protected link** | Password + TTL + optional email notify; copy/share the returned URL. |
-
-**Tier 1 limits:** PGP encrypts one **To**; Cc/Bcc are header-only; plain-text body; no attachments. **Reply** / **Reply all** on message detail. Swipe triage and client filters match iOS.
-
-From the repository root: `make test-flutter`.
-
-Feature matrix and QA: [docs/client-parity-roadmap.md](../../docs/client-parity-roadmap.md). Manual checks against `make dev`: [IOS/README.md](../../IOS/README.md#manual-qa-make-dev).
 
 ## Crypto tests
 

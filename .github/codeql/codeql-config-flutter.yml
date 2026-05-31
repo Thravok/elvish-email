@@ -1,5 +1,0 @@
-name: "ELVish Flutter Android CodeQL"
-
-# CodeQL has no Dart extractor; this scopes Kotlin/Java alerts to the Android tree.
-paths:
-  - flutter/elvish_mail/android

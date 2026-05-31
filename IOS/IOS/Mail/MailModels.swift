@@ -80,27 +80,3 @@ nonisolated struct MailInboxRow: Identifiable, Sendable, Equatable {
     let hasHeaderCiphertext: Bool
     let hasAttachments: Bool
 }
-
-nonisolated struct KeyLookupHitDTO: Decodable, Sendable {
-    let email: String?
-    let fingerprint: String?
-    let armoredPublic: String?
-    let source: String?
-}
-
-nonisolated struct PostEncryptedMessageResponse: Decodable, Sendable {
-    let id: String?
-    let blobRef: String?
-}
-
-nonisolated struct PostOutboxResponse: Decodable, Sendable {
-    let id: String?
-}
-
-nonisolated struct ProtectedLinkCreateResponse: Decodable, Sendable {
-    let token: String?
-    let url: String?
-    let expiresAt: String?
-    let maxViews: Int64?
-    let notifySent: Bool?
-}

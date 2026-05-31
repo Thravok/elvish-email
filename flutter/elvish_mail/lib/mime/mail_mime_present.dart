@@ -7,10 +7,6 @@ class MailPresentedMessage {
     required this.cc,
     required this.date,
     required this.body,
-    this.messageId = '',
-    this.inReplyTo = '',
-    this.references = '',
-    this.replyTo = '',
   });
 
   final String subject;
@@ -19,10 +15,6 @@ class MailPresentedMessage {
   final String cc;
   final String date;
   final String body;
-  final String messageId;
-  final String inReplyTo;
-  final String references;
-  final String replyTo;
 
   static MailPresentedMessage present(String decrypted) {
     final normalized = decrypted.replaceAll('\r\n', '\n');
@@ -68,10 +60,6 @@ class MailPresentedMessage {
       cc: (headers['cc'] ?? '').trim(),
       date: (headers['date'] ?? '').trim(),
       body: bodyText.trim(),
-      messageId: (headers['message-id'] ?? '').trim(),
-      inReplyTo: (headers['in-reply-to'] ?? '').trim(),
-      references: (headers['references'] ?? '').trim(),
-      replyTo: (headers['reply-to'] ?? '').trim(),
     );
   }
 

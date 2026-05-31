@@ -7,7 +7,7 @@
     {
       "description": "Group browser bundle npm updates",
       "matchManagers": ["npm"],
-      "matchFileNames": ["apps/web/frontend/package.json"],
+      "matchFileNames": ["frontend/package.json"],
       "groupName": "frontend npm"
     },
     {

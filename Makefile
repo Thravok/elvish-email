@@ -1,18 +1,21 @@
-# ELVISH — monolith api (HTTP + SMTP + outbox) on one process. Prefer: brew install overmind
-# api :8765 · SMTP :2525/:2587 · auto `make db-up` unless SKIP_AUTO_DB_UP=1
+# ELVISH — live server (CockroachDB/Postgres + Valkey required unless ELVISH_ALLOW_EMPTY_DB=1) + static assets
+#
+# `make dev` uses fswatch for auto-restart (brew install fswatch). Use `make dev-once` for a single `go run`.
+# `make dev` / `make dev-once` auto-run `make db-up` unless SKIP_AUTO_DB_UP=1. Dev defaults include
+# Scylla + MinIO S3 (same ports as compose). Set SKIP_MAIL_BACKENDS=1 to run without those exports
+# (mail routes stay 503 unless you set SCYLLA_* / BLOB_S3_* yourself).
 
 SHELL := /bin/bash
 
 PORT ?= 8765
 ROOT ?= .
-BINARY ?= bin/elvishapi
+BINARY ?= bin/elvish
 
 # Shell prefix: DB + optional mail backends (hostPublished ports from docker-compose.yml).
 define DEV_ENV_EXPORTS
 	export COCKROACH_DSN="$${COCKROACH_DSN:-postgres://root@127.0.0.1:26257/defaultdb?sslmode=disable}"; \
 	export VALKEY_ADDR="$${VALKEY_ADDR:-127.0.0.1:6379}"; \
 	export ELVISH_AUTO_GEN_MFA_KEY="$${ELVISH_AUTO_GEN_MFA_KEY:-1}"; \
-	export ELVISH_AUTO_GEN_DKIM_KEY="$${ELVISH_AUTO_GEN_DKIM_KEY:-1}"; \
 	if [ "$${SKIP_MAIL_BACKENDS:-}" != "1" ]; then \
 		export SCYLLA_HOSTS="$${SCYLLA_HOSTS:-127.0.0.1:9042}"; \
 		export SCYLLA_KEYSPACE="$${SCYLLA_KEYSPACE:-elvish_mail}"; \
@@ -27,175 +30,156 @@ endef
 
 define DEV_AUTO_DB_UP
 	if [ "$${SKIP_AUTO_DB_UP:-}" = "1" ]; then \
-		printf '%s\n' "[elvish] skipping automatic db-up (SKIP_AUTO_DB_UP=1)"; \
+		printf '%s\n' "[elvishserver] skipping automatic db-up (SKIP_AUTO_DB_UP=1)"; \
 	else \
-		printf '%s\n' "[elvish] ensuring local Docker backends via make db-up"; \
+		printf '%s\n' "[elvishserver] ensuring local Docker backends via make db-up"; \
 		$(MAKE) -s db-up || exit $$?; \
 	fi;
 endef
 
-.PHONY: openapi openapi-check codeql codeql-go codeql-js codeql-all codeql-summary codeql-clean codeql-install-hint codeql-build docs-stage docs-serve docs-build docs-check docs-up
+.PHONY: openapi openapi-check
 openapi:
-	go run ./tools/apiroutes -write
+	go run ./cmd/apiroutes -write
 
 openapi-check:
-	go run ./tools/apiroutes -check
-.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e test-flutter test-ios check-clients vuln bench-smoke check dev dev-api dev-mta dev-worker dev-api-once dev-mta-once dev-worker-once compose-up compose-coolify-config
+	go run ./cmd/apiroutes -check
+.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e vuln bench-smoke check
 
-FLUTTER_APP ?= flutter/elvish_mail
-IOS_SCHEME ?= IOS
-IOS_SIMULATOR ?= platform=iOS Simulator,name=iPhone 17
-
-# Precompiled browser bundles into apps/web/dist/. Requires Node.js.
+# Precompiled browser bundles (React 19, OpenPGP 6 vendor copy, mail search worker) into static/dist/.
+# Requires Node.js. First run installs frontend/node_modules via npm ci. Set SKIP_STATIC_JS=1 to skip (use prebuilt static/dist only).
 static-js:
 	@if [ "$${SKIP_STATIC_JS:-}" = "1" ]; then printf '%s\n' "[static-js] skipped (SKIP_STATIC_JS=1)"; exit 0; fi
-	@command -v node >/dev/null 2>&1 || { printf '%s\n' "node required for static-js (or SKIP_STATIC_JS=1)"; exit 1; }
-	@if [ ! -d apps/web/frontend/node_modules ]; then printf '%s\n' "[static-js] npm ci in apps/web/frontend ..."; (cd apps/web/frontend && npm ci); fi
-	@node apps/web/frontend/build.mjs
-	@node apps/admin/frontend/build.mjs
-	@mkdir -p apps/web/shared apps/admin/shared
-	@cp packages/elvish-client/src/api-config.js packages/elvish-client/src/api-fetch.js apps/web/shared/
-	@cp packages/elvish-client/src/api-config.js packages/elvish-client/src/api-fetch.js apps/admin/shared/
-	@cp packages/elvish-ui/src/shared.css apps/web/shared/shared.css
-	@cp services/api/static/perf.js apps/web/perf.js
+	@command -v node >/dev/null 2>&1 || { printf '%s\n' "node required for static-js (or SKIP_STATIC_JS=1 with existing static/dist)"; exit 1; }
+	@if [ ! -d frontend/node_modules ]; then printf '%s\n' "[static-js] npm ci in frontend/ ..."; (cd frontend && npm ci); fi
+	@node frontend/build.mjs
 
 build:
 ifneq ($(SKIP_STATIC_JS),1)
 	@$(MAKE) static-js
 endif
 	@mkdir -p bin
-	go build -o bin/elvishapi ./services/api/cmd/elvishapi
-	go build -o bin/elvishmta ./services/mta/cmd/elvishmta
-	go build -o bin/elvishworker ./services/worker/cmd/elvishworker
+	go build -o $(BINARY) ./cmd/elvishserver
 
-# `make dev` starts the monolith api process (Overmind or scripts/dev-split.sh).
+# Run elvishserver on http://127.0.0.1:$(PORT)/ (not Docker). Auto-starts local Docker backends unless
+# SKIP_AUTO_DB_UP=1. For one shot without watching: make dev-once
+# Requires fswatch. For one shot without watching: make dev-once
 dev:
-	@$(DEV_AUTO_DB_UP)
-	@command -v overmind >/dev/null 2>&1 && overmind start -f Procfile || bash scripts/dev-split.sh
-
-define DEV_API_EXPORTS
-	export ELVISH_MONOLITH="$${ELVISH_MONOLITH:-1}"; \
-	export ELVISH_PUBLIC_BASE_URL="$${ELVISH_PUBLIC_BASE_URL:-http://127.0.0.1:$(PORT)}"; \
-	export ELVISH_MAIL_DOMAIN="$${ELVISH_MAIL_DOMAIN:-localhost.test}"; \
-	export ELVISH_HOSTNAME="$${ELVISH_HOSTNAME:-localhost.test}"; \
-	export ELVISH_SMTP_ADDR="$${ELVISH_SMTP_ADDR:-:2525}"; \
-	export ELVISH_SMTP_SUBMISSION_ADDR="$${ELVISH_SMTP_SUBMISSION_ADDR:-:2587}";
-endef
-
-dev-api-once:
+	@command -v fswatch >/dev/null 2>&1 || { printf '%s\n' "fswatch required: brew install fswatch (or: make dev-once)"; exit 1; }
 	@$(DEV_AUTO_DB_UP) \
 	$(DEV_ENV_EXPORTS) \
-	$(DEV_API_EXPORTS) \
-	go run ./services/api/cmd/elvishapi -addr :$(PORT) -root $(ROOT)
+	pid=""; \
+	kill_pid() { \
+		local target="$$1"; \
+		if [ -z "$$target" ]; then \
+			return 0; \
+		fi; \
+		kill -TERM "$$target" 2>/dev/null || true; \
+		for _ in 1 2 3 4 5 6 7 8 9 10; do \
+			if ! kill -0 "$$target" 2>/dev/null; then return 0; fi; \
+			sleep 0.05; \
+		done; \
+		kill -KILL "$$target" 2>/dev/null || true; \
+		wait "$$target" 2>/dev/null || true; \
+	}; \
+	kill_stale_listener() { \
+		local listener listener_cmd; \
+		listener="$$(lsof -tiTCP:$(PORT) -sTCP:LISTEN 2>/dev/null | awk 'NR == 1 { print; exit }')"; \
+		if [ -z "$$listener" ]; then \
+			return 0; \
+		fi; \
+		listener_cmd="$$(ps -p "$$listener" -o command= 2>/dev/null || true)"; \
+		case "$$listener_cmd" in \
+			*elvishserver*|*bin/elvish*) \
+				printf '%s\n' "[elvishserver] stopping stale listener $$listener on :$(PORT)"; \
+				kill_pid "$$listener"; \
+				;; \
+			*) \
+				printf '%s\n' "[elvishserver] port $(PORT) already in use by $$listener_cmd"; \
+				return 1; \
+				;; \
+		esac; \
+	}; \
+	cleanup() { \
+		if [ -n "$$pid" ]; then \
+			kill_pid "$$pid"; \
+		fi; \
+		kill_stale_listener || return $$?; \
+		sleep 0.15; \
+	}; \
+	trap 'cleanup; exit 130' INT; \
+	trap 'cleanup; exit 143' TERM; \
+	trap cleanup EXIT; \
+	while true; do \
+		kill_stale_listener || exit $$?; \
+		printf '%s\n' "[elvishserver] http://127.0.0.1:$(PORT)/ — Ctrl+C to stop; watching for changes"; \
+		if $(MAKE) -s build; then \
+			"$(BINARY)" -addr :$(PORT) -root $(ROOT) & \
+			pid=$$!; \
+		else \
+			pid=""; \
+			printf '%s\n' "[elvishserver] build failed — waiting for changes"; \
+		fi; \
+		fswatch -1 -r \
+			"$(ROOT)/content" \
+			"$(ROOT)/static" \
+			"$(ROOT)/templates" \
+			"$(ROOT)/cmd" \
+			"$(ROOT)/internal" \
+			"$(ROOT)/go.mod" \
+			"$(ROOT)/go.sum" || { st=$$?; cleanup; exit $$st; }; \
+		printf '%s\n' "[elvishserver] change detected — restarting"; \
+		cleanup; \
+		pid=""; \
+	done
 
-dev-mta-once:
+# Single `go run` (no fswatch). Same env defaults and automatic db-up behavior as make dev.
+dev-once:
 	@$(DEV_AUTO_DB_UP) \
 	$(DEV_ENV_EXPORTS) \
-	ELVISH_MAIL_DOMAIN=$${ELVISH_MAIL_DOMAIN:-localhost.test} \
-	ELVISH_HOSTNAME=$${ELVISH_HOSTNAME:-localhost.test} \
-	ELVISH_SMTP_ADDR=$${ELVISH_SMTP_ADDR:-:2525} \
-	ELVISH_SMTP_SUBMISSION_ADDR=$${ELVISH_SMTP_SUBMISSION_ADDR:-:2587} \
-	go run ./services/mta/cmd/elvishmta -root $(ROOT)
-
-dev-worker-once:
-	@$(DEV_AUTO_DB_UP) \
-	$(DEV_ENV_EXPORTS) \
-	go run ./services/worker/cmd/elvishworker -root $(ROOT)
-
-dev-api: dev-api-once
-dev-mta: dev-mta-once
-dev-worker: dev-worker-once
-
-dev-web-once:
-	@command -v npx >/dev/null 2>&1 || { printf '%s\n' "npx required for dev-web-once"; exit 1; }
-	@test -f apps/web/dist/mail-bundle.js || $(MAKE) -s static-js
-	cd apps/web && npx --yes serve -l 8081 .
-
-dev-admin-once:
-	@command -v npx >/dev/null 2>&1 || { printf '%s\n' "npx required for dev-admin-once"; exit 1; }
-	@test -f apps/admin/dist/admin-bundle.js || $(MAKE) -s static-js
-	cd apps/admin && npx --yes serve -l 8082 .
-
-# Aliases
-dev-once: dev-api-once
-
-compose-up:
-	@command -v docker >/dev/null 2>&1 || { printf '%s\n' "docker not found"; exit 1; }
-	$(MAKE) -s static-js
-	docker compose --profile full up -d --build
-	@printf '%s\n' \
-	  "API:   http://127.0.0.1:8765 (marketing, mail, /api/*, SMTP, outbox)" \
-	  "Docs:  http://127.0.0.1:8766 (MkDocs static site)" \
-	  "SMTP:  localhost:2525 / :2587"
-
-compose-coolify-config:
-	@bash scripts/validate-coolify-compose.sh
-
-# MkDocs Material static site from docs/ (see docs-site/mkdocs.yml, docker/docs/Dockerfile).
-docs-stage:
-	@python3 scripts/docs-stage.py
-
-docs-serve: docs-stage
-	@command -v python3 >/dev/null 2>&1 || { printf '%s\n' "python3 required (or: docker compose --profile docs up docs)"; exit 1; }
-	@python3 -m pip install -q -r docs-site/requirements.txt
-	@cd docs-site && python3 -m mkdocs serve -a 127.0.0.1:8766
-
-docs-build: docs-stage
-	@command -v python3 >/dev/null 2>&1 || { printf '%s\n' "python3 required (or: docker build -f docker/docs/Dockerfile .)"; exit 1; }
-	@python3 -m pip install -q -r docs-site/requirements.txt
-	@cd docs-site && python3 -m mkdocs build
-
-docs-check: docs-stage
-	@command -v python3 >/dev/null 2>&1 || { printf '%s\n' "python3 required"; exit 1; }
-	@python3 -m pip install -q -r docs-site/requirements.txt
-	@cd docs-site && python3 -m mkdocs build --strict
-
-docs-up:
-	@command -v docker >/dev/null 2>&1 || { printf '%s\n' "docker not found"; exit 1; }
-	docker compose --profile docs up -d --build docs
-	@printf '%s\n' "Documentation site: http://127.0.0.1:8766"
+	go run ./cmd/elvishserver -addr :$(PORT) -root $(ROOT)
 
 # Rebuild $(BINARY) when sources change; run the binary separately (e.g. ./bin/elvish). For build + run with auto-restart, use make dev.
 dev-watch:
 	@command -v fswatch >/dev/null 2>&1 || { printf '%s\n' "fswatch required: brew install fswatch"; exit 1; }
 	@while fswatch -1 -r \
-		"$(ROOT)/services" \
-		"$(ROOT)/libs/go" \
-		"$(ROOT)/apps" \
-		"$(ROOT)/packages" \
+		"$(ROOT)/content" \
+		"$(ROOT)/static" \
+		"$(ROOT)/templates" \
+		"$(ROOT)/cmd" \
+		"$(ROOT)/internal" \
 		"$(ROOT)/go.mod" \
 		"$(ROOT)/go.sum"; do \
-		$(MAKE) -s build && printf '%s\n' "[elvish] rebuilt"; \
+		$(MAKE) -s build && printf '%s\n' "[elvishserver] rebuilt"; \
 	done
 
 # Import posts from content/blog into SQL, then exit.
 migrate:
 	COCKROACH_DSN="$${COCKROACH_DSN:-postgres://root@127.0.0.1:26257/defaultdb?sslmode=disable}" \
-	go run ./services/api/cmd/elvishapi -root $(ROOT) -migrate
+	go run ./cmd/elvishserver -root $(ROOT) -migrate
 
 # Detached minisign signatures for Markdown posts (needs content/blog/signing.key; MINISIGN_PASSWORD if encrypted).
 blog-sign:
-	@key="$(ROOT)/services/api/content/blog/signing.key"; \
+	@key="$(ROOT)/content/blog/signing.key"; \
 	if [ ! -f "$$key" ]; then \
 		printf '%s\n' "Missing $$key" "" "Create a key pair first, then sign:" \
-			"  go run ./tools/elvishsign keygen -out $(ROOT)/services/api/content/blog -password 'your-password'" \
+			"  go run ./cmd/elvishsign keygen -out $(ROOT)/content/blog -password 'your-password'" \
 			"  make blog-sign"; \
 		exit 1; \
 	fi; \
-	go run ./tools/elvishsign sign -key "$$key" $$(find $(ROOT)/services/api/content/blog -maxdepth 1 -name '*.md' ! -name README.md)
+	go run ./cmd/elvishsign sign -key "$$key" $$(find $(ROOT)/content/blog -maxdepth 1 -name '*.md' ! -name README.md)
 
 blog-verify:
-	@pub="$(ROOT)/services/api/content/blog/signing.pub"; \
+	@pub="$(ROOT)/content/blog/signing.pub"; \
 	if [ ! -f "$$pub" ]; then \
 		printf '%s\n' "Missing $$pub" "" "Generate keys (creates signing.pub + signing.key):" \
-			"  go run ./tools/elvishsign keygen -out $(ROOT)/services/api/content/blog -password 'your-password'"; \
+			"  go run ./cmd/elvishsign keygen -out $(ROOT)/content/blog -password 'your-password'"; \
 		exit 1; \
 	fi; \
-	go run ./tools/elvishsign verify -pub "$$pub" $$(find $(ROOT)/services/api/content/blog -maxdepth 1 -name '*.md' ! -name README.md)
+	go run ./cmd/elvishsign verify -pub "$$pub" $$(find $(ROOT)/content/blog -maxdepth 1 -name '*.md' ! -name README.md)
 
 # Ping CockroachDB / Valkey if COCKROACH_DSN and/or VALKEY_ADDR are set (no-op if unset).
 db-health:
-	@go run ./tools/elvishdb health
+	@go run ./cmd/elvishdb health
 
 # Start local CockroachDB + Valkey + Scylla + MinIO (no api/frontend containers). Full stack: docker compose up -d
 db-up:
@@ -217,8 +201,8 @@ test-mail-e2e:
 	@command -v docker >/dev/null 2>&1 || { printf '%s\n' "docker required for full mail e2e"; exit 1; }
 	$(MAKE) db-up
 	@$(DEV_ENV_EXPORTS) \
-	go run ./tools/elvishmailtest no-plaintext-audit && \
-	go run ./tools/elvishmailtest bootstrap-and-selfcheck
+	go run ./cmd/elvishmailtest no-plaintext-audit && \
+	go run ./cmd/elvishmailtest bootstrap-and-selfcheck
 
 fmt:
 	@test -z "$$(gofmt -l .)" || (printf '%s\n' "gofmt needed on:"; gofmt -l .; exit 1)
@@ -228,16 +212,23 @@ vet:
 
 lint:
 	go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4 run
-	sh scripts/lint-invariants.sh
-	sh scripts/lint-import-boundaries.sh
+	@# Invariant: there is no server-side body-search endpoint. ADR 0008.
+	@if grep -RIn --include='*.go' 'search/body' internal/httpserver/ ; then \
+		printf '%s\n' "ERROR: forbidden body-search route detected — see ADR 0008"; exit 1; \
+	fi
+	@# Invariant: protected-link password (Mode B) never reaches the server. ADR 0009.
+	@if grep -RIn --include='*.go' -E '"(password|kek_b64|recipient_password|sender_password)"' \
+		internal/httpserver/api_protected_links.go internal/maillinks/ internal/relaykey/ 2>/dev/null ; then \
+		printf '%s\n' "ERROR: protected-link password leaked into server code — see ADR 0009"; exit 1; \
+	fi
 
 test:
 	go test ./...
 
 # Docker-backed Cockroach + goose + mailstore (set ELVISH_INTEGRATION_DB=1).
 test-integration:
-	ELVISH_INTEGRATION_DB=1 go test ./libs/go/db -run TestCockroachMigrationsAndMailstore -count=1 -v
-	ELVISH_INTEGRATION_DB=1 go test ./libs/go/httpserver -run TestAdminUptimeAPIIntegration -count=1 -v
+	ELVISH_INTEGRATION_DB=1 go test ./internal/db -run TestCockroachMigrationsAndMailstore -count=1 -v
+	ELVISH_INTEGRATION_DB=1 go test ./internal/httpserver -run TestAdminUptimeAPIIntegration -count=1 -v
 
 # Playwright admin smoke (start elvishserver separately; see e2e/README.md).
 test-e2e:
@@ -248,19 +239,6 @@ test-e2e:
 test-race:
 	go test -race ./...
 
-# Flutter Android mail client (see docs/client-parity-roadmap.md).
-test-flutter:
-	@command -v flutter >/dev/null 2>&1 || { printf '%s\n' "flutter required — https://docs.flutter.dev/get-started/install"; exit 1; }
-	cd $(FLUTTER_APP) && flutter pub get && flutter analyze --no-fatal-infos && flutter test
-
-# iOS mail client (macOS + Xcode only).
-test-ios:
-	@command -v xcodebuild >/dev/null 2>&1 || { printf '%s\n' "xcodebuild required (macOS + Xcode)"; exit 1; }
-	cd IOS && xcodebuild test -project IOS.xcodeproj -scheme $(IOS_SCHEME) -destination '$(IOS_SIMULATOR)' CODE_SIGNING_ALLOWED=NO
-
-check-clients: test-flutter
-	@if [ "$$(uname -s)" = "Darwin" ]; then $(MAKE) test-ios; else printf '%s\n' "[check-clients] skipping test-ios (not macOS)"; fi
-
 vuln:
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
@@ -268,78 +246,3 @@ bench-smoke:
 	go test -bench=. -benchtime=1x ./...
 
 check: fmt vet lint static-js openapi-check test-race vuln
-
-# --- CodeQL (local; mirrors .github/workflows/codeql-analysis.yml server job) ---
-# Install CLI once: brew install codeql  (or https://github.com/github/codeql-action/releases)
-CODEQL ?= codeql
-CODEQL_DIR ?= .codeql
-CODEQL_CONFIG ?= .github/codeql/codeql-config.yml
-CODEQL_MODEL_PACK ?= $(abspath .github/codeql/elvish-go-models)
-CODEQL_GO_DB ?= $(CODEQL_DIR)/databases/go
-CODEQL_JS_DB ?= $(CODEQL_DIR)/databases/javascript
-CODEQL_GO_SARIF ?= $(CODEQL_DIR)/results/go.sarif
-CODEQL_JS_SARIF ?= $(CODEQL_DIR)/results/javascript.sarif
-
-codeql-install-hint:
-	@printf '%s\n' \
-		"CodeQL CLI not found. Install one of:" \
-		"  brew install codeql" \
-		"  https://github.com/github/codeql-action/releases (download the codeql-bundle archive)" \
-		"" \
-		"Then run: make codeql-go   (or make codeql-all for Go + JS)"
-
-codeql-check:
-	@command -v $(CODEQL) >/dev/null 2>&1 || { $(MAKE) -s codeql-install-hint; exit 1; }
-	@grep -qE '^[[:space:]]*-[[:space:]]*local:' $(CODEQL_CONFIG) && { \
-		printf '%s\n' "Remove 'local:' packs from $(CODEQL_CONFIG) (see .github/codeql/README.md)"; exit 1; \
-	} || true
-	@$(CODEQL) version | head -1
-
-# Traced by `codeql database create --command` (must be a single executable; not "VAR=1 go ...").
-codeql-build:
-	CGO_ENABLED=0 go build -v ./...
-
-# Default local scan: Go only (matches most server alerts; fastest iteration).
-codeql: codeql-go
-
-codeql-all: codeql-go codeql-js
-
-codeql-go: codeql-check
-	@mkdir -p $(CODEQL_DIR)/databases $(CODEQL_DIR)/results
-	@printf '%s\n' "[codeql] creating Go database (traces: make codeql-build) ..."
-	$(CODEQL) database create $(CODEQL_GO_DB) --overwrite \
-		--language=go \
-		--source-root="$(CURDIR)" \
-		--codescanning-config="$(CURDIR)/$(CODEQL_CONFIG)" \
-		--command='make codeql-build'
-	@printf '%s\n' "[codeql] analyzing Go (elvish/go-models MaD pack) ..."
-	$(CODEQL) database analyze $(CODEQL_GO_DB) \
-		--format=sarif-latest \
-		--output="$(CODEQL_GO_SARIF)" \
-		--additional-packs="$(CODEQL_MODEL_PACK)" \
-		--model-packs=elvish/go-models
-	@printf '%s\n' "[codeql] Go SARIF: $(CODEQL_GO_SARIF)" \
-		"       summary: make codeql-summary-go"
-
-codeql-js: codeql-check
-	@mkdir -p $(CODEQL_DIR)/databases $(CODEQL_DIR)/results
-	@printf '%s\n' "[codeql] creating JavaScript/TypeScript database (no build) ..."
-	$(CODEQL) database create $(CODEQL_JS_DB) --overwrite \
-		--language=javascript \
-		--source-root="$(CURDIR)" \
-		--codescanning-config="$(CURDIR)/$(CODEQL_CONFIG)"
-	@printf '%s\n' "[codeql] analyzing JavaScript/TypeScript ..."
-	$(CODEQL) database analyze $(CODEQL_JS_DB) \
-		--format=sarif-latest \
-		--output="$(CODEQL_JS_SARIF)" \
-		--codescanning-config="$(CURDIR)/$(CODEQL_CONFIG)"
-	@printf '%s\n' "[codeql] JS SARIF: $(CODEQL_JS_SARIF)"
-
-codeql-summary-go: codeql-check
-	@test -d "$(CODEQL_GO_DB)" || { printf '%s\n' "missing $(CODEQL_GO_DB) — run make codeql-go first"; exit 1; }
-	@$(CODEQL) database interpret-results "$(CODEQL_GO_DB)" --format=text --max-path-problems=30
-
-codeql-summary: codeql-summary-go
-
-codeql-clean:
-	rm -rf "$(CODEQL_DIR)"

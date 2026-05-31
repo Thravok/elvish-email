@@ -17,10 +17,6 @@ nonisolated struct MailPresentedMessage: Sendable {
     let date: String
     let body: String
     let attachments: [MailAttachmentPreview]
-    let rfcMessageId: String
-    let inReplyTo: String
-    let references: String
-    let replyTo: String
 }
 
 /// MIME walk + decoding aligned with `static/mail/mail-app.jsx` (`extractDisplayEnvelope`, `parseMimeEntity`, …).
@@ -29,23 +25,14 @@ nonisolated enum MailMIMEParser {
     static func present(decrypted: String) -> MailPresentedMessage {
         let normalized = decrypted.replacingOccurrences(of: "\r\n", with: "\n")
         guard let sep = normalized.range(of: "\n\n") else {
-            return MailPresentedMessage(
-                subject: "", from: "", to: "", cc: "", date: "", body: decrypted, attachments: [],
-                rfcMessageId: "", inReplyTo: "", references: "", replyTo: ""
-            )
+            return MailPresentedMessage(subject: "", from: "", to: "", cc: "", date: "", body: decrypted, attachments: [])
         }
         let headerBlock = String(normalized[..<sep.lowerBound])
         if headerBlock.count > 32 * 1024 {
-            return MailPresentedMessage(
-                subject: "", from: "", to: "", cc: "", date: "", body: decrypted, attachments: [],
-                rfcMessageId: "", inReplyTo: "", references: "", replyTo: ""
-            )
+            return MailPresentedMessage(subject: "", from: "", to: "", cc: "", date: "", body: decrypted, attachments: [])
         }
         guard let parsed = parseHeaderBlock(headerBlock), looksLikeDisplayableEnvelope(parsed) else {
-            return MailPresentedMessage(
-                subject: "", from: "", to: "", cc: "", date: "", body: decrypted, attachments: [],
-                rfcMessageId: "", inReplyTo: "", references: "", replyTo: ""
-            )
+            return MailPresentedMessage(subject: "", from: "", to: "", cc: "", date: "", body: decrypted, attachments: [])
         }
         let headers = parsed.headers
         let body = String(normalized[sep.upperBound...])
@@ -56,10 +43,6 @@ nonisolated enum MailMIMEParser {
         let cc = collapseHeaderWhitespace(headers["cc"] ?? "")
         let date = (headers["date"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let displayBody = envelope.bodyText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let rfcMessageId = (headers["message-id"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let inReplyTo = collapseHeaderWhitespace(headers["in-reply-to"] ?? "")
-        let references = collapseHeaderWhitespace(headers["references"] ?? "")
-        let replyTo = collapseHeaderWhitespace(headers["reply-to"] ?? "")
         if envelope.bodyScore > 0 || !envelope.attachments.isEmpty || (headers["content-type"] ?? "").lowercased().hasPrefix("multipart/") {
             return MailPresentedMessage(
                 subject: subject,
@@ -68,18 +51,11 @@ nonisolated enum MailMIMEParser {
                 cc: cc,
                 date: date,
                 body: displayBody,
-                attachments: envelope.attachments,
-                rfcMessageId: rfcMessageId,
-                inReplyTo: inReplyTo,
-                references: references,
-                replyTo: replyTo
+                attachments: envelope.attachments
             )
         }
         let fallback = decodeMailBody(body, transferEncoding: headers["content-transfer-encoding"])
-        return MailPresentedMessage(
-            subject: subject, from: from, to: to, cc: cc, date: date, body: fallback, attachments: [],
-            rfcMessageId: rfcMessageId, inReplyTo: inReplyTo, references: references, replyTo: replyTo
-        )
+        return MailPresentedMessage(subject: subject, from: from, to: to, cc: cc, date: date, body: fallback, attachments: [])
     }
 
     // MARK: - Header block

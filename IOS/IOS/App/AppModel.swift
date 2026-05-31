@@ -32,12 +32,6 @@ final class AppModel {
     private(set) var mailFilters: [MailFilterRuleDTO] = []
     /// Mirrored from `keyVault.isUnlocked` so `@Observable` invalidates views; the vault itself is not observable.
     private(set) var mailKeysUnlocked = false
-    /// Cached from vault after unlock (compose From picker).
-    var mailIdentities: [IdentityRowDTO] { keyVault.identityRows }
-
-    var composeService: MailComposeService {
-        MailComposeService(mail: mail, vault: keyVault)
-    }
     var lastError: String?
     var isBusy = false
 

@@ -9,13 +9,10 @@
 /* Begin PBXBuildFile section */
 		6A9A3CC02FB3D5CC00819DE8 /* BigInt in Frameworks */ = {isa = PBXBuildFile; productRef = 6A9A3CC12FB3D5CC00819DE8 /* BigInt */; };
 		6A9A3CC52FB3D5CC00819DE8 /* ElvishSRPClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A9A3CC42FB3D5CC00819DE8 /* ElvishSRPClientTests.swift */; };
+		7B0A3CC72FB3D5CC00819DE8 /* MailFilterEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0A3CC62FB3D5CC00819DE8 /* MailFilterEngineTests.swift */; };
 		6A9A3CD12FB3D5CC00819DE8 /* BigInt in Frameworks */ = {isa = PBXBuildFile; productRef = 6A9A3CC12FB3D5CC00819DE8 /* BigInt */; };
 		6A9A3CEC2FB3D5CC00819DE8 /* ObjectivePGP in Frameworks */ = {isa = PBXBuildFile; productRef = 6A9A3CF02FB3D5CC00819DE8 /* ObjectivePGP */; };
 		6A9A3CED2FB3D5CC00819DE8 /* Argon2Swift in Frameworks */ = {isa = PBXBuildFile; productRef = 6A9A3CF12FB3D5CC00819DE8 /* Argon2Swift */; };
-		7B0A3CC72FB3D5CC00819DE8 /* MailFilterEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0A3CC62FB3D5CC00819DE8 /* MailFilterEngineTests.swift */; };
-		8A0A3CC52FB3D5CC00819DE8 /* ElvishAccountWrapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A0A3CC42FB3D5CC00819DE8 /* ElvishAccountWrapTests.swift */; };
-		8A0A3CC72FB3D5CC00819DE8 /* MailComposeMimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A0A3CC62FB3D5CC00819DE8 /* MailComposeMimeTests.swift */; };
-		9B0A3CC82FB3D5CC00819DE8 /* ReplyDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0A3CC72FB3D5CC00819DE8 /* ReplyDraftTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,10 +30,6 @@
 		6A9A3CC32FB3D5CC00819DE8 /* IOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A9A3CC42FB3D5CC00819DE8 /* ElvishSRPClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElvishSRPClientTests.swift; sourceTree = "<group>"; };
 		7B0A3CC62FB3D5CC00819DE8 /* MailFilterEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailFilterEngineTests.swift; sourceTree = "<group>"; };
-		8A0A3CC42FB3D5CC00819DE8 /* ElvishAccountWrapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElvishAccountWrapTests.swift; sourceTree = "<group>"; };
-		8A0A3CC62FB3D5CC00819DE8 /* MailComposeMimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailComposeMimeTests.swift; sourceTree = "<group>"; };
-		9B0A3CC72FB3D5CC00819DE8 /* ReplyDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplyDraftTests.swift; sourceTree = "<group>"; };
-		A0A3CD02FB3D5CC00819DE8 /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -72,7 +65,6 @@
 		6A9A3C992FB3D5C600819DE8 = {
 			isa = PBXGroup;
 			children = (
-				A0A3CD12FB3D5CC00819DE8 /* Config */,
 				6A9A3CA42FB3D5C600819DE8 /* IOS */,
 				6A9A3CC62FB3D5CC00819DE8 /* IOSTests */,
 				6A9A3CA32FB3D5C600819DE8 /* Products */,
@@ -91,21 +83,10 @@
 		6A9A3CC62FB3D5CC00819DE8 /* IOSTests */ = {
 			isa = PBXGroup;
 			children = (
-				8A0A3CC42FB3D5CC00819DE8 /* ElvishAccountWrapTests.swift */,
 				6A9A3CC42FB3D5CC00819DE8 /* ElvishSRPClientTests.swift */,
-				8A0A3CC62FB3D5CC00819DE8 /* MailComposeMimeTests.swift */,
 				7B0A3CC62FB3D5CC00819DE8 /* MailFilterEngineTests.swift */,
-				9B0A3CC72FB3D5CC00819DE8 /* ReplyDraftTests.swift */,
 			);
 			path = IOSTests;
-			sourceTree = "<group>";
-		};
-		A0A3CD12FB3D5CC00819DE8 /* Config */ = {
-			isa = PBXGroup;
-			children = (
-				A0A3CD02FB3D5CC00819DE8 /* Project.xcconfig */,
-			);
-			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -230,11 +211,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8A0A3CC52FB3D5CC00819DE8 /* ElvishAccountWrapTests.swift in Sources */,
 				6A9A3CC52FB3D5CC00819DE8 /* ElvishSRPClientTests.swift in Sources */,
-				8A0A3CC72FB3D5CC00819DE8 /* MailComposeMimeTests.swift in Sources */,
 				7B0A3CC72FB3D5CC00819DE8 /* MailFilterEngineTests.swift in Sources */,
-				9B0A3CC82FB3D5CC00819DE8 /* ReplyDraftTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,7 +229,6 @@
 /* Begin XCBuildConfiguration section */
 		6A9A3CAB2FB3D5C800819DE8 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A0A3CD02FB3D5CC00819DE8 /* Project.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -316,7 +293,6 @@
 		};
 		6A9A3CAC2FB3D5C800819DE8 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A0A3CD02FB3D5CC00819DE8 /* Project.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -380,14 +356,13 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 77Q7V2R5RU;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/ElvishInfo.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Elvish Mail";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -405,6 +380,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = email.elvish.IOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -426,14 +402,13 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 77Q7V2R5RU;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/ElvishInfo.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Elvish Mail";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -451,6 +426,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = email.elvish.IOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";

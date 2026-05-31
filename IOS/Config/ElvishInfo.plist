@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>ElvishAPIBaseURL</key>
-	<string>http://127.0.0.1:8765</string>
+	<string>https://elvish.quest</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

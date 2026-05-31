@@ -28,7 +28,7 @@ class ElvishSrpClient {
 
   static final BigInt groupN = BigInt.parse(nHex, radix: 16);
   static final BigInt groupG = BigInt.two;
-  static const int padLen = (nHex.length + 1) ~/ 2;
+  static final int padLen = (nHex.length + 1) ~/ 2;
 
   /// [deterministicPrivateExponent] — tests only (matches Swift `deterministicPrivateExponent`).
   static ElvishSrpLoginState beginLogin(

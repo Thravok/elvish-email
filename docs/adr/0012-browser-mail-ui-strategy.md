@@ -45,7 +45,7 @@ Goals: **fewer bytes executed by default**, **smaller first-load parse surface**
 - **Go `templ` or `html/template` shells** for layout and hashed asset URLs; keep explicit script entrypoints (no third-party script CDNs).
 - **Optional framework removal** on mail chrome only after triage/compose/settings have a replacement story (keyboard UX, a11y, large settings surface).
 
-The operator panel is **mail-embedded only** (`/mail?view=admin` + [`mail-admin-embed.js`](static/dist/mail-admin-embed.js)). Legacy `/admin/` URLs redirect to mail.
+Standalone **`/admin/`** remains supported via [`static/admin/index.html`](static/admin/index.html) and `admin-bundle.js` (full React for that dedicated page).
 
 ## Recorded scope: moving off React (phased)
 
@@ -57,7 +57,7 @@ This records **explicit choices** for future work (see also [CONTRIBUTING.md](CO
 
 1. **Auth surfaces** — [`static/auth/login.html`](static/auth/login.html), [`static/auth/register.html`](static/auth/register.html), and their [`frontend/entries/auth-*-entry.jsx`](frontend/entries/) bundles: smaller than mail triage; good place to prove **templ shell + thin TS crypto** and stricter CSP story.
 2. **Shared thin TS layer** — mail manifest / fetch wrappers / pure MIME helpers compiled as a small non-React bundle consumed by remaining React or vanilla callers.
-3. **Operator panel** — further slimming of [`mail-admin-embed.js`](static/dist/mail-admin-embed.js) after auth pattern is stable.
+3. **Admin standalone page** — optional shrink of [`static/admin/index.html`](static/admin/index.html) after auth pattern is stable (embedded admin already lazy-loads).
 4. **Mail chrome last** — list, detail, compose, [`static/mail/mail-settings.jsx`](static/mail/mail-settings.jsx): largest UX and a11y footprint; migrate only after (1)–(3) de-risk templ + TS split.
 
 **Already done toward (3)/(4) without a framework swap:** lazy [`mail-admin-embed.js`](frontend/entries/mail-admin-embed-entry.jsx) so default mail load excludes admin modules.

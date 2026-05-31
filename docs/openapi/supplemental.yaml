@@ -61,15 +61,9 @@ routes:
   - method: POST
     path: /api/admin/users/{userId}/disable
     summary: Disable user (admin)
-  - method: POST
-    path: /api/admin/users/{userId}/enable
-    summary: Re-enable user (admin; SRP accounts only)
-  - method: PATCH
-    path: /api/admin/users/{userId}
-    summary: Patch user (admin; is_admin)
   - method: DELETE
     path: /api/admin/users/{userId}
-    summary: Delete user (admin; full purge)
+    summary: Delete user (admin)
 
   # --- admin outbox ---
   - method: GET

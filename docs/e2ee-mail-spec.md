@@ -143,8 +143,6 @@ invariant from §2; only the path to wire-format differs.
 | **A — OpenPGP interop** | Recipient has a published OpenPGP key (resolver-fetched or pasted by sender) | OpenPGP ciphertext to recipient pubkey | Ship as-is |
 | **B — Protected link** | Any email address; recipient gets a notification with `/m/{token}` URL and unlocks in-browser with a sender-shared password | Body = AES-GCM(msgKey); msgKey = AES-GCM(KEK, msgKey); KEK = Argon2id(password, salt) | Sweeper deletes expired/burned blobs |
 
-**Expiring Elvish delivery:** when Mode A targets another local identity (`POST /api/v1/mail/messages`), senders may attach optional `expires_in_seconds` (≤ 30d) and/or `max_reads` (burn-after-N-opens). Policy is stored on `mail_message_lifecycle`; blob GET consumes a read atomically; the retention sweeper purges expired rows. Protected links (Mode B) use the same TTL/read-cap model via `mail_protected_links`.
-
 Implementation pointers: `static/mail/compose.jsx` (UI), `internal/httpserver/api_protected_links.go` (Mode B), `internal/maillinks/` (Mode B store + sweeper hooks), `internal/httpserver/api_mail.go` + `internal/httpserver/api_keys.go` (Mode A), and `internal/mailworker/worker.go` (interop dispatch). ADR 0010 is now legacy-only.
 
 ## 4. HTTP API surface
@@ -165,11 +163,11 @@ Implementation pointers: `static/mail/compose.jsx` (UI), `internal/httpserver/ap
 | POST | `/api/v1/identities/{fp}/default` | session | Mark default |
 | POST | `/api/v1/identities/{fp}/revoke` | session | Submit revocation cert + mark inactive |
 | DELETE | `/api/v1/identities/{fp}` | session | Hard delete identity + secret blob |
-| GET | `/api/v1/keys/lookup?email=` | session, rate-limited (120/hr/user) | Run resolver chain (local → cache → WKD → Proton/HKPS) |
+| GET | `/api/v1/keys/lookup?email=` | session | Run resolver chain (local → cache → WKD → Proton/HKPS) |
 | GET | `/api/v1/mail/messages?folder=&limit=&before=` | session | Manifest list with `header_ciphertext_b64` + sparse consented fields |
 | GET | `/api/v1/mail/messages/{id}` | session | Single manifest |
 | GET | `/api/v1/mail/messages/{id}/blob` | session | Stream PGP body ciphertext |
-| POST | `/api/v1/mail/messages` | session | Internal-route ingest of pre-encrypted body; optional `expires_in_seconds`, `max_reads` for expiring delivery |
+| POST | `/api/v1/mail/messages` | session | Internal-route ingest of pre-encrypted body |
 | GET | `/api/v1/mail/settings` | session | Settings + per-field consent |
 | POST | `/api/v1/mail/settings` | session | Update settings + consent (forward-only) |
 | POST | `/api/v1/mail/test/echo` | session | Self-deliver a ciphertext (selfcheck) |
@@ -212,18 +210,25 @@ BLOB_S3_ACCESS_KEY=elvish-dev
 BLOB_S3_SECRET_KEY=elvish-dev-secret
 BLOB_S3_FORCE_PATH_STYLE=true
 
-# SMTP (listen addresses stay in env; platform mail domain in admin → Platform)
+# SMTP
+ELVISH_MAIL_DOMAIN=elvish.email
 ELVISH_HOSTNAME=mx.elvish.email
 ELVISH_SMTP_ADDR=:25
 ELVISH_SMTP_SUBMISSION_ADDR=:587
 ELVISH_SMTP_ALLOW_PLAIN_AUTH=false   # only enable if a TLS terminator handles AUTH
-# smtp_rate_limit_per_hour, platform_mail_domain, public_base_url → admin → Platform
 
-# DKIM PEM path (selector/domain in admin → Testing → DKIM config)
+# DKIM (optional; outbound SMTP mail is domain-signed if all three are set)
+# Selector/domain are normalized to lowercase at runtime before status checks and worker delivery.
+ELVISH_DKIM_DOMAIN=elvish.email
+ELVISH_DKIM_SELECTOR=mail
 ELVISH_DKIM_KEY_PATH=/var/lib/elvish/dkim.pem
 
 # Plaintext-relay key (legacy internal notifications only).
+# User-authored plaintext relay is disabled in the browser mail surface.
 ELVISH_RELAY_KEY_PATH=/var/lib/elvish/relay.asc
+
+# Public base URL used when minting `/m/{token}` URLs into recipient notices.
+ELVISH_PUBLIC_BASE_URL=https://elvish.email
 ```
 
 ## 6. Validation

@@ -1,10 +1,9 @@
-# Local development: CockroachDB + Valkey + mail backends; optional api/mta/worker in containers.
+# Local development: CockroachDB + Redis; optional api + nginx frontend in containers.
 #
 # Databases only (for `make dev` / `make dev-once` on the host): `make db-up`
 #   → cockroach + valkey + scylla + minio (+ automatic scylla-init + minio-init)
 #
-# Full stack in Docker: `make compose-up` (profile full) — api :8765, docs :8766
-# Docs only: `make docs-up` or `docker compose --profile docs up docs`
+# Full stack in Docker: `docker compose up -d` (public site on :8765; api is internal-only — use `docker compose port` or a profile override to expose it)
 #
 # Do not set COOKIE_SECURE for plain http://127.0.0.1 — session cookies must not use Secure on HTTP.
 
@@ -74,16 +73,15 @@ services:
       start_period: 120s
 
   scylla-init:
-    build:
-      context: .
-      dockerfile: docker/scylla-init/Dockerfile
+    image: scylladb/scylla:5.4
     container_name: elvish-scylla-init
     depends_on:
       scylla:
         condition: service_healthy
-    environment:
-      - SCYLLA_HOST=${SCYLLA_HOST:-scylla}
-      - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
+    volumes:
+      - ./internal/scyllastore/schema.cql:/schema.cql:ro
+      - ./docker/scylla-init.sh:/scylla-init.sh:ro
+    entrypoint: ["sh", "/scylla-init.sh"]
     restart: "no"
 
   minio:
@@ -98,18 +96,11 @@ services:
       - "9001:9001"
     volumes:
       - elvish_minio_data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null || wget -q --spider http://127.0.0.1:9000/minio/health/live || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 8
-      start_period: 15s
 
   minio-init:
     image: minio/mc:latest
     depends_on:
-      minio:
-        condition: service_healthy
+      - minio
     environment:
       BLOB_S3_ACCESS_KEY: ${BLOB_S3_ACCESS_KEY:-elvish-dev}
       BLOB_S3_SECRET_KEY: ${BLOB_S3_SECRET_KEY:-elvish-dev-secret}
@@ -125,10 +116,9 @@ services:
     restart: "no"
 
   api:
-    profiles: [full, staging]
     build:
       context: .
-      dockerfile: services/api/Dockerfile
+      dockerfile: Dockerfile
     container_name: elvish-api
     depends_on:
       cockroach:
@@ -138,31 +128,19 @@ services:
       scylla:
         condition: service_healthy
       minio:
-        condition: service_healthy
-      scylla-init:
-        condition: service_completed_successfully
-      minio-init:
-        condition: service_completed_successfully
-    ports:
-      - "8765:8765"
-      - "2525:25"
-      - "2587:587"
-    command: ["-addr", ":8765", "-root", "/app"]
+        condition: service_started
+    expose:
+      - "8765"
     environment:
-      - ELVISH_SERVE_STATIC=1
-      - ELVISH_MONOLITH=1
-      - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-http://127.0.0.1:8765}
-      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-localhost.test}
-      - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-localhost.test}
-      - ELVISH_SMTP_ADDR=:25
-      - ELVISH_SMTP_SUBMISSION_ADDR=:587
       - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
       - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
       - VALKEY_PASSWORD=${VALKEY_PASSWORD:-}
       - VALKEY_DB=${VALKEY_DB:-0}
       - COOKIE_SECURE=${COOKIE_SECURE:-0}
       - ELVISH_AUTO_GEN_MFA_KEY=${ELVISH_AUTO_GEN_MFA_KEY:-1}
-      - ELVISH_AUTO_GEN_DKIM_KEY=${ELVISH_AUTO_GEN_DKIM_KEY:-1}
+      - ELVISH_TRUST_FORWARDED_FOR=${ELVISH_TRUST_FORWARDED_FOR:-1}
+      - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-http://127.0.0.1:8765}
+      - ELVISH_UPTIME_BASE_URL=${ELVISH_UPTIME_BASE_URL:-http://127.0.0.1:8765}
       - ELVISH_ALLOW_EMPTY_DB=${ELVISH_ALLOW_EMPTY_DB:-0}
       - SCYLLA_HOSTS=${SCYLLA_HOSTS:-scylla:9042}
       - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
@@ -172,160 +150,18 @@ services:
       - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-elvish-dev}
       - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-elvish-dev-secret}
       - BLOB_S3_FORCE_PATH_STYLE=${BLOB_S3_FORCE_PATH_STYLE:-1}
-    volumes:
-      - elvish_data:/app/data
-    healthcheck:
-      test: ["CMD", "/usr/local/bin/elvishapi", "-root", "/app", "-addr", ":8765", "-healthcheck"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
 
-  web:
-    profiles: [split-origin]
+  frontend:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
-    container_name: elvish-web
-    ports:
-      - "8081:8080"
-    environment:
-      - ELVISH_API_BASE=${ELVISH_API_BASE:-http://127.0.0.1:8765}
-      - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-http://127.0.0.1:8082}
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  admin:
-    profiles: [split-origin]
-    build:
-      context: .
-      dockerfile: apps/admin/Dockerfile
-    container_name: elvish-admin
-    ports:
-      - "8082:8080"
-    environment:
-      - ELVISH_API_BASE=${ELVISH_API_BASE:-http://127.0.0.1:8765}
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  mail-mta:
-    profiles: [split-roles]
-    build:
-      context: .
-      dockerfile: services/mta/Dockerfile
-    container_name: elvish-mail-mta
+      dockerfile: docker/frontend/Dockerfile
+    container_name: elvish-frontend
     depends_on:
-      cockroach:
-        condition: service_healthy
-      valkey:
-        condition: service_healthy
-      scylla:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      scylla-init:
-        condition: service_completed_successfully
-      minio-init:
-        condition: service_completed_successfully
-    command: ["-addr", ":8765", "-root", "/app"]
-    environment:
-      - ELVISH_HTTP_ENABLED=1
-      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-localhost.test}
-      - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-localhost.test}
-      - ELVISH_SMTP_ADDR=:25
-      - ELVISH_SMTP_SUBMISSION_ADDR=:587
-      - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
-      - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
-      - SCYLLA_HOSTS=${SCYLLA_HOSTS:-scylla:9042}
-      - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
-      - BLOB_S3_ENDPOINT=${BLOB_S3_ENDPOINT:-http://minio:9000}
-      - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
-      - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
-      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-elvish-dev}
-      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-elvish-dev-secret}
-      - BLOB_S3_FORCE_PATH_STYLE=${BLOB_S3_FORCE_PATH_STYLE:-1}
-      - ELVISH_AUTO_GEN_MFA_KEY=${ELVISH_AUTO_GEN_MFA_KEY:-1}
-      - ELVISH_AUTO_GEN_DKIM_KEY=${ELVISH_AUTO_GEN_DKIM_KEY:-1}
-    volumes:
-      - elvish_data:/app/data
+      - api
     ports:
-      - "2525:25"
-      - "2587:587"
-    healthcheck:
-      test: ["CMD", "/usr/local/bin/elvishmta", "-addr", ":8765", "-root", "/app", "-healthcheck"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-
-  docs:
-    profiles: [docs, full]
-    build:
-      context: .
-      dockerfile: docker/docs/Dockerfile
-    container_name: elvish-docs
-    ports:
-      - "8766:8080"
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-
-  worker:
-    profiles: [split-roles]
-    build:
-      context: .
-      dockerfile: services/worker/Dockerfile
-    container_name: elvish-worker
-    depends_on:
-      cockroach:
-        condition: service_healthy
-      valkey:
-        condition: service_healthy
-      scylla:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      scylla-init:
-        condition: service_completed_successfully
-      minio-init:
-        condition: service_completed_successfully
-    command: ["-root", "/app"]
-    environment:
-      - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
-      - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
-      - ELVISH_AUTO_GEN_MFA_KEY=${ELVISH_AUTO_GEN_MFA_KEY:-1}
-      - ELVISH_AUTO_GEN_DKIM_KEY=${ELVISH_AUTO_GEN_DKIM_KEY:-1}
-      - ELVISH_ALLOW_EMPTY_DB=${ELVISH_ALLOW_EMPTY_DB:-0}
-      - SCYLLA_HOSTS=${SCYLLA_HOSTS:-scylla:9042}
-      - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
-      - BLOB_S3_ENDPOINT=${BLOB_S3_ENDPOINT:-http://minio:9000}
-      - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
-      - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
-      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-elvish-dev}
-      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-elvish-dev-secret}
-      - BLOB_S3_FORCE_PATH_STYLE=${BLOB_S3_FORCE_PATH_STYLE:-1}
-    volumes:
-      - elvish_data:/app/data
-    healthcheck:
-      test: ["CMD", "/usr/local/bin/elvishworker", "-root", "/app", "-healthcheck"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 90s
+      - "8765:80"
 
 volumes:
-  elvish_data:
   elvish_crdb_data:
   elvish_scylla_data:
   elvish_minio_data:

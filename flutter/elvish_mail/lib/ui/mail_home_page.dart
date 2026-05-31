@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../api/mail_dtos.dart';
 import '../app_state.dart';
-import 'compose_page.dart';
 import 'message_detail_page.dart';
 
 class MailHomePage extends StatelessWidget {
@@ -20,44 +19,22 @@ class MailHomePage extends StatelessWidget {
             model.mailFolders.isEmpty ? MailFolderDto.standardPlaceholders() : model.mailFolders;
         final rawIdx = folders.indexWhere((f) => f.id == model.selectedMailboxFolder);
         final selectedIdx = rawIdx < 0 ? 0 : rawIdx;
-        final folder = model.selectedMailboxFolder.toLowerCase();
 
         return Scaffold(
-          floatingActionButton: model.mailKeysUnlocked
-              ? FloatingActionButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => ComposePage(model: model),
-                      ),
-                    );
-                  },
-                  child: const Icon(Icons.edit),
-                )
-              : null,
           appBar: AppBar(
             title: const Text('Mail'),
             actions: [
-              IconButton(
-                tooltip: 'Refresh',
-                onPressed: model.isBusy ? null : () => model.refreshMailData(),
-                icon: const Icon(Icons.refresh),
-              ),
               if (!model.mailKeysUnlocked)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: Tooltip(
-                    message:
-                        'Mail keys are locked. Sign out and sign in with your password to read encrypted mail.',
+                    message: 'Mail keys are locked. Sign out and sign in with your password to read encrypted mail.',
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.lock_outline, size: 20, color: scheme.onSurfaceVariant),
                         const SizedBox(width: 4),
-                        Text(
-                          'Locked',
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
-                        ),
+                        Text('Locked', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant)),
                       ],
                     ),
                   ),
@@ -109,17 +86,30 @@ class MailHomePage extends StatelessWidget {
                         itemCount: model.inboxRows.length,
                         itemBuilder: (context, i) {
                           final row = model.inboxRows[i];
-                          return _MessageRow(
-                            model: model,
-                            row: row,
-                            folder: folder,
-                            onOpen: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => MessageDetailPage(model: model, row: row),
+                          return Card.filled(
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: scheme.secondaryContainer,
+                                foregroundColor: scheme.onSecondaryContainer,
+                                child: Text(
+                                  (row.fromAddr ?? row.subject ?? '?').trim().isEmpty
+                                      ? '?'
+                                      : (row.fromAddr ?? row.subject ?? '?').trim()[0].toUpperCase(),
                                 ),
-                              );
-                            },
+                              ),
+                              title: Text(row.subject ?? '(no subject)', maxLines: 2, overflow: TextOverflow.ellipsis),
+                              subtitle: Text(row.fromAddr ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
+                              trailing: row.read == true
+                                  ? null
+                                  : Icon(Icons.mark_email_unread_outlined, color: scheme.primary, size: 22),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => MessageDetailPage(model: model, row: row),
+                                  ),
+                                );
+                              },
+                            ),
                           );
                         },
                       ),
@@ -180,116 +170,5 @@ class MailHomePage extends StatelessWidget {
       default:
         return name;
     }
-  }
-}
-
-class _MessageRow extends StatelessWidget {
-  const _MessageRow({
-    required this.model,
-    required this.row,
-    required this.folder,
-    required this.onOpen,
-  });
-
-  final ElvishAppState model;
-  final MailInboxRow row;
-  final String folder;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final card = Card.filled(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: scheme.secondaryContainer,
-          foregroundColor: scheme.onSecondaryContainer,
-          child: Text(
-            (row.fromAddr ?? row.subject ?? '?').trim().isEmpty
-                ? '?'
-                : (row.fromAddr ?? row.subject ?? '?').trim()[0].toUpperCase(),
-          ),
-        ),
-        title: Text(row.subject ?? '(no subject)', maxLines: 2, overflow: TextOverflow.ellipsis),
-        subtitle: Text(row.fromAddr ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
-        trailing: row.read == true
-            ? null
-            : Icon(Icons.mark_email_unread_outlined, color: scheme.primary, size: 22),
-        onTap: onOpen,
-      ),
-    );
-
-    if (folder == 'trash') {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        child: Dismissible(
-          key: ValueKey('inbox-${row.id}'),
-          direction: DismissDirection.startToEnd,
-          background: Container(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.only(left: 20),
-            color: scheme.primaryContainer,
-            child: Icon(Icons.inbox, color: scheme.onPrimaryContainer),
-          ),
-          confirmDismiss: (_) async {
-            await model.moveMessage(row.id, 'inbox');
-            return false;
-          },
-          child: card,
-        ),
-      );
-    }
-
-    if (folder == 'archive') {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        child: Dismissible(
-          key: ValueKey('inbox-${row.id}'),
-          direction: DismissDirection.startToEnd,
-          background: Container(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.only(left: 20),
-            color: scheme.primaryContainer,
-            child: Icon(Icons.inbox, color: scheme.onPrimaryContainer),
-          ),
-          confirmDismiss: (_) async {
-            await model.moveMessage(row.id, 'inbox');
-            return false;
-          },
-          child: card,
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      child: Dismissible(
-        key: ValueKey('row-${row.id}'),
-        direction: DismissDirection.horizontal,
-        background: folder == 'inbox'
-            ? Container(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.only(left: 20),
-                color: scheme.tertiaryContainer,
-                child: Icon(Icons.archive, color: scheme.onTertiaryContainer),
-              )
-            : null,
-        secondaryBackground: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          color: scheme.errorContainer,
-          child: Icon(Icons.delete, color: scheme.onErrorContainer),
-        ),
-        confirmDismiss: (direction) async {
-          if (direction == DismissDirection.endToStart) {
-            await model.moveMessage(row.id, 'trash');
-          } else if (direction == DismissDirection.startToEnd && folder == 'inbox') {
-            await model.moveMessage(row.id, 'archive');
-          }
-          return false;
-        },
-        child: card,
-      ),
-    );
   }
 }
