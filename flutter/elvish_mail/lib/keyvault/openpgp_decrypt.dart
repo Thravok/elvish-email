@@ -7,14 +7,14 @@ import 'package:dart_pg/dart_pg.dart';
 /// When [verifySignature] is true, embedded signatures are verified after decrypt (parity with web/iOS).
 String decryptOpenPgpUtf8(
   Uint8List ciphertext,
-  List<PrivateKeyInterface> keys, {
+  List<PrivateKey> keys, {
   bool verifySignature = false,
 }) {
   final head = ciphertext.length > 80 ? 80 : ciphertext.length;
   final probe = String.fromCharCodes(ciphertext.sublist(0, head));
-  final EncryptedMessageInterface enc;
+  final EncryptedMessage enc;
   if (probe.contains('BEGIN PGP MESSAGE')) {
-    enc = OpenPGP.readEncryptedMessage(utf8.decode(ciphertext));
+    enc = OpenPGP.readEncryptedMessage(utf8.decode(ciphertext)) as EncryptedMessage;
   } else {
     enc = EncryptedMessage(PacketList.decode(ciphertext));
   }

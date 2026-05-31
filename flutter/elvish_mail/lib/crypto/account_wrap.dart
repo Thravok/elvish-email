@@ -73,7 +73,7 @@ class ElvishAccountWrap {
     if (wrapped.length < 12) {
       throw StateError('invalid wrapped blob');
     }
-    final aes = Aes256Gcm();
+    final aes = AesGcm.with256bits();
     final secretBox = SecretBox.fromConcatenation(wrapped, nonceLength: 12, macLength: 16);
     final clear = await aes.decrypt(secretBox, secretKey: kek);
     return Uint8List.fromList(clear);

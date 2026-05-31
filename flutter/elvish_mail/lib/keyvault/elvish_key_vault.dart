@@ -47,7 +47,7 @@ class ElvishKeyVault {
 
   bool isUnlocked = false;
 
-  final Map<String, PrivateKeyInterface> _identitySecretKeys = {};
+  final Map<String, PrivateKey> _identitySecretKeys = {};
   String? _defaultFingerprint16;
   final List<String> _orderedIdentityFingerprintsFull = [];
 
@@ -97,7 +97,7 @@ class ElvishKeyVault {
       throw KeyVaultError.invalidBase64;
     }
 
-    late final PrivateKeyInterface accountKey;
+    late final PrivateKey accountKey;
     late final String armoredPrivString;
     try {
       final kek = await ElvishAccountWrap.deriveKek(
@@ -111,7 +111,7 @@ class ElvishKeyVault {
       if (armoredPrivString.isEmpty) {
         throw KeyVaultError.incorrectPassword;
       }
-      accountKey = OpenPGP.readPrivateKey(armoredPrivString);
+      accountKey = OpenPGP.readPrivateKey(armoredPrivString) as PrivateKey;
       final liveFp = fingerprintHexFull(accountKey);
       if (!fingerprintsEquivalent(liveFp, expectedFp)) {
         throw KeyVaultError.incorrectPassword;
@@ -168,7 +168,7 @@ class ElvishKeyVault {
 
     zero();
     try {
-      final accountKey = OpenPGP.readPrivateKey(cached.accountArmoredPriv);
+      final accountKey = OpenPGP.readPrivateKey(cached.accountArmoredPriv) as PrivateKey;
       final liveFp = fingerprintHexFull(accountKey);
       if (!fingerprintsEquivalent(liveFp, cached.accountFingerprint)) {
         await _store.delete(norm);
@@ -184,7 +184,7 @@ class ElvishKeyVault {
     return isUnlocked;
   }
 
-  Future<void> _unlockIdentities(ElvishApiClient api, PrivateKeyInterface accountKey) async {
+  Future<void> _unlockIdentities(ElvishApiClient api, PrivateKey accountKey) async {
     final idList = IdentitiesListResponse.fromJson(await api.getJson('/api/v1/identities'));
     final ordered = <String>[];
     for (final row in idList.identities) {
@@ -206,16 +206,16 @@ class ElvishKeyVault {
         continue;
       }
       final armoredWrap = utf8.decode(wrappedId);
-      LiteralMessageInterface lit;
+      LiteralMessage lit;
       try {
-        lit = OpenPGP.decrypt(armoredWrap, decryptionKeys: [accountKey]);
+        lit = OpenPGP.decrypt(armoredWrap, decryptionKeys: [accountKey]) as LiteralMessage;
       } catch (_) {
         continue;
       }
       final decryptedArmored = lit.literalData.text;
-      PrivateKeyInterface idSecret;
+      PrivateKey idSecret;
       try {
-        idSecret = OpenPGP.readPrivateKey(decryptedArmored);
+        idSecret = OpenPGP.readPrivateKey(decryptedArmored) as PrivateKey;
       } catch (_) {
         continue;
       }
@@ -322,7 +322,7 @@ class ElvishKeyVault {
     return out;
   }
 
-  static String fingerprintHexFull(PrivateKeyInterface key) {
+  static String fingerprintHexFull(PrivateKey key) {
     final fp = key.fingerprint;
     final sb = StringBuffer();
     for (var i = 0; i < fp.length; i++) {

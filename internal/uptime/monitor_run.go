@@ -82,7 +82,7 @@ func runMonitorHTTP(ctx context.Context, hc *http.Client, id string, row models.
 	pctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	start := time.Now()
-	req, err := http.NewRequestWithContext(pctx, method, validated.String(), nil)
+	req, err := NewProbeHTTPRequest(pctx, method, validated)
 	if err != nil {
 		return ProbeResult{ID: id, URL: u, Method: method, OK: false, Error: err.Error()}
 	}

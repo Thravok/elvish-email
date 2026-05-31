@@ -50,7 +50,7 @@ func probeOne(ctx context.Context, hc *http.Client, t ResolvedTarget, timeout ti
 	defer cancel()
 
 	start := time.Now()
-	req, err := http.NewRequestWithContext(pctx, method, validated.String(), nil)
+	req, err := NewProbeHTTPRequest(pctx, method, validated)
 	if err != nil {
 		return ProbeResult{ID: t.ID, URL: t.URL, Method: method, OK: false, Error: err.Error()}
 	}
@@ -92,7 +92,7 @@ func probeGETFallback(ctx context.Context, hc *http.Client, t ResolvedTarget, ti
 	pctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	start := time.Now()
-	req, err := http.NewRequestWithContext(pctx, http.MethodGet, validated.String(), nil)
+	req, err := NewProbeHTTPRequest(pctx, http.MethodGet, validated)
 	if err != nil {
 		return ProbeResult{ID: t.ID, URL: t.URL, Method: "GET", OK: false, LatencyMS: headLatency, Error: err.Error()}
 	}
