@@ -1,6 +1,6 @@
 # ADR 0014 — Inbound mail authentication (SPF, DKIM, DMARC)
 
-**Status:** Proposed (Phase 2)
+**Status:** Accepted (2026-05, initial rollout: log-only default)
 **Related:** [0006 — Own SMTP stack](./0006-own-smtp-stack.md), [docs/e2ee-mail-spec.md](../e2ee-mail-spec.md)
 
 ## Context

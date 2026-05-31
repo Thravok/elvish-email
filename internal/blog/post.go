@@ -59,10 +59,10 @@ type Post struct {
 }
 
 // ParsePostMarkdown parses one markdown document (with YAML front matter) into a Post.
-// pathHint is used for slug inference and minisign sidecars when it looks like a filesystem path.
-// When skip is true (draft front matter), post is zero and err is nil.
-func ParsePostMarkdown(pathHint string, raw []byte, md *markdown.Renderer, metrics map[string]EntryMetrics, signing *SigningLoadOpts) (post Post, skip bool, err error) {
-	sigState, err := parseSigning(pathHint, raw, signing)
+// contentRoot is the filesystem directory that owns markdown paths (used to anchor minisig sidecars).
+// Use an empty contentRoot for virtual paths (e.g. admin API previews) to skip reading *.minisig from disk.
+func ParsePostMarkdown(contentRoot, pathHint string, raw []byte, md *markdown.Renderer, metrics map[string]EntryMetrics, signing *SigningLoadOpts) (post Post, skip bool, err error) {
+	sigState, err := parseSigning(contentRoot, pathHint, raw, signing)
 	if err != nil {
 		return Post{}, false, err
 	}
@@ -149,7 +149,7 @@ func LoadPosts(dir string, md *markdown.Renderer, metrics map[string]EntryMetric
 		if err != nil {
 			return err
 		}
-		p, skip, err := ParsePostMarkdown(path, raw, md, metrics, signing)
+		p, skip, err := ParsePostMarkdown(dir, path, raw, md, metrics, signing)
 		if err != nil {
 			return err
 		}

@@ -1,11 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("admin panel", () => {
-  test("redirects anonymous users from /admin to login with next", async ({ page }) => {
+  test("redirects /admin to console origin", async ({ page }) => {
     await page.goto("/admin/");
-    await expect(page).toHaveURL(/\/login\?/);
-    expect(page.url()).toContain("next=");
-    expect(decodeURIComponent(new URL(page.url()).searchParams.get("next") || "")).toBe("/admin/");
+    await page.waitForURL(/8780|:8080|console/, { timeout: 15000 });
   });
 
   test("operator admin bundle rejects without session when sessions enforced", async ({ request }) => {

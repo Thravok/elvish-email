@@ -66,17 +66,13 @@
   }
 
   function htmlToDisplayText(html) {
-    return String(html || "")
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<(br|\/p|\/div|\/li|\/tr|\/h[1-6])\b[^>]*>/gi, "\n")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/&amp;/gi, "&")
-      .replace(/&lt;/gi, "<")
-      .replace(/&gt;/gi, ">")
-      .replace(/&quot;/gi, "\"")
-      .replace(/&#39;/gi, "'")
+    if (typeof DOMParser === "undefined") {
+      return String(html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    }
+    const doc = new DOMParser().parseFromString(String(html || ""), "text/html");
+    doc.querySelectorAll("script, style").forEach((node) => node.remove());
+    const text = doc.body.textContent || "";
+    return text
       .replace(/\r/g, "")
       .replace(/[ \t]+\n/g, "\n")
       .replace(/\n{3,}/g, "\n\n")

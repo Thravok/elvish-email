@@ -53,6 +53,10 @@ type IngestResult struct {
 func (p *Pipe) ingestPlaintext(ctx context.Context, source, fromAddr, recipient string, rcpt []string, rawBody []byte) (*IngestResult, error) {
 	startedAt := time.Now()
 	defer wipe(rawBody)
+	if err := p.checkSize(rawBody); err != nil {
+		p.recordTelemetry(ctx, source, startedAt, err)
+		return nil, err
+	}
 	rec, err := p.recipientIdentity(ctx, recipient)
 	if err != nil {
 		p.recordTelemetry(ctx, source, startedAt, err)
@@ -98,6 +102,9 @@ func (p *Pipe) ingestPlaintext(ctx context.Context, source, fromAddr, recipient 
 // persisting. Already-encrypted PGP payloads are stored as-is and the manifest
 // records "already_encrypted" provenance.
 func (p *Pipe) IngestExternal(ctx context.Context, fromAddr string, recipient string, rawBody []byte) (*IngestResult, error) {
+	if err := p.checkSize(rawBody); err != nil {
+		return nil, err
+	}
 	switch kind := vopenpgp.Sniff(rawBody); kind {
 	case vopenpgp.BodyArmoredMessage, vopenpgp.BodyBinaryPGP, vopenpgp.BodyPGPMIME:
 	default:
@@ -176,6 +183,10 @@ func (p *Pipe) IngestSubmission(ctx context.Context, principalEmail, fromAddr st
 // rawCipher is treated as the body blob (no re-encryption).
 func (p *Pipe) IngestInternal(ctx context.Context, recipient string, headerCiphertext, rawCipher []byte, fromAddr string, rcpt []string) (*IngestResult, error) {
 	startedAt := time.Now()
+	if err := p.checkSize(rawCipher); err != nil {
+		p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
+		return nil, err
+	}
 	rec, err := p.recipientIdentity(ctx, recipient)
 	if err != nil {
 		p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
@@ -183,6 +194,10 @@ func (p *Pipe) IngestInternal(ctx context.Context, recipient string, headerCiphe
 	}
 	if vopenpgp.Sniff(rawCipher) == vopenpgp.BodyCleartext {
 		err := errors.New("mailpipe: IngestInternal requires ciphertext body")
+		p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
+		return nil, err
+	}
+	if err := p.validateHeaderCiphertext(headerCiphertext); err != nil {
 		p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
 		return nil, err
 	}
@@ -195,6 +210,10 @@ func (p *Pipe) IngestInternal(ctx context.Context, recipient string, headerCiphe
 // IngestClientSent stores a sender-authored ciphertext copy in the sender's sent folder.
 func (p *Pipe) IngestClientSent(ctx context.Context, principalEmail string, headerCiphertext, rawCipher []byte, fromAddr string, rcpt []string) (*IngestResult, error) {
 	startedAt := time.Now()
+	if err := p.checkSize(rawCipher); err != nil {
+		p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
+		return nil, err
+	}
 	sender, err := p.recipientIdentity(ctx, principalEmail)
 	if err != nil {
 		p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
@@ -202,6 +221,10 @@ func (p *Pipe) IngestClientSent(ctx context.Context, principalEmail string, head
 	}
 	if vopenpgp.Sniff(rawCipher) == vopenpgp.BodyCleartext {
 		err := errors.New("mailpipe: IngestClientSent requires ciphertext body")
+		p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
+		return nil, err
+	}
+	if err := p.validateHeaderCiphertext(headerCiphertext); err != nil {
 		p.recordTelemetry(ctx, mailmeta.SourceAPIClient, startedAt, err)
 		return nil, err
 	}
@@ -267,9 +290,7 @@ func (p *Pipe) recipientIdentity(ctx context.Context, email string) (*mailmeta.I
 func (p *Pipe) materialize(rawBody []byte, recipientPub string) (provenance string, ciphertext []byte, err error) {
 	kind := vopenpgp.Sniff(rawBody)
 	switch kind {
-	case vopenpgp.BodyArmoredMessage, vopenpgp.BodyBinaryPGP:
-		return mailmeta.ProvenanceSenderPGPMime, append([]byte(nil), rawBody...), nil
-	case vopenpgp.BodyPGPMIME:
+	case vopenpgp.BodyArmoredMessage, vopenpgp.BodyBinaryPGP, vopenpgp.BodyPGPMIME:
 		return mailmeta.ProvenanceSenderPGPMime, append([]byte(nil), rawBody...), nil
 	default:
 		ct, err := vopenpgp.Encrypt(recipientPub, rawBody)
@@ -278,6 +299,31 @@ func (p *Pipe) materialize(rawBody []byte, recipientPub string) (provenance stri
 		}
 		return mailmeta.ProvenanceSMTPGatewayEncrypted, ct, nil
 	}
+}
+
+func (p *Pipe) checkSize(raw []byte) error {
+	max := 26 << 20
+	if p != nil && p.MaxSize > 0 {
+		max = p.MaxSize
+	}
+	if len(raw) > max {
+		return fmt.Errorf("mailpipe: message exceeds max size (%d bytes)", max)
+	}
+	return nil
+}
+
+func (p *Pipe) validateHeaderCiphertext(headerCiphertext []byte) error {
+	if len(headerCiphertext) == 0 {
+		return errors.New("mailpipe: header ciphertext required")
+	}
+	kind := vopenpgp.Sniff(headerCiphertext)
+	if kind == vopenpgp.BodyCleartext {
+		return errors.New("mailpipe: header ciphertext must be encrypted")
+	}
+	if !vopenpgp.ValidateEncryptedBody(headerCiphertext, kind) {
+		return errors.New("mailpipe: invalid header ciphertext")
+	}
+	return nil
 }
 
 // persist writes the body blob, manifest row, mailbox row, opt-in projection, ledger row.

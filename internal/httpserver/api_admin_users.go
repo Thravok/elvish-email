@@ -162,7 +162,7 @@ func (s *Server) apiAdminUsersDelete(w http.ResponseWriter, r *http.Request, idS
 		return
 	}
 
-	if admin.ID == userID {
+	if admin != nil && admin.ID == userID {
 		s.writeErr(w, http.StatusBadRequest, "cannot delete yourself")
 		return
 	}

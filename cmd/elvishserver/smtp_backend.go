@@ -10,8 +10,12 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"elvish/internal/mailauth"
 	"elvish/internal/mailmeta"
 	"elvish/internal/mailpipe"
+	"elvish/internal/netaddr"
+	"elvish/internal/ratelimit"
+	elvishsmtp "elvish/internal/smtp"
 	"elvish/internal/smtp/sasl"
 	"elvish/internal/smtp/wire"
 	"elvish/internal/store"
@@ -35,14 +39,34 @@ type smtpBackend struct {
 	store      *store.Store
 	meta       *mailmeta.Store
 	telemetry  *telemetry.Service
+	rateLimit  *ratelimit.Limiter
+	mailAuth   *mailauth.Checker
 }
 
-func newSMTPBackend(pipe *mailpipe.Pipe, logger *slog.Logger, submission bool, st *store.Store, meta *mailmeta.Store, tel *telemetry.Service) *smtpBackend {
-	return &smtpBackend{pipe: pipe, logger: logger, submission: submission, store: st, meta: meta, telemetry: tel}
+func newSMTPBackend(pipe *mailpipe.Pipe, logger *slog.Logger, submission bool, st *store.Store, meta *mailmeta.Store, tel *telemetry.Service, rl *ratelimit.Limiter) *smtpBackend {
+	return &smtpBackend{
+		pipe: pipe, logger: logger, submission: submission, store: st, meta: meta, telemetry: tel,
+		rateLimit: rl, mailAuth: mailauth.NewChecker(logger),
+	}
 }
 
 func (b *smtpBackend) HandleInbound(ctx context.Context, from string, rcpt []string, body []byte, peer net.Addr, hello string) error {
 	startedAt := time.Now()
+	if !b.allowSMTP(ctx, peer, elvishsmtp.RateLimitMXPerHour) {
+		b.recordSMTP(ctx, "inbound", false, startedAt)
+		return &wire.SMTPError{Code: 451, Message: "rate limit exceeded, please retry later"}
+	}
+	if b.mailAuth != nil {
+		authRes := b.mailAuth.Check(ctx, peer, from, body)
+		if b.logger != nil {
+			b.logger.Info("inbound mail auth", "from", from, "peer", netaddr.HostFromAddr(peer),
+				"spf", authRes.SPF, "dkim", authRes.DKIM, "dmarc", authRes.DMARC, "mode", authRes.Mode)
+		}
+		if err := b.mailAuth.Enforce(authRes); err != nil {
+			b.recordSMTP(ctx, "inbound", false, startedAt)
+			return err
+		}
+	}
 	for _, to := range rcpt {
 		res, err := b.pipe.IngestExternal(ctx, from, strings.ToLower(strings.TrimSpace(to)), append([]byte(nil), body...))
 		if err != nil {
@@ -63,6 +87,10 @@ func (b *smtpBackend) HandleInbound(ctx context.Context, from string, rcpt []str
 
 func (b *smtpBackend) HandleSubmission(ctx context.Context, principal, from string, rcpt []string, body []byte, peer net.Addr) error {
 	startedAt := time.Now()
+	if !b.allowSMTP(ctx, peer, elvishsmtp.RateLimitSubmissionPerHour) {
+		b.recordSMTP(ctx, "submission", false, startedAt)
+		return &wire.SMTPError{Code: 451, Message: "rate limit exceeded, please retry later"}
+	}
 	resolveStartedAt := time.Now()
 	principalEmail, err := b.resolveSubmissionPrincipal(ctx, principal)
 	b.recordDependency(ctx, "principal_resolve", err == nil, resolveStartedAt)
@@ -171,4 +199,24 @@ func (b *smtpBackend) recordDependency(ctx context.Context, operation string, su
 	if err := b.telemetry.RecordDependencyPerf(ctx, "smtp_backend", operation, "smtp", success, time.Since(startedAt)); err != nil && b.logger != nil {
 		b.logger.Warn("smtp dependency telemetry", "err", err, "operation", operation)
 	}
+}
+
+// allowSMTP enforces a Valkey-backed per-IP fixed window. On Valkey errors it fails closed.
+func (b *smtpBackend) allowSMTP(ctx context.Context, peer net.Addr, max int64) bool {
+	if b == nil || b.rateLimit == nil {
+		return true
+	}
+	name := "smtp_mx"
+	if b.submission {
+		name = "smtp_submission"
+	}
+	id := netaddr.HostFromAddr(peer)
+	ok, err := b.rateLimit.Allow(ctx, name, id, max, elvishsmtp.RateLimitWindow)
+	if err != nil {
+		if b.logger != nil {
+			b.logger.Warn("smtp ratelimit", "name", name, "peer", id, "err", err)
+		}
+		return false
+	}
+	return ok
 }

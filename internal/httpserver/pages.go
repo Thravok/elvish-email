@@ -690,25 +690,13 @@ func (s *Server) renderPostHTML(w http.ResponseWriter, r *http.Request, ctx cont
 	}
 }
 
-func safeRedirectPath(next string) string {
-	next = strings.TrimSpace(next)
-	if next == "" {
-		return "/"
-	}
-	if !strings.HasPrefix(next, "/") || strings.HasPrefix(next, "//") {
-		return "/"
-	}
-	return next
-}
-
 func (s *Server) handleAuthLogout(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	s.clearBrowserSession(w, r)
-	next := safeRedirectPath(r.FormValue("next"))
-	http.Redirect(w, r, next, http.StatusSeeOther)
+	redirectSafePath(w, r, r.FormValue("next"), http.StatusSeeOther)
 }
 
 // serveAuthHTML serves /login and /register (static/auth/*.html).
@@ -844,7 +832,7 @@ func (s *Server) serveStaticFile(w http.ResponseWriter, r *http.Request) {
 		s.emitServiceWorker(w, r)
 		return
 	}
-	if isOperatorDistAsset(rel) && !s.requireAdminUIAccess(w, r, adminUIAuthAsset) {
+	if isOperatorDistAsset(rel) && legacyConsoleEnabled() && !s.requireAdminUIAccess(w, r, adminUIAuthAsset) {
 		return
 	}
 	setCacheStaticFromPath(w, r, rel)
@@ -933,23 +921,9 @@ func (s *Server) serveAdminOrStatic(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-
-	// Admin panel is now embedded in the mail client.
-	// Redirect all /admin requests to /mail where the admin panel is accessible
-	// for users with operator privileges.
-	rel := strings.TrimPrefix(r.URL.Path, "/admin")
-	rel = strings.TrimPrefix(rel, "/")
-
-	// Legacy redirects for old admin login/register links
-	switch rel {
-	case "login.html", "login":
-		http.Redirect(w, r, "/login", http.StatusMovedPermanently)
-		return
-	case "register.html", "register":
-		http.Redirect(w, r, "/register", http.StatusMovedPermanently)
-		return
+	target := strings.TrimSpace(os.Getenv("ELVISH_CONSOLE_PUBLIC_URL"))
+	if target == "" {
+		target = "http://127.0.0.1:8780"
 	}
-
-	// Redirect to mail client where admin is now embedded
-	http.Redirect(w, r, "/mail", http.StatusFound)
+	http.Redirect(w, r, strings.TrimRight(target, "/")+"/", http.StatusFound)
 }

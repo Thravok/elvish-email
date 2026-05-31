@@ -9518,6 +9518,42 @@ var init_openpgp_min = __esm({
   }
 });
 
+// ../static/mail/html-plaintext.js
+function stripHtmlBlocks(html) {
+  const raw = String(html || "");
+  if (typeof DOMParser === "undefined") {
+    return raw.replace(/<[^>]+>/g, " ");
+  }
+  const doc = new DOMParser().parseFromString(raw, "text/html");
+  doc.querySelectorAll("script, style").forEach((node) => node.remove());
+  return doc.body.innerHTML || "";
+}
+function decodeHtmlEntities(text) {
+  const raw = String(text || "");
+  if (typeof DOMParser !== "undefined") {
+    const doc = new DOMParser().parseFromString(raw, "text/html");
+    return doc.documentElement.textContent || "";
+  }
+  return raw;
+}
+function htmlToPlainSearchText(html) {
+  return decodeHtmlEntities(stripHtmlBlocks(html).replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+}
+function validatedSameOriginScriptURL(raw, baseHref) {
+  const u2 = new URL(String(raw || ""), baseHref || self.location.href);
+  if (u2.origin !== new URL(baseHref || self.location.href).origin) {
+    throw new Error("script URL must be same-origin");
+  }
+  if (!u2.pathname.startsWith("/static/")) {
+    throw new Error("script URL path not allowed");
+  }
+  return u2.href;
+}
+var init_html_plaintext = __esm({
+  "../static/mail/html-plaintext.js"() {
+  }
+});
+
 // ../static/mail/search/db.js
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -9748,7 +9784,7 @@ async function handleInit(msg) {
     if (typeof openpgp !== "undefined") {
       openpgpReady = true;
     } else if (msg.openpgpScriptUrl) {
-      importScripts(msg.openpgpScriptUrl);
+      importScripts(validatedSameOriginScriptURL(msg.openpgpScriptUrl, self.location.href));
       openpgpReady = true;
     }
   }
@@ -9932,7 +9968,7 @@ function mimeToText(bytes) {
   let body = sep > 0 ? text.slice(sep + 4) : text;
   const sigStart = body.indexOf("-----BEGIN PGP SIGNATURE-----");
   if (sigStart >= 0) body = body.slice(0, sigStart);
-  return body.replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
+  return htmlToPlainSearchText(body);
 }
 async function writePostings(messageId, terms, snippet) {
   const t2 = db.transaction([STORE_TERMS, STORE_DOCS], "readwrite");
@@ -10033,6 +10069,7 @@ async function averageDocLength(store) {
 var db, indexKey, identityFingerprint, identityArmoredPrivate, openpgpReady, inflight;
 var init_worker = __esm({
   "../static/mail/search/worker.js"() {
+    init_html_plaintext();
     init_db();
     init_key();
     init_tokenize();

@@ -1,6 +1,6 @@
 # ADR 0004 — Per-field metadata consent (replaces strict/balanced)
 
-**Status:** Accepted (2026-05)
+**Status:** Superseded by [0017 — Full server metadata policy](./0017-full-server-metadata-policy.md) (2026-05)
 **Replaces:** the original "strict vs balanced" mode flag in `user_mail_settings`
 **Related:** [0003 — Keyserver chain](./0003-keyserver-resolution-chain.md), [0007 — Four-store mail architecture](./0007-four-store-mail-architecture.md)
 

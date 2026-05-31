@@ -65,6 +65,10 @@ func runMonitorHTTP(ctx context.Context, hc *http.Client, id string, row models.
 	if err := ValidateProbeHTTPURL(u); err != nil {
 		return ProbeResult{ID: id, URL: u, Method: "GET", OK: false, Error: err.Error()}
 	}
+	validated, err := NewValidatedProbeURL(u)
+	if err != nil {
+		return ProbeResult{ID: id, URL: u, Method: "GET", OK: false, Error: err.Error()}
+	}
 	method := strings.ToUpper(strings.TrimSpace(row.Method))
 	if method == "" {
 		method = "GET"
@@ -78,7 +82,7 @@ func runMonitorHTTP(ctx context.Context, hc *http.Client, id string, row models.
 	pctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	start := time.Now()
-	req, err := http.NewRequestWithContext(pctx, method, u, nil)
+	req, err := NewProbeHTTPRequest(pctx, method, validated)
 	if err != nil {
 		return ProbeResult{ID: id, URL: u, Method: method, OK: false, Error: err.Error()}
 	}

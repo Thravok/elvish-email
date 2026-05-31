@@ -1,8 +1,10 @@
 // ELVISH — KeyVault: unlocked account key + identity private keys.
 //
-// Account key material may be cached in browser storage so reloads can restore the
-// unlocked vault without another password prompt. Manual lock and log out clear
-// that cache; idle timeout clears memory only (then restore from cache when possible).
+// Account key material is cached in sessionStorage by default so reloads within the
+// same browser tab can restore the unlocked vault without another password prompt.
+// "Trust this device" persists to localStorage for cross-tab/cold reload convenience.
+// Manual lock and log out clear the cache; idle timeout clears memory only (then restore
+// from cache when possible).
 //
 // Password verification for unwrap never POSTs the password. We bind the derived
 // KEK to this account by requiring the decrypted private key fingerprint to
@@ -31,9 +33,23 @@
 
   function storage() {
     try {
-      return globalThis.localStorage || null;
+      if (readTrustedDeviceFlag()) {
+        return globalThis.localStorage || null;
+      }
+      return globalThis.sessionStorage || null;
     } catch (_) {
       return null;
+    }
+  }
+
+  function clearAllPersistedCaches() {
+    for (const s of [globalThis.sessionStorage, globalThis.localStorage]) {
+      if (!s) continue;
+      try {
+        s.removeItem(PERSIST_KEY);
+      } catch (_) {
+        // ignore
+      }
     }
   }
 
@@ -52,6 +68,7 @@
         accountArmoredPub,
         accountFingerprint: state.accountFingerprint,
         storedAtMs: Date.now(),
+        trustedDevice: readTrustedDeviceFlag(),
       }));
     } catch (_) {
       // Best effort only: if storage is unavailable, the vault still works in-memory.
@@ -59,13 +76,7 @@
   }
 
   function clearPersistedAccountCache() {
-    const s = storage();
-    if (!s) return;
-    try {
-      s.removeItem(PERSIST_KEY);
-    } catch (_) {
-      // ignore
-    }
+    clearAllPersistedCaches();
   }
 
   function readTrustedDeviceFlag() {
@@ -112,25 +123,28 @@
   }
 
   function readPersistedAccountCache() {
-    const s = storage();
-    if (!s) return null;
-    try {
-      const raw = s.getItem(PERSIST_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!parsed || parsed.version !== 1) {
-        clearPersistedAccountCache();
-        return null;
+    const stores = readTrustedDeviceFlag()
+      ? [globalThis.localStorage, globalThis.sessionStorage]
+      : [globalThis.sessionStorage, globalThis.localStorage];
+    for (const s of stores) {
+      if (!s) continue;
+      try {
+        const raw = s.getItem(PERSIST_KEY);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        if (!parsed || parsed.version !== 1) {
+          continue;
+        }
+        if (!parsed.accountArmoredPriv || !parsed.accountArmoredPub) {
+          continue;
+        }
+        return parsed;
+      } catch (_) {
+        continue;
       }
-      if (!parsed.accountArmoredPriv || !parsed.accountArmoredPub) {
-        clearPersistedAccountCache();
-        return null;
-      }
-      return parsed;
-    } catch (_) {
-      clearPersistedAccountCache();
-      return null;
     }
+    clearAllPersistedCaches();
+    return null;
   }
 
   async function fetchIdentityRows() {

@@ -8,6 +8,8 @@
 //      from the parent page via importScripts), strips MIME, tokenizes, and
 //      writes encrypted postings + a snippet doc into IndexedDB.
 //   3. UI posts {kind:'search', q, limit} and gets back ranked hits.
+
+import { htmlToPlainSearchText, validatedSameOriginScriptURL } from '../html-plaintext.js';
 //   4. UI posts {kind:'purge'} to wipe the local index (e.g. on identity rotate
 //      or when the user toggles indexing off in Settings → Search).
 //
@@ -80,7 +82,7 @@ async function handleInit(msg) {
     if (typeof openpgp !== 'undefined') {
       openpgpReady = true;
     } else if (msg.openpgpScriptUrl) {
-      importScripts(msg.openpgpScriptUrl);
+      importScripts(validatedSameOriginScriptURL(msg.openpgpScriptUrl, self.location.href));
       openpgpReady = true;
     }
   }
@@ -280,16 +282,7 @@ function mimeToText(bytes) {
   let body = sep > 0 ? text.slice(sep + 4) : text;
   const sigStart = body.indexOf('-----BEGIN PGP SIGNATURE-----');
   if (sigStart >= 0) body = body.slice(0, sigStart);
-  return body
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return htmlToPlainSearchText(body);
 }
 
 async function writePostings(messageId, terms, snippet) {

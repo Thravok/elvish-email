@@ -439,9 +439,11 @@ func (s *Store) DeleteUserOptInMetadata(ctx context.Context, userID uuid.UUID) e
 	).WithContext(ctx).Exec()
 }
 
-// SearchOptInMetadata returns message_ids whose consented fields contain any of the query tokens (case-insensitive).
+// SearchOptInMetadata returns message_ids whose metadata fields contain any of the query tokens (case-insensitive).
 // Implementation note: Scylla SASI/secondary indexes are not assumed; we scan the user's rows in-memory.
-// For very large mailboxes the worker should be configured to limit how many rows to scan.
+// Scanning stops after maxSearchScanRows regardless of match count.
+const maxSearchScanRows = 10000
+
 func (s *Store) SearchOptInMetadata(ctx context.Context, userID uuid.UUID, fields []string, q string, limit int) ([]uuid.UUID, error) {
 	if s == nil || s.sess == nil {
 		return nil, errors.New("scyllastore: nil")
@@ -462,7 +464,12 @@ func (s *Store) SearchOptInMetadata(ctx context.Context, userID uuid.UUID, field
 		from   string
 		toList []string
 	)
+	scanned := 0
 	for iter.Scan(&mid, &subj, &from, &toList) {
+		scanned++
+		if scanned > maxSearchScanRows {
+			break
+		}
 		if matchesQuery(q, subj, from, toList, wantSubject, wantFrom, wantTo) {
 			out = append(out, uuid.UUID(mid))
 			if len(out) >= limit {

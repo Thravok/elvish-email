@@ -232,7 +232,10 @@ const (
 func Sniff(body []byte) BodyKind {
 	trim := bytes.TrimLeft(body, " \r\n\t")
 	if bytes.HasPrefix(trim, []byte("-----BEGIN PGP MESSAGE-----")) {
-		return BodyArmoredMessage
+		if validateArmoredMessage(trim) {
+			return BodyArmoredMessage
+		}
+		return BodyCleartext
 	}
 	if bytes.HasPrefix(trim, []byte("-----BEGIN PGP SIGNED MESSAGE-----")) {
 		// Cleartext-signed mail is not ciphertext; do not treat as an encrypted blob.
@@ -240,15 +243,77 @@ func Sniff(body []byte) BodyKind {
 	}
 	// Lightweight MIME sniff for PGP/MIME (RFC 3156).
 	if bytes.Contains(body, []byte("multipart/encrypted")) && bytes.Contains(body, []byte("application/pgp-encrypted")) {
-		return BodyPGPMIME
-	}
-	// OpenPGP packet header byte: 0x84/0x85/0x86/0x88 etc. New format = 0xC0|tag.
-	if len(trim) > 0 {
-		b := trim[0]
-		// New-format packets always have bit 7 and bit 6 set: 0b11xxxxxx (>=0xC0).
-		if b >= 0xC0 || (b&0xC0) == 0x80 {
-			return BodyBinaryPGP
+		if validatePGPMIME(body) {
+			return BodyPGPMIME
 		}
+		return BodyCleartext
+	}
+	if validateBinaryPGP(trim) {
+		return BodyBinaryPGP
 	}
 	return BodyCleartext
+}
+
+// ValidateEncryptedBody reports whether body matches kind with structural OpenPGP validation.
+func ValidateEncryptedBody(body []byte, kind BodyKind) bool {
+	switch kind {
+	case BodyArmoredMessage:
+		return validateArmoredMessage(bytes.TrimLeft(body, " \r\n\t"))
+	case BodyBinaryPGP:
+		return validateBinaryPGP(bytes.TrimLeft(body, " \r\n\t"))
+	case BodyPGPMIME:
+		return validatePGPMIME(body)
+	default:
+		return false
+	}
+}
+
+func validateArmoredMessage(body []byte) bool {
+	block, err := armor.Decode(bytes.NewReader(body))
+	if err != nil || block == nil {
+		return false
+	}
+	if block.Type != "PGP MESSAGE" {
+		return false
+	}
+	return hasOpenPGPPacket(block.Body)
+}
+
+func validateBinaryPGP(body []byte) bool {
+	if len(body) == 0 {
+		return false
+	}
+	return hasOpenPGPPacket(bytes.NewReader(body))
+}
+
+func hasOpenPGPPacket(r io.Reader) bool {
+	pr := packet.NewReader(r)
+	for {
+		p, err := pr.Next()
+		if err == io.EOF {
+			return false
+		}
+		if err != nil {
+			return false
+		}
+		switch p.(type) {
+		case *packet.EncryptedKey, *packet.SymmetricallyEncrypted, *packet.Compressed, *packet.LiteralData:
+			return true
+		}
+	}
+}
+
+func validatePGPMIME(body []byte) bool {
+	if !bytes.Contains(body, []byte("multipart/encrypted")) || !bytes.Contains(body, []byte("application/pgp-encrypted")) {
+		return false
+	}
+	// Require a MIME boundary and a version parameter typical of RFC 3156.
+	lower := bytes.ToLower(body)
+	if !bytes.Contains(lower, []byte("boundary=")) {
+		return false
+	}
+	if !bytes.Contains(lower, []byte("version: 1")) && !bytes.Contains(lower, []byte("version:1")) {
+		return false
+	}
+	return true
 }

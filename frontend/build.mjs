@@ -52,6 +52,7 @@ async function main() {
     { entry: "admin-modals-entry.jsx", out: "admin-modals-bundle.js" },
     { entry: "admin-blog-entry.jsx", out: "admin-blog-bundle.js" },
     { entry: "admin-tools-preview-entry.jsx", out: "admin-tools-preview-bundle.js" },
+    { entry: "console-entry.jsx", out: "console-bundle.js" },
   ];
 
   for (const b of bundles) {

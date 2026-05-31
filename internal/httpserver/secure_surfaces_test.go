@@ -18,7 +18,12 @@ func TestSecureAppPageHeaders(t *testing.T) {
 		t.Fatalf("X-Frame-Options = %q", got)
 	}
 	csp := h.Get("Content-Security-Policy")
-	for _, want := range []string{"default-src 'self'", "frame-ancestors 'none'", "connect-src 'self'"} {
+	for _, want := range []string{
+		"default-src 'self'",
+		"frame-ancestors 'none'",
+		"connect-src 'self'",
+		"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+	} {
 		if !strings.Contains(csp, want) {
 			t.Fatalf("CSP missing %q: %s", want, csp)
 		}

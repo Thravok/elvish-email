@@ -34,7 +34,7 @@ func (s *Server) handleKeysAPI(w http.ResponseWriter, r *http.Request, p string)
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		s.apiKeysLookup(w, r)
+		s.apiKeysLookup(w, r, u)
 	case rest == "contacts":
 		if s.mailmeta == nil {
 			s.writeErr(w, http.StatusServiceUnavailable, "mail subsystem not configured")
@@ -71,7 +71,10 @@ func (s *Server) handleKeysAPI(w http.ResponseWriter, r *http.Request, p string)
 	}
 }
 
-func (s *Server) apiKeysLookup(w http.ResponseWriter, r *http.Request) {
+func (s *Server) apiKeysLookup(w http.ResponseWriter, r *http.Request, u *models.User) {
+	if !s.rateLimitKey(w, r, "keys_lookup", u.ID.String(), rateLimitKeyLookupPerHour, rateLimitKeyLookupWindow) {
+		return
+	}
 	email := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("email")))
 	if email == "" {
 		s.writeErr(w, http.StatusBadRequest, "email required")

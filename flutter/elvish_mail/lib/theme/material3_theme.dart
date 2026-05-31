@@ -67,7 +67,9 @@ class ElvishMaterial3Theme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withOpacity(brightness == Brightness.dark ? 0.35 : 0.5),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(
+          alpha: brightness == Brightness.dark ? 0.35 : 0.5,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -82,11 +84,6 @@ class ElvishMaterial3Theme {
           borderSide: BorderSide(color: colorScheme.error),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-      materialBannerTheme: MaterialBannerThemeData(
-        backgroundColor: colorScheme.errorContainer,
-        contentTextStyle: TextStyle(color: colorScheme.onErrorContainer),
-        dividerColor: Colors.transparent,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: colorScheme.primary,

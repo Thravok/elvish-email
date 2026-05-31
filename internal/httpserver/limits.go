@@ -2,6 +2,8 @@ package httpserver
 
 import (
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -14,9 +16,18 @@ const (
 
 	rateLimitProbePerHour = int64(120)
 	rateLimitProbeWindow  = time.Hour
+
+	rateLimitKeyLookupPerHour = int64(60)
+	rateLimitKeyLookupWindow  = time.Hour
 )
 
-// rateLimitOK enforces a Valkey-backed fixed window when configured. On Valkey errors it fails open and logs.
+func rateLimitFailClosed() bool {
+	v := strings.TrimSpace(strings.ToLower(os.Getenv("ELVISH_RATELIMIT_FAIL_CLOSED")))
+	return v == "1" || v == "true" || v == "yes"
+}
+
+// rateLimitOK enforces a Valkey-backed fixed window when configured.
+// On Valkey errors it fails open unless ELVISH_RATELIMIT_FAIL_CLOSED=1.
 func (s *Server) rateLimitOK(w http.ResponseWriter, r *http.Request, name string, max int64, window time.Duration) bool {
 	if s.rateLimit == nil {
 		return true
@@ -25,7 +36,7 @@ func (s *Server) rateLimitOK(w http.ResponseWriter, r *http.Request, name string
 	ok, err := s.rateLimit.Allow(r.Context(), name, id, max, window)
 	if err != nil {
 		s.log.Warn("ratelimit", "name", name, "err", err)
-		return true
+		return !rateLimitFailClosed()
 	}
 	if !ok {
 		s.writeErr(w, http.StatusTooManyRequests, "too many requests")
@@ -42,7 +53,7 @@ func (s *Server) rateLimitMailUser(w http.ResponseWriter, r *http.Request, userI
 	ok, err := s.rateLimit.Allow(r.Context(), "mail_api", userID, rateLimitMailPerHour, rateLimitMailWindow)
 	if err != nil {
 		s.log.Warn("ratelimit mail", "err", err)
-		return true
+		return !rateLimitFailClosed()
 	}
 	if !ok {
 		s.writeErr(w, http.StatusTooManyRequests, "too many requests")
@@ -59,7 +70,7 @@ func (s *Server) rateLimitKey(w http.ResponseWriter, r *http.Request, name, key 
 	ok, err := s.rateLimit.Allow(r.Context(), name, key, max, window)
 	if err != nil {
 		s.log.Warn("ratelimit key", "name", name, "err", err)
-		return true
+		return !rateLimitFailClosed()
 	}
 	if !ok {
 		s.writeErr(w, http.StatusTooManyRequests, "too many requests")

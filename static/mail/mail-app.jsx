@@ -1,6 +1,7 @@
 // ELVISH MAIL — brutalist encrypted mail client.
 // Real wiring: ElvishMailManifest for /api/v1/mail/*; ElvishKeyVault for header
 // + body decryption; ElvishMailUnlockModal for blocking re-derive-in-place.
+import { htmlToDisplayText } from "./html-plaintext.js";
 import React from "react";
 import { Icons, FOLDERS } from "./mail-icons.jsx";
 import { formatDate, formatFullDate, formatAttachmentSize } from "./lib/mail-format-helpers.js";
@@ -427,24 +428,6 @@ function parseHeaderBlock(headerBlock) {
     }
   }
   return { headers, totalHeaders, knownHeaders };
-}
-
-function htmlToDisplayText(html) {
-  return String(html || "")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<(br|\/p|\/div|\/li|\/tr|\/h[1-6])\b[^>]*>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, "\"")
-    .replace(/&#39;/gi, "'")
-    .replace(/\r/g, "")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
 }
 
 function splitMultipartBody(body, boundary) {
@@ -1090,25 +1073,20 @@ function Sidebar({
           <span className="mail-folder-name">Settings</span>
         </div>
         {isAdmin && (
-          <div
-            className={`mail-folder ${view === "admin" ? "active" : ""}`}
-            onClick={() => onViewChange("admin")}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onViewChange("admin");
-              }
-            }}
+          <a
+            className="mail-folder"
+            href={(typeof window !== "undefined" && window.ELVISH_CONSOLE_ORIGIN) || "http://127.0.0.1:8780"}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "none", color: "inherit" }}
           >
             <span className="mail-folder-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
             </span>
-            <span className="mail-folder-name">Admin</span>
-          </div>
+            <span className="mail-folder-name">Console</span>
+          </a>
         )}
       </nav>
 

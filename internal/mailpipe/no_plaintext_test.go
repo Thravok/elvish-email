@@ -69,9 +69,9 @@ func TestSniffPGPCleartextDetection(t *testing.T) {
 		want openpgp.BodyKind
 	}{
 		{"cleartext", []byte("hello world\n"), openpgp.BodyCleartext},
-		{"armored msg", []byte("-----BEGIN PGP MESSAGE-----\n\nfake\n-----END PGP MESSAGE-----\n"), openpgp.BodyArmoredMessage},
+		{"fake armored msg", []byte("-----BEGIN PGP MESSAGE-----\n\nfake\n-----END PGP MESSAGE-----\n"), openpgp.BodyCleartext},
 		{"signed cleartext", []byte("-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\nx\n-----BEGIN PGP SIGNATURE-----\nabc\n-----END PGP SIGNATURE-----\n"), openpgp.BodyCleartext},
-		{"binary pgp", []byte{0xC4, 0x01, 0x02, 0x03}, openpgp.BodyBinaryPGP},
+		{"invalid binary pgp", []byte{0xC4, 0x01, 0x02, 0x03}, openpgp.BodyCleartext},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

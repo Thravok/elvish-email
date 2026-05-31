@@ -7,6 +7,8 @@
 // The body is NEVER returned in /messages — it lives in object storage and is
 // fetched lazily via /messages/{id}/blob when the user opens a thread.
 
+import { randomAlphanumeric } from './html-plaintext.js';
+
 const API = '/api/v1/mail';
 
 export async function fetchManifests(folder = 'inbox', { limit = 50, before } = {}) {
@@ -478,9 +480,7 @@ function buildGeneratedIdentityAddress({ type, domain, localPart, name }) {
     const tag = validatePlusTagFromName(name);
     return { email: `${base}+${tag}@${dom}`, expiresAt: '' };
   }
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let rand = '';
-  for (let i = 0; i < 14; i++) rand += chars[Math.floor(Math.random() * chars.length)];
+  const rand = randomAlphanumeric(14);
   return {
     email: `d_${rand}@${dom}`,
     expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),

@@ -68,6 +68,11 @@ func adminEmailConfigured(email string) bool {
 	return ok
 }
 
+func legacyConsoleEnabled() bool {
+	v := strings.TrimSpace(strings.ToLower(os.Getenv("ELVISH_LEGACY_CONSOLE")))
+	return v == "1" || v == "true" || v == "yes"
+}
+
 func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet && r.URL.Path == "/api/healthz" {
 		w.Header().Set("Cache-Control", "no-store")
@@ -136,53 +141,41 @@ func (s *Server) handleAPI(w http.ResponseWriter, r *http.Request) {
 	case p == "v1/account" && r.Method == http.MethodDelete:
 		s.apiAccountDelete(w, r)
 	case p == "pgp/keys" && r.Method == http.MethodPost:
+		if !legacyConsoleEnabled() {
+			http.NotFound(w, r)
+			return
+		}
 		s.apiPGPUpload(w, r)
 	case p == "migrate/posts" && r.Method == http.MethodPost:
+		if !legacyConsoleEnabled() {
+			http.NotFound(w, r)
+			return
+		}
 		s.apiMigratePosts(w, r)
 	case p == "posts" && r.Method == http.MethodGet:
+		if !legacyConsoleEnabled() {
+			http.NotFound(w, r)
+			return
+		}
 		s.apiPostsList(w, r)
 	case p == "posts" && r.Method == http.MethodPost:
+		if !legacyConsoleEnabled() {
+			http.NotFound(w, r)
+			return
+		}
 		s.apiPostUpsert(w, r)
 	case p == "tools/calls" && r.Method == http.MethodGet:
 		s.apiToolCalls(w, r)
 	case p == "uptime.json" && r.Method == http.MethodGet:
 		s.apiUptime(w, r)
-	case p == "admin/uptime" && r.Method == http.MethodGet:
-		s.apiAdminUptimeGet(w, r)
-	case p == "admin/uptime" && r.Method == http.MethodPost:
-		s.apiAdminUptimePost(w, r)
-	case p == "admin/uptime/test-probe" && r.Method == http.MethodPost:
-		s.apiAdminUptimeTestProbe(w, r)
-	case p == "admin/uptime/runs" && r.Method == http.MethodDelete:
-		s.apiAdminUptimeDeleteRuns(w, r)
-	case p == "admin/telemetry" && r.Method == http.MethodGet:
-		s.apiAdminTelemetryGet(w, r)
-	case p == "admin/telemetry" && r.Method == http.MethodPost:
-		s.apiAdminTelemetryPost(w, r)
-	case p == "admin/telemetry/export" && r.Method == http.MethodPost:
-		s.apiAdminTelemetryExport(w, r)
-	case p == "admin/auth-captcha" && r.Method == http.MethodGet:
-		s.apiAdminAuthCaptchaGet(w, r)
-	case p == "admin/auth-captcha" && r.Method == http.MethodPost:
-		s.apiAdminAuthCaptchaPost(w, r)
-	case p == "admin/performance" && r.Method == http.MethodGet:
-		s.apiAdminPerformanceGet(w, r)
-	case p == "admin/performance/export" && r.Method == http.MethodPost:
-		s.apiAdminPerformanceExport(w, r)
+	case strings.HasPrefix(p, "admin/"):
+		if !legacyConsoleEnabled() {
+			http.NotFound(w, r)
+			return
+		}
+		s.RoutePlatformConsoleAPI(w, r, "/"+strings.TrimPrefix(p, "admin/"))
 	case p == "telemetry/browser" && r.Method == http.MethodPost:
 		s.apiBrowserTelemetry(w, r)
-	case p == "admin/site/home" && r.Method == http.MethodPut:
-		s.apiAdminSiteHomePut(w, r)
-	case strings.HasPrefix(p, "admin/users"):
-		s.handleAdminUsersAPI(w, r, strings.TrimPrefix(p, "admin/users"))
-	case strings.HasPrefix(p, "admin/outbox"):
-		s.handleAdminOutboxAPI(w, r, strings.TrimPrefix(p, "admin/outbox"))
-	case strings.HasPrefix(p, "admin/domains"):
-		s.handleAdminDomainsAPI(w, r, strings.TrimPrefix(p, "admin/domains"))
-	case strings.HasPrefix(p, "admin/test"):
-		s.handleAdminTestAPI(w, r, strings.TrimPrefix(p, "admin/test"))
-	case strings.HasPrefix(p, "admin/system-mail"):
-		s.handleAdminSystemMailAPI(w, r, strings.TrimPrefix(p, "admin/system-mail"))
 	// v1/mailbox must precede v1/mail: strings.HasPrefix("v1/mailbox/…", "v1/mail") is true.
 	case strings.HasPrefix(p, "v1/mailbox"):
 		s.handleMailboxAPI(w, r, p)
@@ -612,6 +605,17 @@ func (s *Server) requireUser(w http.ResponseWriter, r *http.Request) (*models.Us
 }
 
 func (s *Server) requireAdmin(w http.ResponseWriter, r *http.Request) (*models.User, bool) {
+	if st, ok := StaffFromContext(r.Context()); ok {
+		if st.DisabledAt != nil || st.PasswordHash == "$disabled$" {
+			s.writeErr(w, http.StatusForbidden, "staff account disabled")
+			return nil, false
+		}
+		if !staffRoleAtLeast(st.Role, models.StaffRoleOperator) {
+			s.writeErr(w, http.StatusForbidden, "operator access required")
+			return nil, false
+		}
+		return nil, true
+	}
 	u, ok := s.requireUser(w, r)
 	if !ok {
 		return nil, false
@@ -719,7 +723,7 @@ func (s *Server) apiPostUpsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	mdr := markdown.NewRenderer()
-	parsed, skip, err := blog.ParsePostMarkdown("api/"+body.Slug+".md", []byte(body.BodyMarkdown), mdr, nil, nil)
+	parsed, skip, err := blog.ParsePostMarkdown("", "api/"+body.Slug+".md", []byte(body.BodyMarkdown), mdr, nil, nil)
 	if err != nil {
 		s.log.Warn("post markdown parse", "slug", body.Slug, "err", err)
 		s.writeErr(w, http.StatusBadRequest, "invalid post markdown")
