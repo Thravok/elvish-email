@@ -12,12 +12,18 @@ import (
 func main() {
 	addr := flag.String("addr", ":8765", "listen address when ELVISH_HTTP_ENABLED=1 (health checks)")
 	root := flag.String("root", ".", "project root (data/ keys)")
+	healthcheck := flag.Bool("healthcheck", false, "probe SMTP or /api/healthz on the running server and exit")
 	flag.Parse()
 
-	if err := elvishboot.Run(elvishboot.RoleMTA, elvishboot.Flags{
-		Addr: *addr,
-		Root: *root,
-	}); err != nil {
+	flags := elvishboot.Flags{Addr: *addr, Root: *root}
+	if *healthcheck {
+		if err := elvishboot.RunHealthcheck(elvishboot.RoleMTA, flags); err != nil {
+			os.Exit(1)
+		}
+		return
+	}
+
+	if err := elvishboot.Run(elvishboot.RoleMTA, flags); err != nil {
 		slog.Default().Error("elvishmta", "err", err)
 		os.Exit(1)
 	}

@@ -15,5 +15,8 @@ WORKDIR /app
 COPY --from=build /out/elvishmta /usr/local/bin/elvishmta
 COPY --from=build --chown=nonroot:nonroot /out/data /app/data
 USER nonroot:nonroot
+EXPOSE 8765
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+	CMD ["/usr/local/bin/elvishmta", "-addr", ":8765", "-root", "/app", "-healthcheck"]
 ENTRYPOINT ["/usr/local/bin/elvishmta"]
-CMD ["-root", "/app"]
+CMD ["-addr", ":8765", "-root", "/app"]

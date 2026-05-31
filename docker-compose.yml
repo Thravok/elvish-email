@@ -162,6 +162,12 @@ services:
       - BLOB_S3_FORCE_PATH_STYLE=${BLOB_S3_FORCE_PATH_STYLE:-1}
     volumes:
       - elvish_data:/app/data
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/elvishapi", "-root", "/app", "-addr", ":8765", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
 
   web:
     profiles: [full, staging]
@@ -175,7 +181,14 @@ services:
     ports:
       - "8081:8080"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   admin:
     profiles: [full, staging]
@@ -188,7 +201,14 @@ services:
     ports:
       - "8082:8080"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   mail-mta:
     profiles: [full, staging]
@@ -209,9 +229,9 @@ services:
         condition: service_completed_successfully
       minio-init:
         condition: service_completed_successfully
-    command: ["/usr/local/bin/elvishmta", "-root", "/app"]
+    command: ["/usr/local/bin/elvishmta", "-addr", ":8765", "-root", "/app"]
     environment:
-      - ELVISH_HTTP_ENABLED=0
+      - ELVISH_HTTP_ENABLED=1
       - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-localhost.test}
       - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-localhost.test}
       - ELVISH_SMTP_ADDR=:25
@@ -232,6 +252,12 @@ services:
     ports:
       - "2525:25"
       - "2587:587"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/elvishmta", "-addr", ":8765", "-root", "/app", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
 
   docs:
     profiles: [docs, full]
@@ -241,6 +267,12 @@ services:
     container_name: elvish-docs
     ports:
       - "8766:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   worker:
     profiles: [full, staging]
@@ -277,6 +309,12 @@ services:
       - BLOB_S3_FORCE_PATH_STYLE=${BLOB_S3_FORCE_PATH_STYLE:-1}
     volumes:
       - elvish_data:/app/data
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/elvishworker", "-root", "/app", "-healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
 
 volumes:
   elvish_data:

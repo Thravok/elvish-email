@@ -89,13 +89,27 @@ Set `ELVISH_COOKIE_DOMAIN` (e.g. `.example.com`) when `web`, `admin`, and `api` 
 - Mount shared `elvish_data` for DKIM/relay keys (also used by `worker` for outbound signing).
 - One `mail-mta` per host is sufficient; a second MTA on the same machine cannot both bind port 25.
 
-### 6. Health checks (Coolify UI)
+### 6. Health checks
 
-| Service | Path | Port |
-|---------|------|------|
-| `api` | `/api/healthz` | 8765 |
+Compose defines Docker healthchecks for every long-running service. Coolify uses them for deploy readiness and restarts; you can mirror the same paths in the Coolify UI for proxy health probes.
 
-`mail-mta` has HTTP disabled by default (`ELVISH_HTTP_ENABLED=0`). Use TCP checks on 25/587 or set `ELVISH_HTTP_ENABLED=1` for HTTP health on 8765.
+| Service | Probe | Notes |
+|---------|-------|-------|
+| `api` | `GET /api/healthz` on **8765** | Binary `-healthcheck` (distroless-safe) |
+| `web` | `GET /healthz` on **8080** | nginx static tier |
+| `admin` | `GET /healthz` on **8080** | nginx operator tier |
+| `worker` | `-healthcheck` | Pings SQL, Valkey, and Scylla when configured |
+| `mail-mta` | `-healthcheck` on internal **8765** | `ELVISH_HTTP_ENABLED=1` for `/api/healthz` only; SMTP stays on 25/587 |
+| `docs` (profile) | `GET /healthz` on **8080** | Optional docs site |
+| `cockroach` | `cockroach sql -e 'SELECT 1'` | Internal |
+| `valkey` | `redis-cli PING` | Internal |
+| `scylla` | CQL `system.local` | Long `start_period` (~3 min) |
+| `minio` | — | Scratch image; readiness via **`minio-init`** one-shot |
+| `scylla-init`, `minio-init` | — | `exclude_from_hc: true`; gate app startup |
+
+`web` and `admin` wait for **`api` healthy** before starting. App tiers wait for **`minio-init` completed** so the blob bucket exists.
+
+After changing healthcheck code, rebuild/publish GHCR images (`ELVISH_IMAGE_TAG`) before redeploying Coolify.
 
 ### 7. Scaling `api`
 

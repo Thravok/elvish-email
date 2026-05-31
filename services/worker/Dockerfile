@@ -15,5 +15,7 @@ WORKDIR /app
 COPY --from=build /out/elvishworker /usr/local/bin/elvishworker
 COPY --from=build --chown=nonroot:nonroot /out/data /app/data
 USER nonroot:nonroot
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+	CMD ["/usr/local/bin/elvishworker", "-root", "/app", "-healthcheck"]
 ENTRYPOINT ["/usr/local/bin/elvishworker"]
 CMD ["-root", "/app"]

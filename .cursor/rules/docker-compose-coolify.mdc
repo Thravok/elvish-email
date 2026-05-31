@@ -75,8 +75,9 @@ Prefer `configs:` with `content: |` for generated config files when bind-mount c
 
 - **`api`** (port 8765): JSON API + SSR (`elvishapi`, `ELVISH_SERVE_STATIC=0`); assign a Coolify domain; defaults from `SERVICE_URL_API_8765`.
 - **`web`** / **`admin`** (port 8080): nginx static tiers (`apps/web`, `apps/admin`); assign separate Coolify domains; defaults on `api` from `SERVICE_URL_WEB_8080` and `SERVICE_URL_ADMIN_8080`.
-- **`mail-mta`**: host `ports` for 25/587 — HTTP proxy cannot carry SMTP.
-- **`worker`**, **`cockroach`**, **`valkey`**, **`scylla`**, **`minio`**: internal only — no `ports:`, no Coolify domain, and **no** `SERVICE_URL_*` / `SERVICE_FQDN_*` on the service (Coolify treats those as HTTP exposure). MinIO credentials use `SERVICE_USER_MINIO` / `SERVICE_PASSWORD_64_MINIO` declared on `api` (generated from the `minio` service name).
+- **`mail-mta`**: host `ports` for 25/587 — HTTP proxy cannot carry SMTP. Internal `:8765` serves `/api/healthz` when `ELVISH_HTTP_ENABLED=1` (compose default); not published to the host.
+- **`worker`**, **`cockroach`**, **`valkey`**, **`scylla`**, **`minio`**: internal only — no `ports:`, no Coolify domain, and **no** `SERVICE_URL_*` / `SERVICE_FQDN_*` on the service (Coolify treats those as HTTP exposure). MinIO credentials use `SERVICE_USER_MINIO` / `SERVICE_PASSWORD_64_MINIO` declared on `api` (generated from the `minio` service name). MinIO readiness is gated by **`minio-init`**, not an in-container healthcheck (scratch image).
+- Compose **`healthcheck`** blocks on app tiers use `-healthcheck` on Go binaries (distroless-safe) or `wget /healthz` on nginx images — see [docs/deploy-coolify.md](docs/deploy-coolify.md).
 - Keep dev-only `ports:` in `docker-compose.yml`; production exposure goes through Coolify domains or intentional host binds in `docker-compose.coolify.yaml`.
 
 ## Predefined networks

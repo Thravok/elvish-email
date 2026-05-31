@@ -17,7 +17,7 @@ services:
       scylla:
         condition: service_healthy
       minio:
-        condition: service_healthy
+        condition: service_started
       scylla-init:
         condition: service_completed_successfully
       minio-init:
@@ -64,6 +64,12 @@ services:
       - ELVISH_ALLOW_EMPTY_DB=0
     volumes:
       - elvish_data:/app/data
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/elvishapi", "-root", "/app", "-addr", ":8765", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
     restart: unless-stopped
 
   web:
@@ -76,12 +82,18 @@ services:
         read_only: true
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
     environment:
       - SERVICE_URL_WEB_8080
       - SERVICE_FQDN_WEB
       - ELVISH_API_BASE=${ELVISH_API_BASE:-$SERVICE_URL_API_8765}
       - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-$SERVICE_URL_ADMIN_8080}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
 
   admin:
@@ -94,11 +106,17 @@ services:
         read_only: true
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
     environment:
       - SERVICE_URL_ADMIN_8080
       - SERVICE_FQDN_ADMIN
       - ELVISH_API_BASE=${ELVISH_API_BASE:-$SERVICE_URL_API_8765}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
 
   worker:
@@ -112,7 +130,7 @@ services:
       scylla:
         condition: service_healthy
       minio:
-        condition: service_healthy
+        condition: service_started
       scylla-init:
         condition: service_completed_successfully
       minio-init:
@@ -141,6 +159,12 @@ services:
       - ELVISH_ALLOW_EMPTY_DB=0
     volumes:
       - elvish_data:/app/data
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/elvishworker", "-root", "/app", "-healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
     restart: unless-stopped
 
   # Optional — not in default deploy (Coolify cannot build from partial checkout paths).
@@ -148,11 +172,17 @@ services:
   docs:
     profiles: [docs]
     image: ghcr.io/thravok/elvish-email/docs:${ELVISH_IMAGE_TAG:-main}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
 
   mail-mta:
     image: ghcr.io/thravok/elvish-email/mta:${ELVISH_IMAGE_TAG:-main}
-    command: ["/usr/local/bin/elvishmta", "-root", "/app"]
+    command: ["/usr/local/bin/elvishmta", "-addr", ":8765", "-root", "/app"]
     depends_on:
       cockroach:
         condition: service_healthy
@@ -161,7 +191,7 @@ services:
       scylla:
         condition: service_healthy
       minio:
-        condition: service_healthy
+        condition: service_started
       scylla-init:
         condition: service_completed_successfully
       minio-init:
@@ -185,7 +215,7 @@ services:
       - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
       - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
       - BLOB_S3_FORCE_PATH_STYLE=1
-      - ELVISH_HTTP_ENABLED=${ELVISH_HTTP_ENABLED:-0}
+      - ELVISH_HTTP_ENABLED=1
       - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-}
       - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-}
       - ELVISH_SMTP_ADDR=${ELVISH_SMTP_ADDR:-:25}
@@ -200,6 +230,12 @@ services:
     ports:
       - "25:25"
       - "587:587"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/elvishmta", "-addr", ":8765", "-root", "/app", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
     restart: unless-stopped
 
   # Internal only — do not declare SERVICE_URL_* / SERVICE_FQDN_* (Coolify would offer a public domain).
@@ -307,16 +343,6 @@ services:
       - MINIO_ROOT_PASSWORD=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
     volumes:
       - elvish_minio_data:/data
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mc alias set health http://localhost:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD >/dev/null 2>&1 && mc admin info health >/dev/null 2>&1",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 15s
     restart: unless-stopped
 
   minio-init:
@@ -324,7 +350,7 @@ services:
     exclude_from_hc: true
     depends_on:
       minio:
-        condition: service_healthy
+        condition: service_started
     environment:
       - SERVICE_USER_MINIO
       - SERVICE_PASSWORD_64_MINIO

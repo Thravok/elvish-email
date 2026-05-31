@@ -19,5 +19,7 @@ COPY --chown=nonroot:nonroot services/api/static /app/services/api/static
 ENV ELVISH_SERVE_STATIC=0
 USER nonroot:nonroot
 EXPOSE 8765
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+	CMD ["/usr/local/bin/elvishapi", "-root", "/app", "-addr", ":8765", "-healthcheck"]
 ENTRYPOINT ["/usr/local/bin/elvishapi"]
 CMD ["-addr", ":8765", "-root", "/app"]

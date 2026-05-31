@@ -11,11 +11,18 @@ import (
 
 func main() {
 	root := flag.String("root", ".", "project root (data/ keys)")
+	healthcheck := flag.Bool("healthcheck", false, "probe configured SQL/Valkey/Scylla backends and exit")
 	flag.Parse()
 
-	if err := elvishboot.Run(elvishboot.RoleWorker, elvishboot.Flags{
-		Root: *root,
-	}); err != nil {
+	flags := elvishboot.Flags{Root: *root}
+	if *healthcheck {
+		if err := elvishboot.RunHealthcheck(elvishboot.RoleWorker, flags); err != nil {
+			os.Exit(1)
+		}
+		return
+	}
+
+	if err := elvishboot.Run(elvishboot.RoleWorker, flags); err != nil {
 		slog.Default().Error("elvishworker", "err", err)
 		os.Exit(1)
 	}
