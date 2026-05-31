@@ -1,27 +1,65 @@
-# Flutter / Dart
-.dart_tool/
-.packages
-.pub-cache/
-.pub/
-build/
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ / Android Studio
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# Android
+# VS Code (uncomment to ignore local launch configs)
+# .vscode/
+
+# Flutter / Dart / Pub
+**/doc/api/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication / obfuscation
+app.*.symbols
+app.*.map.json
+
+# Android build outputs
+/android/app/debug
+/android/app/profile
+/android/app/release
+*.apk
+*.aab
+
+# Android local / generated
 **/local.properties
 **/captures/
 **/.cxx/
 **/.gradle/
 **/gradle-app.setting
+**/GeneratedPluginRegistrant.java
+android/key.properties
+*.jks
 *.keystore
 !debug.keystore
 
-# Generated plugin registrant (flutter create / pub get)
-.flutter-plugins
-.flutter-plugins-dependencies
-**/GeneratedPluginRegistrant.java
-
-# iOS (if generated later)
+# iOS (when added)
 **/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*

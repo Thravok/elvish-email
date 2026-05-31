@@ -57,11 +57,14 @@ IOS/Config/Local.xcconfig
 .DS_Store
 Thumbs.db
 
-# Flutter (see also flutter/elvish_mail/.gitignore)
+# Flutter (authoritative ignore rules: flutter/elvish_mail/.gitignore)
 flutter/**/.dart_tool/
 flutter/**/build/
 flutter/**/.flutter-plugins
 flutter/**/.flutter-plugins-dependencies
+flutter/**/android/.gradle/
+flutter/**/android/local.properties
+flutter/**/*.iml
 
 # Standalone binary names (go build -o …)
 /elvishmailtest
