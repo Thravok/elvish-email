@@ -1,7 +1,9 @@
 FROM nginx:1.27-alpine
-ARG ELVISH_API_BASE=
 COPY apps/admin /usr/share/nginx/html
-RUN printf '%s\n' "window.__ELVISH_API_BASE__='${ELVISH_API_BASE}';" > /usr/share/nginx/html/shared/api-config.js
 COPY docker/nginx/admin.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx/write-admin-api-config.sh /runtime/write-admin-api-config.sh
+RUN chmod +x /runtime/write-admin-api-config.sh
 EXPOSE 8080
-HEALTHCHECK CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=5 \
+	CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1
+ENTRYPOINT ["/runtime/write-admin-api-config.sh"]

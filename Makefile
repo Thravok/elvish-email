@@ -14,6 +14,7 @@ define DEV_ENV_EXPORTS
 	export COCKROACH_DSN="$${COCKROACH_DSN:-postgres://root@127.0.0.1:26257/defaultdb?sslmode=disable}"; \
 	export VALKEY_ADDR="$${VALKEY_ADDR:-127.0.0.1:6379}"; \
 	export ELVISH_AUTO_GEN_MFA_KEY="$${ELVISH_AUTO_GEN_MFA_KEY:-1}"; \
+	export ELVISH_AUTO_GEN_DKIM_KEY="$${ELVISH_AUTO_GEN_DKIM_KEY:-1}"; \
 	if [ "$${SKIP_MAIL_BACKENDS:-}" != "1" ]; then \
 		export SCYLLA_HOSTS="$${SCYLLA_HOSTS:-127.0.0.1:9042}"; \
 		export SCYLLA_KEYSPACE="$${SCYLLA_KEYSPACE:-elvish_mail}"; \
@@ -41,7 +42,7 @@ openapi:
 
 openapi-check:
 	go run ./tools/apiroutes -check
-.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e test-flutter test-ios check-clients vuln bench-smoke check dev dev-api dev-mta dev-worker dev-api-once dev-mta-once dev-worker-once compose-up
+.PHONY: fmt vet lint test test-race test-integration test-e2e test-mail-e2e test-flutter test-ios check-clients vuln bench-smoke check dev dev-api dev-mta dev-worker dev-api-once dev-mta-once dev-worker-once compose-up compose-coolify-config
 
 FLUTTER_APP ?= flutter/elvish_mail
 IOS_SCHEME ?= IOS
@@ -131,6 +132,9 @@ compose-up:
 	  "Docs:  http://127.0.0.1:8766 (MkDocs static site)" \
 	  "SMTP:  localhost:2525 / :2587" \
 	  "worker: mail outbox + sweepers"
+
+compose-coolify-config:
+	@bash scripts/validate-coolify-compose.sh
 
 # MkDocs Material static site from docs/ (see docs-site/mkdocs.yml, docker/docs/Dockerfile).
 docs-stage:

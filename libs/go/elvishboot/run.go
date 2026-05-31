@@ -311,6 +311,9 @@ func Run(role Role, flags Flags) error {
 		var signer *dkim.Signer
 		smtpTLSConfig := smtpServerTLSConfig(logger)
 		outboundSMTPClientTLS := smtpClientTLSConfig()
+		if err := maybeBootstrapDKIMKey(flags.Root, mailDomain, logger); err != nil {
+			return fmt.Errorf("dkim key bootstrap: %w", err)
+		}
 		dkimSelector, dkimDomain, dkimKeyPath, _ := dkimSettingsForRoot(flags.Root, mailDomain)
 		if sqlStore != nil {
 			doc, derr := sqlStore.GetAdminMailSettings(ctx)

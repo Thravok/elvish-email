@@ -30,9 +30,9 @@ Coolify **pulls** pre-built role images (no on-server Go/nginx builds for app ti
 
 Published on every push to `main` ([`.github/workflows/docker-publish.yml`](../.github/workflows/docker-publish.yml)). Set **`ELVISH_IMAGE_TAG`** in Coolify to pin another tag (e.g. `v1.2.3` or a commit SHA).
 
-`web` and `admin` write `shared/api-config.js` at container start from `ELVISH_API_BASE` / `ELVISH_ADMIN_ORIGIN` (defaults use Coolify `$SERVICE_URL_*` magic vars). The repo still supplies bind-mounted init scripts (`scylla-init`, `minio-init`, nginx entrypoints).
+`web` and `admin` write `shared/api-config.js` at container start from `ELVISH_API_BASE` / `ELVISH_ADMIN_ORIGIN` (defaults use Coolify `$SERVICE_URL_*` magic vars). Entrypoint scripts are **baked into the GHCR images** — no bind mount required on the Coolify host. The repo still supplies bind-mounted init scripts for **`scylla-init`** only.
 
-`docs` is **off by default** (compose profile `docs`). Image: `ghcr.io/thravok/elvish-email/docs:main` after CI publishes it. Enable with `COMPOSE_PROFILES=docs` in Coolify only if you want the docs site.
+`docs` is **off by default** (compose profile `docs`). Image: `ghcr.io/thravok/elvish-email/docs:main` after CI publishes it. Enable with `COMPOSE_PROFILES=docs` in Coolify **before** assigning a docs domain; otherwise the container stays **Exited**.
 
 If packages are private, add a GHCR registry credential in Coolify before deploy.
 
@@ -122,10 +122,20 @@ Compose defines Docker healthchecks for every long-running service. Coolify uses
 | `cockroach` | `cockroach sql -e 'SELECT 1'` | Internal |
 | `valkey` | `redis-cli PING` | Internal |
 | `scylla` | CQL `system.local` | Long `start_period` (~3 min) |
-| `minio` | — | Scratch image; readiness via **`minio-init`** one-shot |
+| `minio` | `GET /minio/health/live` on **9000** | Internal; curl/wget fallback in compose |
 | `scylla-init`, `minio-init` | — | `exclude_from_hc: true`; gate app startup |
 
-`web` and `admin` wait for **`api` healthy** before starting. App tiers wait for **`minio-init` completed** so the blob bucket exists.
+`web` and `admin` start independently of `api` (static nginx + runtime `api-config.js`). App tiers wait for **`minio-init` completed** so the blob bucket exists.
+
+### Troubleshooting deploy stuck on `web` / `admin`
+
+Symptoms: `api` and `worker` are **healthy**, but `web` / `admin` show **Starting (unknown)**.
+
+1. **Redeploy after GHCR publish** — web/admin entrypoint scripts must be in the image (`web`/`admin` tags newer than the bind-mount-only era).
+2. **Confirm domains** — assign `https://web.example.com:8080`, `https://admin.example.com:8080`, and `https://api.example.com:8765` so `SERVICE_URL_*` magic vars populate `ELVISH_API_BASE`.
+3. **Check container logs** — `nginx -t` runs at start; a bad config or missing `shared/` dir exits before `/healthz` is reachable.
+4. **Do not assign an HTTP domain to `mail-mta`** — SMTP uses host ports 25/587 only; an accidental HTTPS domain can confuse Coolify health for that service.
+5. **`docs` Exited** — expected unless `COMPOSE_PROFILES=docs` is set; remove the docs domain or enable the profile.
 
 After changing healthcheck code, rebuild/publish GHCR images (`ELVISH_IMAGE_TAG`) before redeploying Coolify.
 
@@ -157,7 +167,9 @@ Compose env syntax follows [`.cursor/rules/docker-compose-coolify.mdc`](../.curs
 
 ## Init jobs
 
-`scylla-init` and `minio-init` use `exclude_from_hc: true` so one-shot containers do not fail stack health.
+`scylla-init` and `minio-init` use `exclude_from_hc: true` so one-shot containers do not fail stack health. Coolify strips that field before Docker runs it; validate the file locally with `make compose-coolify-config` (strips Coolify-only keys and runs `docker compose config`).
+
+`minio` exposes an internal healthcheck on `/minio/health/live`; app tiers wait for `minio` **healthy** (not merely started) before boot.
 
 ## Related
 

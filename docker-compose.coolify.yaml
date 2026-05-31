@@ -13,7 +13,7 @@
 services:
   api:
     image: ghcr.io/thravok/elvish-email/api:${ELVISH_IMAGE_TAG:-main}
-    command: ["/usr/local/bin/elvishapi", "-addr", ":8765", "-root", "/app"]
+    command: ["-addr", ":8765", "-root", "/app"]
     depends_on:
       cockroach:
         condition: service_healthy
@@ -22,7 +22,7 @@ services:
       scylla:
         condition: service_healthy
       minio:
-        condition: service_started
+        condition: service_healthy
       scylla-init:
         condition: service_completed_successfully
       minio-init:
@@ -80,15 +80,6 @@ services:
 
   web:
     image: ghcr.io/thravok/elvish-email/web:${ELVISH_IMAGE_TAG:-main}
-    entrypoint: ["sh", "/runtime/write-api-config.sh"]
-    volumes:
-      - type: bind
-        source: ./docker/nginx/write-api-config.sh
-        target: /runtime/write-api-config.sh
-        read_only: true
-    depends_on:
-      api:
-        condition: service_healthy
     environment:
       - SERVICE_URL_WEB_8080
       - SERVICE_FQDN_WEB
@@ -99,24 +90,15 @@ services:
       - ELVISH_API_BASE=${ELVISH_API_BASE:-${SERVICE_URL_API_8765:?}}
       - ELVISH_ADMIN_ORIGIN=${ELVISH_ADMIN_ORIGIN:-${SERVICE_URL_ADMIN_8080:?}}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
       interval: 30s
       timeout: 5s
-      retries: 3
-      start_period: 15s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   admin:
     image: ghcr.io/thravok/elvish-email/admin:${ELVISH_IMAGE_TAG:-main}
-    entrypoint: ["sh", "/runtime/write-admin-api-config.sh"]
-    volumes:
-      - type: bind
-        source: ./docker/nginx/write-admin-api-config.sh
-        target: /runtime/write-admin-api-config.sh
-        read_only: true
-    depends_on:
-      api:
-        condition: service_healthy
     environment:
       - SERVICE_URL_ADMIN_8080
       - SERVICE_FQDN_ADMIN
@@ -124,16 +106,16 @@ services:
       - SERVICE_FQDN_API
       - ELVISH_API_BASE=${ELVISH_API_BASE:-${SERVICE_URL_API_8765:?}}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
       interval: 30s
       timeout: 5s
-      retries: 3
-      start_period: 15s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   worker:
     image: ghcr.io/thravok/elvish-email/worker:${ELVISH_IMAGE_TAG:-main}
-    command: ["/usr/local/bin/elvishworker", "-root", "/app"]
+    command: ["-root", "/app"]
     depends_on:
       cockroach:
         condition: service_healthy
@@ -142,7 +124,7 @@ services:
       scylla:
         condition: service_healthy
       minio:
-        condition: service_started
+        condition: service_healthy
       scylla-init:
         condition: service_completed_successfully
       minio-init:
@@ -189,16 +171,16 @@ services:
       - SERVICE_URL_DOCS_8080
       - SERVICE_FQDN_DOCS
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
       interval: 30s
       timeout: 5s
-      retries: 3
-      start_period: 15s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   mail-mta:
     image: ghcr.io/thravok/elvish-email/mta:${ELVISH_IMAGE_TAG:-main}
-    command: ["/usr/local/bin/elvishmta", "-addr", ":8765", "-root", "/app"]
+    command: ["-addr", ":8765", "-root", "/app"]
     depends_on:
       cockroach:
         condition: service_healthy
@@ -207,7 +189,7 @@ services:
       scylla:
         condition: service_healthy
       minio:
-        condition: service_started
+        condition: service_healthy
       scylla-init:
         condition: service_completed_successfully
       minio-init:
@@ -371,6 +353,12 @@ services:
       - MINIO_ROOT_PASSWORD=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO:?}}
     volumes:
       - elvish_minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null || wget -q --spider http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 15s
     restart: unless-stopped
 
   minio-init:
@@ -378,7 +366,7 @@ services:
     exclude_from_hc: true
     depends_on:
       minio:
-        condition: service_started
+        condition: service_healthy
     environment:
       - SERVICE_USER_MINIO
       - SERVICE_PASSWORD_64_MINIO
