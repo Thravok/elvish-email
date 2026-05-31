@@ -37,7 +37,7 @@ define DEV_AUTO_DB_UP
 	fi;
 endef
 
-.PHONY: openapi openapi-check
+.PHONY: openapi openapi-check codeql codeql-go codeql-js codeql-all codeql-summary codeql-clean codeql-install-hint codeql-build
 openapi:
 	go run ./cmd/apiroutes -write
 
@@ -246,3 +246,76 @@ bench-smoke:
 	go test -bench=. -benchtime=1x ./...
 
 check: fmt vet lint static-js openapi-check test-race vuln
+
+# --- CodeQL (local; mirrors .github/workflows/codeql-analysis.yml server job) ---
+CODEQL ?= codeql
+CODEQL_DIR ?= .codeql
+CODEQL_CONFIG ?= .github/codeql/codeql-config.yml
+CODEQL_MODEL_PACK ?= $(abspath .github/codeql/elvish-go-models)
+CODEQL_GO_DB ?= $(CODEQL_DIR)/databases/go
+CODEQL_JS_DB ?= $(CODEQL_DIR)/databases/javascript
+CODEQL_GO_SARIF ?= $(CODEQL_DIR)/results/go.sarif
+CODEQL_JS_SARIF ?= $(CODEQL_DIR)/results/js.sarif
+
+.PHONY: codeql codeql-go codeql-js codeql-all codeql-summary codeql-summary-go codeql-clean codeql-check codeql-install-hint codeql-build
+
+codeql-install-hint:
+	@printf '%s\n' \
+		"CodeQL CLI not found. Install one of:" \
+		"  brew install codeql" \
+		"  https://github.com/github/codeql-action/releases" \
+		"" \
+		"Then run: make codeql-go"
+
+codeql-check:
+	@command -v $(CODEQL) >/dev/null 2>&1 || { $(MAKE) -s codeql-install-hint; exit 1; }
+	@grep -qE '^[[:space:]]*-[[:space:]]*local:' $(CODEQL_CONFIG) && { \
+		printf '%s\n' "Remove 'local:' packs from $(CODEQL_CONFIG)"; exit 1; \
+	} || true
+	@$(CODEQL) version | head -1
+
+codeql-build:
+	CGO_ENABLED=0 go build -v ./...
+
+codeql: codeql-go
+
+codeql-all: codeql-go codeql-js
+
+codeql-go: codeql-check
+	@mkdir -p $(CODEQL_DIR)/databases $(CODEQL_DIR)/results
+	@printf '%s\n' "[codeql] creating Go database ..."
+	$(CODEQL) database create $(CODEQL_GO_DB) --overwrite \
+		--language=go \
+		--source-root="$(CURDIR)" \
+		--codescanning-config="$(CODEQL_CONFIG)" \
+		--command='make codeql-build'
+	@printf '%s\n' "[codeql] analyzing Go (elvish/go-models) ..."
+	$(CODEQL) database analyze $(CODEQL_GO_DB) \
+		--format=sarif-latest \
+		--output="$(CODEQL_GO_SARIF)" \
+		--additional-packs="$(CODEQL_MODEL_PACK)" \
+		--model-packs=elvish/go-models
+	@printf '%s\n' "[codeql] Go SARIF: $(CODEQL_GO_SARIF)"
+
+codeql-js: codeql-check
+	@mkdir -p $(CODEQL_DIR)/databases $(CODEQL_DIR)/results
+	@printf '%s\n' "[codeql] creating JavaScript/TypeScript database ..."
+	$(CODEQL) database create $(CODEQL_JS_DB) --overwrite \
+		--language=javascript \
+		--source-root="$(CURDIR)" \
+		--codescanning-config="$(CODEQL_CONFIG)"
+	@printf '%s\n' "[codeql] analyzing JavaScript/TypeScript ..."
+	$(CODEQL) database analyze $(CODEQL_JS_DB) \
+		--format=sarif-latest \
+		--output="$(CODEQL_JS_SARIF)"
+	@printf '%s\n' "[codeql] JS SARIF: $(CODEQL_JS_SARIF)"
+
+codeql-summary-go: codeql-check
+	@test -d "$(CODEQL_GO_DB)" || { printf '%s\n' "missing $(CODEQL_GO_DB) — run make codeql-go first"; exit 1; }
+	@$(CODEQL) database interpret-results "$(CODEQL_GO_DB)" --format=CSV --max-path-problems=30 2>/dev/null | head -40 || \
+		$(CODEQL) database interpret-results "$(CODEQL_GO_DB)" --format=LGTM --max-path-problems=30 | head -40
+
+codeql-summary: codeql-summary-go
+
+codeql-clean:
+	rm -rf "$(CODEQL_DIR)"
