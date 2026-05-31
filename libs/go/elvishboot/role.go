@@ -66,9 +66,19 @@ func validateRoleEnv(role Role) error {
 	return nil
 }
 
+func monolithEnabled() bool {
+	return envTruthy("ELVISH_MONOLITH")
+}
+
 func componentsForRole(role Role) deploymentComponents {
 	switch role {
 	case RoleAPI:
+		if monolithEnabled() {
+			return deploymentComponents{
+				HTTP: true, SMTP: true, MailWorker: true,
+				BackgroundJobs: true, RunMigrations: true,
+			}
+		}
 		return deploymentComponents{
 			HTTP: true, SMTP: false, MailWorker: false,
 			BackgroundJobs: false, RunMigrations: true,

@@ -1,22 +1,22 @@
 # Split deployment runbook
 
-Production defaults to **single-origin**: one Coolify domain on **`api`** serves marketing, mail UI, and `/api/*`. Mail transport still runs as separate Go processes (`elvishmta`, `elvishworker`).
+Production defaults to a **monolith**: one **`api`** container runs HTTP, SMTP, outbox delivery, and sweepers (`ELVISH_MONOLITH=1`). One Coolify domain on `api` (port **8765**); SMTP on host ports **25** and **587**.
 
-Optional **split-origin** nginx tiers (`web`, `admin`) are available via compose profile `split-origin` when you are ready to separate browser origins.
+Optional compose profiles exist when you want to split later:
 
-See [ADR 0018](../adr/0018-monorepo-split-origin-deploy.md) (split-origin is optional, not the default).
+| Profile | Enables |
+|---------|---------|
+| `split-origin` | Separate nginx `web` / `admin` containers |
+| `split-roles` | Separate `mail-mta` and `worker` (set `ELVISH_MONOLITH=0` on `api`) |
+
+See [ADR 0018](../adr/0018-monorepo-split-origin-deploy.md).
 
 ## Local development
 
-### Default (single origin)
-
 ```bash
 make db-up
-brew install overmind   # optional
-make dev                # Procfile: api, mta, worker
+make dev                # monolith api on :8765, SMTP :2525/:2587
 ```
-
-- App: http://127.0.0.1:8765 (`/`, `/mail`, `/login`, `/api/*`)
 
 Without Overmind: `bash scripts/dev-split.sh`.
 
@@ -26,42 +26,20 @@ Without Overmind: `bash scripts/dev-split.sh`.
 docker compose --profile full up
 ```
 
-The `api` container serves static mail UI (`ELVISH_SERVE_STATIC=1`).
-
-### Split-origin (optional)
-
-```bash
-# Local compose
-docker compose --profile full --profile split-origin up
-
-# Coolify: set COMPOSE_PROFILES=split-origin before assigning web/admin domains
-```
-
-Set on **`api`** when split:
-
-| Env | Example |
-|-----|---------|
-| `ELVISH_SERVE_STATIC` | `0` |
-| `ELVISH_WEB_ORIGIN` | `https://mail.example.com` |
-| `ELVISH_ADMIN_ORIGIN` | `https://admin.example.com` |
+One `api` service — no separate mta/worker containers.
 
 ## Production (Coolify)
 
-Deploy **`api`**, **`mail-mta`**, **`worker`**, plus internal data stores. Assign **one domain** on `api` (port **8765**).
+Deploy **`api`** plus internal data stores. Assign **one domain** on `api` (`:8765`). Publish SMTP on the same service (ports **25** / **587**).
 
-| Env (api) | Example |
+| Env (api) | Default |
 |-----------|---------|
-| `ELVISH_SERVE_STATIC` | `1` (default in compose) |
-| `ELVISH_PUBLIC_BASE_URL` | `https://mail.example.com:8765` (from `SERVICE_URL_API_8765`) |
-| `ELVISH_MAIL_DOMAIN` | Your mail domain (defaults from `SERVICE_FQDN_API`) |
+| `ELVISH_MONOLITH` | `1` |
+| `ELVISH_SERVE_STATIC` | `1` |
+| `ELVISH_SMTP_ADDR` | `:25` |
+| `ELVISH_SMTP_SUBMISSION_ADDR` | `:587` |
+| `ELVISH_PUBLIC_BASE_URL` | from `SERVICE_URL_API_8765` |
 
-**Do not** set `ELVISH_BACKGROUND_JOBS` on API; worker owns outbox and sweepers.
+## Scaling (split profile only)
 
-## Scaling
-
-| Tier | Scale | Notes |
-|------|-------|-------|
-| `api` | N | Stateless; one instance runs migrations |
-| `worker` | 1 | Leader lock before N>1 |
-| `mail-mta` | 1 per host | Host :25 / :587; inbound only (outbox on `worker`) |
-| `web` / `admin` | N | Optional profile; static nginx only |
+When using `split-roles`, scale `api` without monolith, plus dedicated `worker` and `mail-mta` as documented in [ADR 0017](../adr/0017-mandatory-split-deployment.md).

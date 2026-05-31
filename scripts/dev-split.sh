@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fallback when overmind is not installed: run api, mta, worker in background.
+# Fallback when overmind is not installed: run monolith api in background.
 set -euo pipefail
 root="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -16,15 +16,11 @@ trap cleanup INT TERM EXIT
 make -s db-up
 make -s dev-api-once &
 pids+=($!)
-make -s dev-mta-once &
-pids+=($!)
-make -s dev-worker-once &
-pids+=($!)
 
 printf '%s\n' \
   "Dev running (PID ${pids[*]})" \
-  "  API:    http://127.0.0.1:8765 (marketing, mail, /api/*)" \
+  "  API:    http://127.0.0.1:8765 (HTTP + SMTP + outbox)" \
   "  SMTP:   localhost:2525 / :2587" \
-  "Ctrl+C to stop all"
+  "Ctrl+C to stop"
 
 wait

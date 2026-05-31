@@ -1,5 +1,5 @@
-# ELVISH — single-origin api + split Go roles (mta, worker). Prefer: brew install overmind
-# api :8765 (marketing + mail + /api/*) · auto `make db-up` unless SKIP_AUTO_DB_UP=1
+# ELVISH — monolith api (HTTP + SMTP + outbox) on one process. Prefer: brew install overmind
+# api :8765 · SMTP :2525/:2587 · auto `make db-up` unless SKIP_AUTO_DB_UP=1
 
 SHELL := /bin/bash
 
@@ -68,15 +68,18 @@ endif
 	go build -o bin/elvishmta ./services/mta/cmd/elvishmta
 	go build -o bin/elvishworker ./services/worker/cmd/elvishworker
 
-# `make dev` starts api + mta + worker (Overmind or scripts/dev-split.sh).
+# `make dev` starts the monolith api process (Overmind or scripts/dev-split.sh).
 dev:
 	@$(DEV_AUTO_DB_UP)
 	@command -v overmind >/dev/null 2>&1 && overmind start -f Procfile || bash scripts/dev-split.sh
 
 define DEV_API_EXPORTS
+	export ELVISH_MONOLITH="$${ELVISH_MONOLITH:-1}"; \
 	export ELVISH_PUBLIC_BASE_URL="$${ELVISH_PUBLIC_BASE_URL:-http://127.0.0.1:$(PORT)}"; \
-	export ELVISH_SMTP_ADDR=; \
-	export ELVISH_SMTP_SUBMISSION_ADDR=;
+	export ELVISH_MAIL_DOMAIN="$${ELVISH_MAIL_DOMAIN:-localhost.test}"; \
+	export ELVISH_HOSTNAME="$${ELVISH_HOSTNAME:-localhost.test}"; \
+	export ELVISH_SMTP_ADDR="$${ELVISH_SMTP_ADDR:-:2525}"; \
+	export ELVISH_SMTP_SUBMISSION_ADDR="$${ELVISH_SMTP_SUBMISSION_ADDR:-:2587}";
 endef
 
 dev-api-once:
@@ -121,10 +124,9 @@ compose-up:
 	$(MAKE) -s static-js
 	docker compose --profile full up -d --build
 	@printf '%s\n' \
-	  "API:   http://127.0.0.1:8765 (marketing, mail, /api/*)" \
+	  "API:   http://127.0.0.1:8765 (marketing, mail, /api/*, SMTP, outbox)" \
 	  "Docs:  http://127.0.0.1:8766 (MkDocs static site)" \
-	  "SMTP:  localhost:2525 / :2587" \
-	  "worker: mail outbox + sweepers"
+	  "SMTP:  localhost:2525 / :2587"
 
 compose-coolify-config:
 	@bash scripts/validate-coolify-compose.sh

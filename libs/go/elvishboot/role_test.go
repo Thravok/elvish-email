@@ -7,6 +7,7 @@ import (
 func TestComponentsForRole(t *testing.T) {
 	t.Setenv("ELVISH_HTTP_ENABLED", "")
 	t.Setenv("ELVISH_COMPONENT", "")
+	t.Setenv("ELVISH_MONOLITH", "")
 
 	api := componentsForRole(RoleAPI)
 	if !api.HTTP || api.SMTP || api.MailWorker || api.BackgroundJobs || !api.RunMigrations {
@@ -27,6 +28,12 @@ func TestComponentsForRole(t *testing.T) {
 	worker := componentsForRole(RoleWorker)
 	if worker.HTTP || worker.SMTP || !worker.MailWorker || !worker.BackgroundJobs || worker.RunMigrations {
 		t.Fatalf("worker: %+v", worker)
+	}
+
+	t.Setenv("ELVISH_MONOLITH", "1")
+	mono := componentsForRole(RoleAPI)
+	if !mono.HTTP || !mono.SMTP || !mono.MailWorker || !mono.BackgroundJobs || !mono.RunMigrations {
+		t.Fatalf("api monolith: %+v", mono)
 	}
 }
 

@@ -6,15 +6,15 @@ Coolify treats [`docker-compose.coolify.yaml`](../docker-compose.coolify.yaml) a
 
 | Service | Public access | Container port | Notes |
 |---------|---------------|------------------|--------|
-| `api` | Coolify domain | **8765** | Single-origin app: marketing, mail UI, `/api/*` (`ELVISH_SERVE_STATIC=1`); health: `/api/healthz` |
+| `api` | Coolify domain | **8765** | Monolith app: marketing, mail UI, `/api/*`, SMTP **25/587** (`ELVISH_MONOLITH=1`); health: `/api/healthz` |
 | `web` | Coolify domain (profile `split-origin` only) | **8080** | Optional mail/auth nginx |
 | `admin` | Coolify domain (profile `split-origin` only) | **8080** | Optional operator nginx |
-| `docs` | Coolify domain (profile `docs` only) | **8080** | MkDocs static site (`ghcr.io/thravok/elvish-email/docs:main`); optional |
-| `mail-mta` | **Host ports** `25`, `587` | 25 / 587 | No HTTP domain; MX DNS → server IP |
-| `worker` | Internal only | — | `elvishworker`: outbox + sweepers; scale to **one** replica |
+| `docs` | Coolify domain (profile `docs` only) | **8080** | MkDocs static site; optional |
+| `mail-mta` | Host ports `25`, `587` (profile `split-roles` only) | 25 / 587 | Legacy split SMTP; disable monolith on `api` first |
+| `worker` | Internal only (profile `split-roles` only) | — | Legacy split outbox |
 | `cockroach`, `valkey`, `scylla`, `minio` | **None** (internal) | — | Reachable only as `cockroach:26257`, `valkey:6379`, `scylla:9042`, `minio:9000`. Do **not** assign Coolify domains or declare `SERVICE_URL_*` on these services. |
 
-**Default:** assign one domain on **`api`** only. Enable `COMPOSE_PROFILES=split-origin` before assigning domains on `web` / `admin`.
+**Default:** assign one domain on **`api`** only. SMTP ports **25** and **587** are published on the same service. Enable `COMPOSE_PROFILES=split-origin` or `split-roles` only when splitting browser or mail roles.
 
 ## Container images (GHCR)
 
@@ -93,29 +93,23 @@ Compose uses `${VAR:?}` so Coolify shows a **red border** until the value exists
 
 | Variable | Where | Value |
 |----------|-------|--------|
-| `worker` service | Deploy enabled | Outbox delivery; do not run multiple workers until leader lock exists |
-| `ELVISH_WEB_ORIGINS` | `api` | Defaults to `$SERVICE_URL_WEB_8080,$SERVICE_URL_ADMIN_8080` after domains are assigned |
-| `ELVISH_PUBLIC_BASE_URL` | `api` | Defaults to `$SERVICE_URL_WEB_8080` (user-facing links) |
-| `ELVISH_COOKIE_DOMAIN` | `api` | e.g. `.example.com` for split subdomains |
+| `ELVISH_MAIL_DOMAIN` | `api` | Your mail domain (defaults from `SERVICE_FQDN_API`) |
+| `ELVISH_PUBLIC_BASE_URL` | `api` | Defaults to `$SERVICE_URL_API_8765` |
 
-### 5. SMTP (`mail-mta`)
+### 5. SMTP (`api`)
 
-- Compose publishes **25** and **587** on the host (required; Coolify HTTP proxy does not carry SMTP).
+- Compose publishes **25** and **587** on the **`api`** host (Coolify HTTP proxy does not carry SMTP).
 - Point MX / submission DNS at this server's public IP.
-- Mount shared `elvish_data` for DKIM/relay keys (also used by `worker` for outbound signing).
-- One `mail-mta` per host is sufficient; a second MTA on the same machine cannot both bind port 25.
+- Mount shared `elvish_data` for DKIM/relay keys.
+- Only one process per host may bind port 25 (default monolith; use profile `split-roles` only when splitting).
 
 ### 6. Health checks
-
-Compose defines Docker healthchecks for every long-running service. Coolify uses them for deploy readiness and restarts; you can mirror the same paths in the Coolify UI for proxy health probes.
 
 | Service | Probe | Notes |
 |---------|-------|-------|
 | `api` | `GET /api/healthz` on **8765** | Binary `-healthcheck` (distroless-safe) |
-| `web` | `GET /healthz` on **8080** | nginx static tier |
-| `admin` | `GET /healthz` on **8080** | nginx operator tier |
-| `worker` | `-healthcheck` | Pings SQL, Valkey, and Scylla when configured |
-| `mail-mta` | `-healthcheck` on internal **8765** | `ELVISH_HTTP_ENABLED=1` for `/api/healthz` only; SMTP stays on 25/587 |
+| `web` / `admin` | `GET /healthz` on **8080** | Profile `split-origin` only |
+| `worker` / `mail-mta` | `-healthcheck` | Profile `split-roles` only |
 | `docs` (profile) | `GET /healthz` on **8080** | Optional docs site |
 | `cockroach` | `cockroach sql -e 'SELECT 1'` | Internal |
 | `valkey` | `redis-cli PING` | Internal |
@@ -137,10 +131,10 @@ Symptoms: `api` and `worker` are **healthy**, but `web` / `admin` show **Startin
 
 After changing healthcheck code, rebuild/publish GHCR images (`ELVISH_IMAGE_TAG`) before redeploying Coolify.
 
-### 7. Scaling `api`
+### 7. Scaling
 
-- Increase replica count in Coolify for `api` only.
-- Run **one** `worker` replica for outbox and sweepers (MTA tiers do not run the outbox worker).
+- Default monolith: scale **`api`** only (one replica recommended until outbox leader lock exists for N>1).
+- Profile `split-roles`: scale `api` with `ELVISH_MONOLITH=0`, plus one `worker` and one `mail-mta` per host.
 
 ## Magic variables declared in compose
 

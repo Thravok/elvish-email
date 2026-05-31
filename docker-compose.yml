@@ -145,12 +145,17 @@ services:
         condition: service_completed_successfully
     ports:
       - "8765:8765"
+      - "2525:25"
+      - "2587:587"
     command: ["-addr", ":8765", "-root", "/app"]
     environment:
       - ELVISH_SERVE_STATIC=1
+      - ELVISH_MONOLITH=1
       - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-http://127.0.0.1:8765}
-      - ELVISH_SMTP_ADDR=
-      - ELVISH_SMTP_SUBMISSION_ADDR=
+      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-localhost.test}
+      - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-localhost.test}
+      - ELVISH_SMTP_ADDR=:25
+      - ELVISH_SMTP_SUBMISSION_ADDR=:587
       - COCKROACH_DSN=${COCKROACH_DSN:-postgres://root@cockroach:26257/defaultdb?sslmode=disable}
       - VALKEY_ADDR=${VALKEY_ADDR:-valkey:6379}
       - VALKEY_PASSWORD=${VALKEY_PASSWORD:-}
@@ -212,7 +217,7 @@ services:
       start_period: 30s
 
   mail-mta:
-    profiles: [full, staging]
+    profiles: [split-roles]
     build:
       context: .
       dockerfile: services/mta/Dockerfile
@@ -277,7 +282,7 @@ services:
       start_period: 15s
 
   worker:
-    profiles: [full, staging]
+    profiles: [split-roles]
     build:
       context: .
       dockerfile: services/worker/Dockerfile

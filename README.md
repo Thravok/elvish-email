@@ -1,6 +1,6 @@
 # ELVish
 
-ELVish is an open-source platform for **end-to-end encrypted mail**, operator tooling, and a public marketing site. Production defaults to a **single-origin** `elvishapi` process (marketing, mail UI, and `/api/*` on one domain); mail transport runs as separate Go roles (`elvishmta`, `elvishworker`).
+ELVish is an open-source platform for **end-to-end encrypted mail**, operator tooling, and a public marketing site. Production defaults to a **single `elvishapi` process** (`ELVISH_MONOLITH=1`): marketing, mail UI, JSON API, SMTP, and outbox delivery on one domain and one container.
 
 **License:** [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html) ([LICENSE](LICENSE))
 
@@ -16,11 +16,9 @@ Five deployables share one Go module (`elvish`) and talk to CockroachDB/Postgres
 
 | Tier | Binary / image | Role | Local port |
 |------|----------------|------|------------|
-| **api** | `elvishapi` | JSON API, SSR marketing, mail/auth UI | `:8765` |
-| **mail-mta** | `elvishmta` | SMTP ingest (MX + submission) | `:2525` / `:2587` |
-| **worker** | `elvishworker` | Outbox delivery, sweepers | (no HTTP) |
+| **api** | `elvishapi` | Full app (HTTP, SMTP, outbox, migrations) | `:8765`, SMTP `:2525`/`:2587` |
 
-Optional split-origin nginx tiers (`web`, `admin`) exist for future use — see [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md).
+Optional split roles (`elvishmta`, `elvishworker`) and nginx tiers (`web`, `admin`) use compose profiles — see [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md).
 
 Backend roles **refuse to start** until **CockroachDB/Postgres** (`COCKROACH_DSN`) and **Valkey** are configured. Set `ELVISH_ALLOW_EMPTY_DB=1` only for static-only API demos without auth.
 
@@ -34,7 +32,7 @@ See [docs/architecture.md](docs/architecture.md), [CODEBASES.md](CODEBASES.md), 
 
 ```bash
 make db-up   # CockroachDB, Valkey, Scylla, MinIO (+ schema init)
-make dev     # api + mta + worker (Overmind or scripts/dev-split.sh)
+make dev     # monolith api (Overmind or scripts/dev-split.sh)
 ```
 
 | URL | Purpose |
@@ -52,7 +50,7 @@ make dev     # api + mta + worker (Overmind or scripts/dev-split.sh)
 | `SKIP_AUTO_DB_UP=1` | Do not start Docker backends automatically |
 | `SKIP_MAIL_BACKENDS=1` | Skip Scylla/S3 defaults (mail APIs return 503 until configured) |
 
-Single roles: `make dev-api-once`, `make dev-mta-once`, `make dev-worker-once`. Full container stack: `make compose-up`. Details: [docs/runbooks/split-deploy.md](docs/runbooks/split-deploy.md).
+Single roles (split profile): `make dev-mta-once`, `make dev-worker-once` with `ELVISH_MONOLITH=0` on api. Full container stack: `make compose-up`.
 
 **Local databases** (`make db-up`): CockroachDB `:26257`, Valkey `:6379`, Scylla `:9042`, MinIO S3 `:8333` (console `:9001`). First Scylla boot can take 1–2 minutes. Stop with `make db-down`; wipe volumes with `make db-clean`. Health check: `make db-health`.
 

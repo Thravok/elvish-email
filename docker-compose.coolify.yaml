@@ -55,14 +55,21 @@ services:
       - ELVISH_PUBLIC_BASE_URL=${ELVISH_PUBLIC_BASE_URL:-${SERVICE_URL_API_8765:?}}
       - ELVISH_COOKIE_DOMAIN=${ELVISH_COOKIE_DOMAIN:-}
       - ELVISH_TRUST_FORWARDED_FOR=${ELVISH_TRUST_FORWARDED_FOR:-1}
-      - ELVISH_SMTP_ADDR=
-      - ELVISH_SMTP_SUBMISSION_ADDR=
+      - ELVISH_MONOLITH=1
+      - ELVISH_SMTP_ADDR=${ELVISH_SMTP_ADDR:-:25}
+      - ELVISH_SMTP_SUBMISSION_ADDR=${ELVISH_SMTP_SUBMISSION_ADDR:-:587}
+      - ELVISH_SMTP_ALLOW_PLAIN_AUTH=${ELVISH_SMTP_ALLOW_PLAIN_AUTH:-0}
+      - ELVISH_SMTP_TLS_CERT_PATH=${ELVISH_SMTP_TLS_CERT_PATH:-}
+      - ELVISH_SMTP_TLS_KEY_PATH=${ELVISH_SMTP_TLS_KEY_PATH:-}
       - COOKIE_SECURE=${COOKIE_SECURE:?1}
       - ELVISH_AUTO_GEN_MFA_KEY=${ELVISH_AUTO_GEN_MFA_KEY:-0}
       - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64:?}}
       - ELVISH_ALLOW_EMPTY_DB=0
     volumes:
       - elvish_data:/app/data
+    ports:
+      - "25:25"
+      - "587:587"
     healthcheck:
       test: ["CMD", "/usr/local/bin/elvishapi", "-root", "/app", "-addr", ":8765", "-healthcheck"]
       interval: 30s
@@ -109,7 +116,9 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Optional — enable COMPOSE_PROFILES=split-roles when running mta/worker separately from api.
   worker:
+    profiles: [split-roles]
     image: ghcr.io/thravok/elvish-email/worker:${ELVISH_IMAGE_TAG:-main}
     command: ["-root", "/app"]
     depends_on:
@@ -174,6 +183,7 @@ services:
     restart: unless-stopped
 
   mail-mta:
+    profiles: [split-roles]
     image: ghcr.io/thravok/elvish-email/mta:${ELVISH_IMAGE_TAG:-main}
     command: ["-addr", ":8765", "-root", "/app"]
     depends_on:
