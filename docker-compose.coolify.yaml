@@ -202,59 +202,6 @@ services:
       - "587:587"
     restart: unless-stopped
 
-  mail-mta-2:
-    profiles: [dual-mta]
-    image: ghcr.io/thravok/elvish-email/mta:${ELVISH_IMAGE_TAG:-main}
-    command: ["/usr/local/bin/elvishmta", "-root", "/app"]
-    depends_on:
-      cockroach:
-        condition: service_healthy
-      valkey:
-        condition: service_healthy
-      scylla:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      scylla-init:
-        condition: service_completed_successfully
-      minio-init:
-        condition: service_completed_successfully
-    environment:
-      - SERVICE_PASSWORD_64_VALKEY
-      - SERVICE_USER_MINIO
-      - SERVICE_PASSWORD_64_MINIO
-      - SERVICE_BASE64_64
-      - COCKROACH_DSN=postgres://root@cockroach:26257/defaultdb?sslmode=disable
-      - VALKEY_ADDR=valkey:6379
-      - VALKEY_PASSWORD=${VALKEY_PASSWORD:-${SERVICE_PASSWORD_64_VALKEY}}
-      - VALKEY_DB=${VALKEY_DB:-0}
-      - SCYLLA_HOSTS=scylla:9042
-      - SCYLLA_KEYSPACE=${SCYLLA_KEYSPACE:-elvish_mail}
-      - SCYLLA_USERNAME=${SCYLLA_USERNAME:-}
-      - SCYLLA_PASSWORD=${SCYLLA_PASSWORD:-}
-      - BLOB_S3_ENDPOINT=http://minio:9000
-      - BLOB_S3_REGION=${BLOB_S3_REGION:-us-east-1}
-      - BLOB_S3_BUCKET=${BLOB_S3_BUCKET:-elvish-mail}
-      - BLOB_S3_ACCESS_KEY=${BLOB_S3_ACCESS_KEY:-${SERVICE_USER_MINIO}}
-      - BLOB_S3_SECRET_KEY=${BLOB_S3_SECRET_KEY:-${SERVICE_PASSWORD_64_MINIO}}
-      - BLOB_S3_FORCE_PATH_STYLE=1
-      - ELVISH_HTTP_ENABLED=${ELVISH_HTTP_ENABLED:-0}
-      - ELVISH_HOSTNAME=${ELVISH_HOSTNAME:-}
-      - ELVISH_MAIL_DOMAIN=${ELVISH_MAIL_DOMAIN:-}
-      - ELVISH_SMTP_ADDR=${ELVISH_SMTP_ADDR:-:25}
-      - ELVISH_SMTP_SUBMISSION_ADDR=${ELVISH_SMTP_SUBMISSION_ADDR:-:587}
-      - ELVISH_SMTP_ALLOW_PLAIN_AUTH=${ELVISH_SMTP_ALLOW_PLAIN_AUTH:-0}
-      - ELVISH_SMTP_TLS_CERT_PATH=${ELVISH_SMTP_TLS_CERT_PATH:-}
-      - ELVISH_SMTP_TLS_KEY_PATH=${ELVISH_SMTP_TLS_KEY_PATH:-}
-      - ELVISH_MFA_ENCRYPTION_KEY=${ELVISH_MFA_ENCRYPTION_KEY:-${SERVICE_BASE64_64}}
-      - ELVISH_ALLOW_EMPTY_DB=0
-    volumes:
-      - elvish_data:/app/data
-    ports:
-      - "25:25"
-      - "587:587"
-    restart: unless-stopped
-
   # Internal only — do not declare SERVICE_URL_* / SERVICE_FQDN_* (Coolify would offer a public domain).
   cockroach:
     image: cockroachdb/cockroach:v24.2.4

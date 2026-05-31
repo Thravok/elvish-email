@@ -86,8 +86,8 @@ Set `ELVISH_COOKIE_DOMAIN` (e.g. `.example.com`) when `web`, `admin`, and `api` 
 
 - Compose publishes **25** and **587** on the host (required; Coolify HTTP proxy does not carry SMTP).
 - Point MX / submission DNS at this server's public IP.
-- For a **second** MTA node, deploy another Coolify server (or enable compose profile `dual-mta`); two containers cannot both bind host port 25 on one machine.
-- Mount shared `elvish_data` (or replicate DKIM/relay keys) so all MTAs sign consistently.
+- Mount shared `elvish_data` for DKIM/relay keys (also used by `worker` for outbound signing).
+- One `mail-mta` per host is sufficient; a second MTA on the same machine cannot both bind port 25.
 
 ### 6. Health checks (Coolify UI)
 
@@ -100,8 +100,7 @@ Set `ELVISH_COOKIE_DOMAIN` (e.g. `.example.com`) when `web`, `admin`, and `api` 
 ### 7. Scaling `api`
 
 - Increase replica count in Coolify for `api` only.
-- Run **one** `worker` replica for outbox and sweepers.
-- `mail-mta` runs outbound SMTP workers on the MTA tier; `LeasePendingOutbox` is safe across workers.
+- Run **one** `worker` replica for outbox and sweepers (MTA tiers do not run the outbox worker).
 
 ## Magic variables declared in compose
 

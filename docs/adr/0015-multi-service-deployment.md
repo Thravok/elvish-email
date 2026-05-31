@@ -13,7 +13,7 @@
    - `mta`: SMTP + `mailworker`; HTTP off unless `ELVISH_HTTP_ENABLED=1` (health checks).
    - `all`: legacy monolith behavior (default when unset).
 
-2. **Coolify compose** — [`docker-compose.coolify.yaml`](../../docker-compose.coolify.yaml) defines `api` (`elvishapi` on 8765: static + API + SSR), `mail-mta`, `worker`, and optional `mail-mta-2` (profile `dual-mta`). Domains and TLS are configured in the Coolify UI per service, not in-repo. See [`docs/deploy-coolify.md`](../deploy-coolify.md).
+2. **Coolify compose** — [`docker-compose.coolify.yaml`](../../docker-compose.coolify.yaml) defines `api`, `web`, `admin`, `mail-mta`, and `worker`. Domains and TLS are configured in the Coolify UI per service, not in-repo. See [`docs/deploy-coolify.md`](../deploy-coolify.md).
 
 3. **Browsers** — Default is single-origin on the `api` Coolify domain (`SERVICE_URL_API_8765`). Optional split-origin uses `ELVISH_WEB_ORIGINS` and `ELVISH_COOKIE_DOMAIN` without a separate static container.
 

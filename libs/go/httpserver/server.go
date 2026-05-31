@@ -188,6 +188,9 @@ type Options struct {
 	CookieSecure bool
 	// Logger is used for server and handler diagnostics; if nil, slog.Default() is used.
 	Logger *slog.Logger
+	// SkipSSR skips HTML template parsing when this process never serves SSR pages
+	// (elvishmta health-only HTTP, elvishworker background jobs).
+	SkipSSR bool
 }
 
 // New builds a Server. When the process is started without SQL/Valkey (static-only mode),
@@ -195,10 +198,15 @@ type Options struct {
 func New(opts Options, bundle *db.Bundle) (*Server, error) {
 	root := filepath.Clean(opts.Root)
 	repo := paths.RepoRoot(root)
-	tmplFS := os.DirFS(repo.APITemplates())
-	eng, err := render.New(tmplFS)
-	if err != nil {
-		return nil, err
+	var tmplFS fs.FS
+	var eng *render.Engine
+	if !opts.SkipSSR {
+		tmplFS = os.DirFS(repo.APITemplates())
+		var err error
+		eng, err = render.New(tmplFS)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var st *store.Store
 	var rdb *db.Bundle

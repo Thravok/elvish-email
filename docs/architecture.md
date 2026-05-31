@@ -26,6 +26,10 @@ flowchart LR
   API --> Valkey[(Valkey)]
   API --> Scylla[(Scylla)]
   API --> S3[(Blob store)]
-  MTA --> API
-  Worker --> API
+  MTA --> CRDB
+  MTA --> Scylla
+  MTA --> S3
+  Worker --> CRDB
+  Worker --> Scylla
+  Worker --> S3
 ```

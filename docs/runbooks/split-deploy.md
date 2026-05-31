@@ -55,5 +55,5 @@ Deploy **api**, **web**, **admin**, **mail-mta**, **worker**. Set `ELVISH_COOKIE
 |------|-------|-------|
 | `api` | N | Stateless; one instance runs migrations |
 | `worker` | 1 | Leader lock before N>1 |
-| `mail-mta` | 1+ per MX IP | Host :25 binding |
+| `mail-mta` | 1 per host | Host :25 / :587; inbound only (outbox on `worker`) |
 | `web` / `admin` | N | Static nginx only |

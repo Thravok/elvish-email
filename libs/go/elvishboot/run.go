@@ -160,6 +160,7 @@ func Run(role Role, flags Flags) error {
 		Root:         flags.Root,
 		CookieSecure: strings.EqualFold(os.Getenv("COOKIE_SECURE"), "1") || strings.EqualFold(os.Getenv("COOKIE_SECURE"), "true"),
 		Logger:       logger,
+		SkipSSR:      role != RoleAPI,
 	}, bundle)
 	if err != nil {
 		return fmt.Errorf("httpserver new: %w", err)
