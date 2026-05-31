@@ -67,7 +67,9 @@ class ElvishMaterial3Theme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withOpacity(brightness == Brightness.dark ? 0.35 : 0.5),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(
+          alpha: brightness == Brightness.dark ? 0.35 : 0.5,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
