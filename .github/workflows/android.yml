@@ -51,8 +51,8 @@ jobs:
         run: |
           flutter pub get
           if [ ! -x android/gradlew ]; then
-            flutter create . --platforms=android --project-name elvish_mail --org org.elvish
-            flutter pub get
+            echo "::error::android/gradlew is missing or not executable; commit the Android tree instead of regenerating it in CI."
+            exit 1
           fi
           yes | flutter doctor --android-licenses || true
 
